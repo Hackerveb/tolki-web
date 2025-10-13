@@ -54,7 +54,7 @@ const OnboardingPage = () => {
     {
       type: 'info',
       title: 'Ready to Start?',
-      subtitle: "It's simple",
+      subtitle: "It&apos;s simple",
       description: 'Receive free credits, choose your languages, tap the record button, and speak. Your words are translated in real-time.',
       icon: (
         <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
@@ -142,8 +142,9 @@ const OnboardingPage = () => {
       } else {
         alert('Unable to sign in. Please try again.');
       }
-    } catch (err: any) {
-      const errorMessage = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'Invalid email or password';
+    } catch (err: unknown) {
+      const error = err as { errors?: Array<{ longMessage?: string; message?: string }> };
+      const errorMessage = error.errors?.[0]?.longMessage || error.errors?.[0]?.message || 'Invalid email or password';
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -159,8 +160,9 @@ const OnboardingPage = () => {
         redirectUrl: '/sso-callback',
         redirectUrlComplete: '/',
       });
-    } catch (error: any) {
-      alert(error?.message || 'Failed to sign in with Google');
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      alert(err?.message || 'Failed to sign in with Google');
       setOauthLoading(null);
     }
   };
@@ -174,8 +176,9 @@ const OnboardingPage = () => {
         redirectUrl: '/sso-callback',
         redirectUrlComplete: '/',
       });
-    } catch (error: any) {
-      alert(error?.message || 'Failed to sign in with Apple');
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      alert(err?.message || 'Failed to sign in with Apple');
       setOauthLoading(null);
     }
   };
@@ -183,8 +186,6 @@ const OnboardingPage = () => {
   const handleSignUpLink = () => {
     router.push('/sign-up');
   };
-
-  const currentSlideData = slides[currentSlide];
 
   return (
     <div

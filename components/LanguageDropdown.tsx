@@ -14,7 +14,7 @@ interface LanguageDropdownProps {
   className?: string;
 }
 
-export const LanguageDropdown: React.FC<LanguageDropdownProps> = memo(({
+const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
   selectedLanguage,
   onLanguageSelect,
   dropDirection = 'up',
@@ -142,4 +142,8 @@ export const LanguageDropdown: React.FC<LanguageDropdownProps> = memo(({
       </AnimatePresence>
     </div>
   );
-});
+};
+
+LanguageDropdownComponent.displayName = 'LanguageDropdown';
+
+export const LanguageDropdown = memo(LanguageDropdownComponent);

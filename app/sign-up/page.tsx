@@ -85,8 +85,9 @@ export default function SignUpPage() {
 
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
-    } catch (err: any) {
-      const errorMessage = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'Unable to create account';
+    } catch (err: unknown) {
+      const error = err as { errors?: Array<{ longMessage?: string; message?: string }> };
+      const errorMessage = error.errors?.[0]?.longMessage || error.errors?.[0]?.message || 'Unable to create account';
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -101,7 +102,7 @@ export default function SignUpPage() {
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       alert('A new verification code has been sent to your email.');
       setCode('');
-    } catch (err: any) {
+    } catch {
       alert('Failed to resend code. Please try again.');
     } finally {
       setLoading(false);
@@ -129,8 +130,9 @@ export default function SignUpPage() {
       } else {
         alert('Verification failed. Please try again.');
       }
-    } catch (err: any) {
-      const errorMessage = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'Invalid verification code';
+    } catch (err: unknown) {
+      const error = err as { errors?: Array<{ longMessage?: string; message?: string }> };
+      const errorMessage = error.errors?.[0]?.longMessage || error.errors?.[0]?.message || 'Invalid verification code';
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -146,8 +148,9 @@ export default function SignUpPage() {
         redirectUrl: '/sso-callback',
         redirectUrlComplete: '/',
       });
-    } catch (error: any) {
-      alert(error?.message || 'Failed to sign up with Google');
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      alert(err?.message || 'Failed to sign up with Google');
       setOauthLoading(null);
     }
   };
@@ -161,8 +164,9 @@ export default function SignUpPage() {
         redirectUrl: '/sso-callback',
         redirectUrlComplete: '/',
       });
-    } catch (error: any) {
-      alert(error?.message || 'Failed to sign up with Apple');
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      alert(err?.message || 'Failed to sign up with Apple');
       setOauthLoading(null);
     }
   };

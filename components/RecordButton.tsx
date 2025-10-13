@@ -11,7 +11,7 @@ interface RecordButtonProps {
   disabled?: boolean;
 }
 
-export const RecordButton: React.FC<RecordButtonProps> = memo(({ onStateChange, disabled = false }) => {
+const RecordButtonComponent: React.FC<RecordButtonProps> = ({ onStateChange, disabled = false }) => {
   const [state, setState] = useState<RecordingState>('idle');
   const connectingTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -136,4 +136,8 @@ export const RecordButton: React.FC<RecordButtonProps> = memo(({ onStateChange, 
       </motion.button>
     </div>
   );
-});
+};
+
+RecordButtonComponent.displayName = 'RecordButton';
+
+export const RecordButton = memo(RecordButtonComponent);

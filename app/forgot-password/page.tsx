@@ -76,8 +76,9 @@ export default function ForgotPasswordPage() {
       });
 
       setCurrentStep('code');
-    } catch (err: any) {
-      const errorMessage = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'Unable to send reset code. Please try again.';
+    } catch (err: unknown) {
+      const error = err as { errors?: Array<{ longMessage?: string; message?: string }> };
+      const errorMessage = error.errors?.[0]?.longMessage || error.errors?.[0]?.message || 'Unable to send reset code. Please try again.';
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -96,7 +97,7 @@ export default function ForgotPasswordPage() {
 
       alert('A new verification code has been sent to your email.');
       setCode('');
-    } catch (err: any) {
+    } catch {
       alert('Failed to resend code. Please try again.');
     } finally {
       setLoading(false);
@@ -125,8 +126,9 @@ export default function ForgotPasswordPage() {
       });
 
       setCurrentStep('password');
-    } catch (err: any) {
-      const errorMessage = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'Invalid verification code. Please try again.';
+    } catch (err: unknown) {
+      const error = err as { errors?: Array<{ longMessage?: string; message?: string }> };
+      const errorMessage = error.errors?.[0]?.longMessage || error.errors?.[0]?.message || 'Invalid verification code. Please try again.';
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -154,8 +156,9 @@ export default function ForgotPasswordPage() {
       });
 
       setCurrentStep('success');
-    } catch (err: any) {
-      const errorMessage = err.errors?.[0]?.longMessage || err.errors?.[0]?.message || 'Unable to reset password. Please try again.';
+    } catch (err: unknown) {
+      const error = err as { errors?: Array<{ longMessage?: string; message?: string }> };
+      const errorMessage = error.errors?.[0]?.longMessage || error.errors?.[0]?.message || 'Unable to reset password. Please try again.';
       alert(errorMessage);
     } finally {
       setLoading(false);

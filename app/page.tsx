@@ -33,7 +33,7 @@ export default function MainScreen() {
   const { room, connect, disconnect, isConnected, error } = useLiveKitRoom();
 
   // Usage tracking
-  const { secondsUsed, creditsDeducted, reset: resetUsage } = useTrackUsage({
+  const { secondsUsed, reset: resetUsage } = useTrackUsage({
     isActive: recordingState === 'recording',
     onInsufficientCredits: () => {
       // Stop recording if credits run out
