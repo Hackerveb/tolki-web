@@ -20,16 +20,12 @@ export const useLiveKitRoom = (): UseLiveKitRoomReturn => {
   const [error, setError] = useState<Error | null>(null);
 
   // Create room instance once
+  // IMPORTANT: No video configuration for voice-only app
+  // Video settings can cause camera permission requests which fail on Vercel
+  // This matches the working iphone_demo_sdk example pattern
   const room = useMemo(() => new Room({
     adaptiveStream: true,
     dynacast: true,
-    videoCaptureDefaults: {
-      resolution: {
-        width: 1280,
-        height: 720,
-        frameRate: 30,
-      },
-    },
   }), []);
 
   // Track connection state changes
