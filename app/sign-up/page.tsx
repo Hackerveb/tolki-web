@@ -427,7 +427,7 @@ export default function SignUpPage() {
               className="mt-2 p-2 rounded-lg"
               style={{
                 backgroundColor: colors.background,
-                boxShadow: shadows.soft.boxShadow,
+                boxShadow: shadows.subtle.boxShadow,
               }}
             >
               <p

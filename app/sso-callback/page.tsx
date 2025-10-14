@@ -1,15 +1,22 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useClerk } from '@clerk/nextjs';
 import { colors } from '@/styles/colors';
 
 export default function SSOCallback() {
+  const router = useRouter();
   const { handleRedirectCallback } = useClerk();
 
   useEffect(() => {
-    handleRedirectCallback();
-  }, [handleRedirectCallback]);
+    async function handleCallback() {
+      await handleRedirectCallback({}, async (url) => {
+        await router.push(url || '/');
+      });
+    }
+    handleCallback();
+  }, [handleRedirectCallback, router]);
 
   return (
     <div

@@ -115,7 +115,7 @@ export default function SettingsScreen() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="h-screen flex flex-col overflow-hidden"
       style={{ backgroundColor: colors.background }}
     >
       {/* Header */}
@@ -215,7 +215,7 @@ export default function SettingsScreen() {
               }}
             >
               <span style={{ fontSize: '24px', fontWeight: '700', color: colors.white }}>
-                {balance.toFixed(0)}
+                {balance.toFixed(1)}
               </span>
               <span style={{ fontSize: '12px', fontWeight: '500', color: colors.white, opacity: 0.9 }}>
                 credits

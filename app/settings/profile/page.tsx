@@ -84,7 +84,7 @@ export default function EditProfileScreen() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="h-screen flex flex-col overflow-hidden"
       style={{ backgroundColor: colors.background }}
     >
       {/* Header */}

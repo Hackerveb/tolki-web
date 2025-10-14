@@ -83,8 +83,11 @@ export const useLiveKitRoom = (): UseLiveKitRoomReturn => {
 
       const { token, url } = await response.json();
 
-      // Enable microphone and connect in parallel (following the example pattern)
-      // preConnectBuffer allows audio to be buffered before the connection completes
+      // Connect to LiveKit and enable microphone in parallel
+      // IMPORTANT: This pattern matches the working iphone_demo_sdk example
+      // The preConnectBuffer flag allows audio to be buffered before connection completes
+      // This is specifically designed for voice agent use cases
+      console.log('Connecting to LiveKit and enabling microphone...');
       await Promise.all([
         room.localParticipant.setMicrophoneEnabled(true, undefined, {
           preConnectBuffer: true,

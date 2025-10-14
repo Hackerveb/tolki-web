@@ -35,7 +35,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the origin for redirect URLs
-    const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // Use the request origin first, then NEXT_PUBLIC_URL env var
+    // Vercel automatically provides VERCEL_URL as a fallback
+    const origin = request.headers.get('origin')
+      || process.env.NEXT_PUBLIC_URL
+      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
     // Create Stripe Checkout session
     const session = await stripe.checkout.sessions.create({

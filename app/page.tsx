@@ -132,7 +132,7 @@ export default function MainScreen() {
   if (!isLoaded || !isSignedIn) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
+        className="h-screen flex items-center justify-center overflow-hidden"
         style={{ backgroundColor: colors.background }}
       >
         <div className="flex flex-col items-center gap-3">
@@ -153,7 +153,7 @@ export default function MainScreen() {
       <RoomAudioRenderer />
       <StartAudio label="Start Audio" />
       <div
-        className="min-h-screen flex flex-col overflow-x-hidden"
+        className="h-screen flex flex-col overflow-hidden"
         style={{ backgroundColor: colors.background }}
       >
       {/* Header */}

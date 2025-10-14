@@ -35,9 +35,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Get LiveKit credentials from environment
+    // IMPORTANT: Use LIVEKIT_URL (not NEXT_PUBLIC_LIVEKIT_URL) to keep it server-side only
+    // This prevents the URL from being embedded in the client bundle at build time
     const apiKey = process.env.LIVEKIT_API_KEY;
     const apiSecret = process.env.LIVEKIT_API_SECRET;
-    const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+    const wsUrl = process.env.LIVEKIT_URL;
 
     if (!apiKey || !apiSecret || !wsUrl) {
       console.error('LiveKit credentials not configured');
