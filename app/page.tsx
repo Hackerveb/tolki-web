@@ -78,7 +78,9 @@ export default function MainScreen() {
       } catch (err) {
         console.error('Failed to connect to LiveKit:', err);
         setRecordingState('idle');
-        alert('Failed to connect to translation service. Please check your microphone permissions and try again.');
+        // Show the actual error message for debugging
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        alert(`Failed to connect to translation service.\n\nError: ${errorMessage}\n\nPlease check your microphone permissions and try again.`);
       }
     } else if (state === 'idle') {
       // Disconnect from LiveKit

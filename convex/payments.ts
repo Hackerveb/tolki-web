@@ -3,13 +3,15 @@ import { mutation, query, action } from "./_generated/server";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
-// Credit packages
+// DEPRECATED: Credit packages moved to lib/credit-packages.ts
+// The actual checkout flow uses Stripe Checkout API with packages from lib/credit-packages.ts
+// Keeping this for backward compatibility with simulatePurchase testing function
 export const creditPackages = [
-  { credits: 90, price: 599, label: "90 credits", description: "$5.99" },
-  { credits: 180, price: 1099, label: "180 credits", description: "$10.99" },
-  { credits: 1080, price: 5999, label: "1080 credits", description: "$59.99" },
-  { credits: 2160, price: 11499, label: "2160 credits", description: "$114.99" },
-  { credits: 4320, price: 21999, label: "4320 credits", description: "$219.99" },
+  { credits: 30, price: 599, label: "30 credits", description: "$5.99" },
+  { credits: 60, price: 1099, label: "60 credits", description: "$10.99" },
+  { credits: 360, price: 5999, label: "360 credits", description: "$59.99" },
+  { credits: 720, price: 11499, label: "720 credits", description: "$114.99" },
+  { credits: 1440, price: 21999, label: "1440 credits", description: "$219.99" },
 ];
 
 // Create a payment intent for purchasing credits
@@ -75,7 +77,7 @@ export const createPurchaseRecord = mutation({
 export const confirmPayment = mutation({
   args: {
     purchaseId: v.id("creditPurchases"),
-    stripePaymentIntentId: v.optional(v.string()),
+    stripeSessionId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const purchase = await ctx.db.get(args.purchaseId);
@@ -90,7 +92,7 @@ export const confirmPayment = mutation({
     // Update purchase status
     await ctx.db.patch(args.purchaseId, {
       status: "completed",
-      stripePaymentIntentId: args.stripePaymentIntentId,
+      stripeSessionId: args.stripeSessionId,
     });
 
     // Get user and add credits
@@ -115,12 +117,12 @@ export const confirmPayment = mutation({
 export const markPaymentFailed = mutation({
   args: {
     purchaseId: v.id("creditPurchases"),
-    stripePaymentIntentId: v.optional(v.string()),
+    stripeSessionId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.purchaseId, {
       status: "failed",
-      stripePaymentIntentId: args.stripePaymentIntentId,
+      stripeSessionId: args.stripeSessionId,
     });
   },
 });
@@ -135,6 +137,29 @@ export const recordPurchase = mutation({
     status: v.union(v.literal("completed"), v.literal("failed"), v.literal("pending")),
   },
   handler: async (ctx, args) => {
+    console.log(`[recordPurchase] Starting for clerkId: ${args.clerkId}, credits: ${args.credits}, status: ${args.status}, sessionId: ${args.stripeSessionId}`);
+
+    // IDEMPOTENCY CHECK: Prevent duplicate processing of the same webhook
+    const existingPurchase = await ctx.db
+      .query("creditPurchases")
+      .withIndex("by_stripe_session_id", (q) => q.eq("stripeSessionId", args.stripeSessionId))
+      .first();
+
+    if (existingPurchase) {
+      console.log(`[recordPurchase] ⚠️ Duplicate webhook detected! Session ${args.stripeSessionId} already processed as purchase ${existingPurchase._id}`);
+      console.log(`[recordPurchase] Returning existing purchase to prevent double-crediting`);
+
+      // Get user for current balance
+      const user = await ctx.db.get(existingPurchase.userId);
+
+      return {
+        purchaseId: existingPurchase._id,
+        newBalance: user?.credits || 0,
+        creditsAdded: 0, // No new credits added (already added before)
+        duplicate: true,
+      };
+    }
+
     // Get user
     const user = await ctx.db
       .query("users")
@@ -142,8 +167,11 @@ export const recordPurchase = mutation({
       .first();
 
     if (!user) {
+      console.error(`[recordPurchase] User not found for clerkId: ${args.clerkId}`);
       throw new Error("User not found");
     }
+
+    console.log(`[recordPurchase] User found: ${user._id}, current credits: ${user.credits}`);
 
     // Create purchase record
     const purchaseId = await ctx.db.insert("creditPurchases", {
@@ -151,23 +179,30 @@ export const recordPurchase = mutation({
       amount: args.amount * 100, // Convert dollars to cents for storage
       credits: args.credits,
       status: args.status,
-      stripePaymentIntentId: args.stripeSessionId,
+      stripeSessionId: args.stripeSessionId,
       purchasedAt: Date.now(),
     });
 
+    console.log(`[recordPurchase] Purchase record created: ${purchaseId}`);
+
     // If completed, add credits to user
     if (args.status === "completed") {
+      const newBalance = user.credits + args.credits;
       await ctx.db.patch(user._id, {
-        credits: user.credits + args.credits,
+        credits: newBalance,
         totalCreditsEverPurchased: user.totalCreditsEverPurchased + args.credits,
       });
+      console.log(`[recordPurchase] Credits updated: ${user.credits} -> ${newBalance}`);
     }
 
-    return {
+    const result = {
       purchaseId,
       newBalance: args.status === "completed" ? user.credits + args.credits : user.credits,
       creditsAdded: args.status === "completed" ? args.credits : 0,
     };
+
+    console.log(`[recordPurchase] Completed successfully:`, result);
+    return result;
   },
 });
 
@@ -262,7 +297,7 @@ export const simulatePurchase = action({
 
     const result = await ctx.runMutation(api.payments.confirmPayment, {
       purchaseId,
-      stripePaymentIntentId: `simulated_${Date.now()}`,
+      stripeSessionId: `simulated_${Date.now()}`,
     });
 
     return result;

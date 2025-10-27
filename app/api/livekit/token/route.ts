@@ -35,16 +35,43 @@ export async function POST(request: NextRequest) {
     }
 
     // Get LiveKit credentials from environment
-    // IMPORTANT: Use LIVEKIT_URL (not NEXT_PUBLIC_LIVEKIT_URL) to keep it server-side only
-    // This prevents the URL from being embedded in the client bundle at build time
     const apiKey = process.env.LIVEKIT_API_KEY;
     const apiSecret = process.env.LIVEKIT_API_SECRET;
-    const wsUrl = process.env.LIVEKIT_URL;
+    const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
+
+    // DIAGNOSTIC LOGGING - Remove after debugging
+    console.log('[LiveKit Token Debug]', {
+      hasApiKey: !!apiKey,
+      apiKeyPrefix: apiKey?.substring(0, 6) + '...',
+      apiKeyLength: apiKey?.length,
+      hasApiSecret: !!apiSecret,
+      apiSecretLength: apiSecret?.length,
+      wsUrl: wsUrl,
+      timestamp: new Date().toISOString(),
+    });
 
     if (!apiKey || !apiSecret || !wsUrl) {
       console.error('LiveKit credentials not configured');
       return NextResponse.json(
         { error: 'Server configuration error' },
+        { status: 500 }
+      );
+    }
+
+    // Validate API key format
+    if (!apiKey.startsWith('API')) {
+      console.error('[LiveKit Token Error] API key does not start with "API". Got:', apiKey.substring(0, 10));
+      return NextResponse.json(
+        { error: 'Invalid API key format. LiveKit API keys must start with "API"' },
+        { status: 500 }
+      );
+    }
+
+    // Validate URL format
+    if (!wsUrl.startsWith('wss://')) {
+      console.error('[LiveKit Token Error] URL does not start with "wss://". Got:', wsUrl);
+      return NextResponse.json(
+        { error: 'Invalid LiveKit URL format. Must start with "wss://"' },
         { status: 500 }
       );
     }
@@ -83,6 +110,15 @@ export async function POST(request: NextRequest) {
     });
 
     const jwt = await token.toJwt();
+
+    // DIAGNOSTIC LOGGING - Remove after debugging
+    console.log('[LiveKit Token Success]', {
+      roomName,
+      wsUrl,
+      tokenLength: jwt.length,
+      agentConfigured: !!token.roomConfig,
+      agentName: token.roomConfig?.agents?.[0]?.agentName,
+    });
 
     return NextResponse.json({
       token: jwt,

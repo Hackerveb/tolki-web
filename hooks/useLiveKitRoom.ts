@@ -20,13 +20,9 @@ export const useLiveKitRoom = (): UseLiveKitRoomReturn => {
   const [error, setError] = useState<Error | null>(null);
 
   // Create room instance once
-  // IMPORTANT: No video configuration for voice-only app
-  // Video settings can cause camera permission requests which fail on Vercel
-  // This matches the working iphone_demo_sdk example pattern
-  const room = useMemo(() => new Room({
-    adaptiveStream: true,
-    dynacast: true,
-  }), []);
+  // EXACT COPY from working example (examples/iphone_demo_sdk/components/app.tsx:22)
+  // Bare Room with NO configuration - this is audio-only, video config causes issues
+  const room = useMemo(() => new Room(), []);
 
   // Track connection state changes
   useEffect(() => {
@@ -35,10 +31,19 @@ export const useLiveKitRoom = (): UseLiveKitRoomReturn => {
       setConnectionState(state);
     };
 
+    // CRITICAL: Listen for media device errors (from example app.tsx:32-36)
+    // This catches microphone permission denials and device errors
+    const handleMediaDevicesError = (error: Error) => {
+      console.error('Media device error:', error.name, error.message);
+      setError(new Error(`Media device error: ${error.name} - ${error.message}`));
+    };
+
     room.on(RoomEvent.ConnectionStateChanged, handleConnectionStateChange);
+    room.on(RoomEvent.MediaDevicesError, handleMediaDevicesError);
 
     return () => {
       room.off(RoomEvent.ConnectionStateChanged, handleConnectionStateChange);
+      room.off(RoomEvent.MediaDevicesError, handleMediaDevicesError);
     };
   }, [room]);
 
@@ -59,7 +64,8 @@ export const useLiveKitRoom = (): UseLiveKitRoomReturn => {
     setError(null);
 
     try {
-      // Get LiveKit token from API
+      // Fetch LiveKit token with language metadata
+      console.log('Fetching LiveKit token...');
       const response = await fetch('/api/livekit/token', {
         method: 'POST',
         headers: {
@@ -74,16 +80,27 @@ export const useLiveKitRoom = (): UseLiveKitRoomReturn => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('[LiveKit Client] Token fetch failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+        });
         throw new Error(errorData.error || 'Failed to get LiveKit token');
       }
 
       const { token, url } = await response.json();
+      console.log('[LiveKit Client] Token received:', {
+        url,
+        tokenLength: token?.length,
+        tokenPrefix: token?.substring(0, 20) + '...',
+      });
 
-      // Connect to LiveKit and enable microphone in parallel
-      // IMPORTANT: This pattern matches the working iphone_demo_sdk example
-      // The preConnectBuffer flag allows audio to be buffered before connection completes
-      // This is specifically designed for voice agent use cases
-      console.log('Connecting to LiveKit and enabling microphone...');
+      // EXACT PATTERN from working example (examples/iphone_demo_sdk/components/app.tsx:49-55)
+      // This is the KEY fix that makes it work on Vercel:
+      // 1. No manual getUserMedia permission request (LiveKit handles it automatically)
+      // 2. preConnectBuffer: true buffers audio before connection completes
+      // 3. Promise.all executes both operations in parallel (faster + more reliable)
+      console.log('Connecting to LiveKit room...');
       await Promise.all([
         room.localParticipant.setMicrophoneEnabled(true, undefined, {
           preConnectBuffer: true,
@@ -94,7 +111,12 @@ export const useLiveKitRoom = (): UseLiveKitRoomReturn => {
       console.log('Successfully connected to LiveKit room and enabled microphone');
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to connect to LiveKit');
-      console.error('LiveKit connection error:', error);
+      console.error('[LiveKit Client] Connection error:', {
+        errorName: error.name,
+        errorMessage: error.message,
+        errorStack: error.stack,
+        roomState: room.state,
+      });
       setError(error);
       throw error;
     }

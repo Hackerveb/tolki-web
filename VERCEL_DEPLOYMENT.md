@@ -25,9 +25,7 @@ NEXT_PUBLIC_CONVEX_URL=https://your-convex-app.convex.cloud
 CONVEX_DEPLOY_KEY=your_convex_deploy_key
 
 # LiveKit
-# IMPORTANT: Use LIVEKIT_URL (not NEXT_PUBLIC_LIVEKIT_URL)
-# Server-side only - not exposed to client, read at runtime
-LIVEKIT_URL=wss://your-livekit-url.livekit.cloud
+NEXT_PUBLIC_LIVEKIT_URL=wss://your-livekit-url.livekit.cloud
 LIVEKIT_API_KEY=your_livekit_api_key
 LIVEKIT_API_SECRET=your_livekit_api_secret
 

@@ -20,12 +20,14 @@ export default defineSchema({
     userId: v.id("users"),
     amount: v.number(), // Amount in cents
     credits: v.number(),
+    stripeSessionId: v.optional(v.string()),
+    // DEPRECATED: Old field name, kept for backward compatibility during migration
     stripePaymentIntentId: v.optional(v.string()),
     status: v.union(v.literal("pending"), v.literal("completed"), v.literal("failed")),
     purchasedAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_stripe_id", ["stripePaymentIntentId"]),
+    .index("by_stripe_session_id", ["stripeSessionId"]),
 
   usageSessions: defineTable({
     userId: v.id("users"),
