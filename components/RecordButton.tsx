@@ -1,46 +1,25 @@
 'use client';
 
-import React, { useState, useEffect, useRef, memo } from 'react';
+import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { RecordingState } from '@/types';
 import { colors } from '@/styles/colors';
 import { shadows } from '@/styles/neumorphic';
 
 interface RecordButtonProps {
+  state: RecordingState;
   onStateChange: (state: RecordingState) => void;
   disabled?: boolean;
 }
 
-const RecordButtonComponent: React.FC<RecordButtonProps> = ({ onStateChange, disabled = false }) => {
-  const [state, setState] = useState<RecordingState>('idle');
-  const connectingTimer = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (connectingTimer.current) {
-        clearTimeout(connectingTimer.current);
-      }
-    };
-  }, []);
-
+const RecordButtonComponent: React.FC<RecordButtonProps> = ({ state, onStateChange, disabled = false }) => {
   const handlePress = () => {
     if (disabled) return;
 
     if (state === 'idle') {
-      setState('connecting');
       onStateChange('connecting');
-
-      // Simulate connecting for 3 seconds, then switch to recording
-      connectingTimer.current = setTimeout(() => {
-        setState('recording');
-        onStateChange('recording');
-      }, 3000);
     } else if (state === 'recording' || state === 'connecting') {
       // Stop recording or cancel connecting
-      if (connectingTimer.current) {
-        clearTimeout(connectingTimer.current);
-      }
-      setState('idle');
       onStateChange('idle');
     }
   };

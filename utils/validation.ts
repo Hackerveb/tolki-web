@@ -11,7 +11,7 @@ export const PASSWORD_REQUIREMENTS = {
   requireUppercase: true,
   requireLowercase: true,
   requireNumber: true,
-  requireSpecialChar: true,
+  requireSpecialChar: false,
 };
 
 export interface ValidationResult {
@@ -131,6 +131,5 @@ export const getPasswordRequirementsList = (): string[] => {
     'One uppercase letter (A-Z)',
     'One lowercase letter (a-z)',
     'One number (0-9)',
-    'One special character (!@#$%...)',
   ];
 };

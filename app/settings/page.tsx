@@ -82,6 +82,15 @@ export default function SettingsScreen() {
   const balance = credits || 0;
   const isLowOnCredits = balance > 0 && balance < 5;
 
+  // Format credits display: show minutes if under 1 hour, otherwise hours
+  const formatCreditsDisplay = (credits: number): string => {
+    if (credits < 60) {
+      return `${credits.toFixed(0)} minutes`;
+    } else {
+      return `${(credits / 60).toFixed(1)} hours`;
+    }
+  };
+
   const handleSignOut = async () => {
     if (confirm('Are you sure you want to sign out?')) {
       await signOut();
@@ -193,45 +202,40 @@ export default function SettingsScreen() {
 
           {/* Credits Display - Compact */}
           <div
-            className="flex items-center justify-center"
+            className="flex items-center justify-center flex-col"
             style={{
               marginTop: '16px',
               marginBottom: '20px',
-              gap: '12px',
+              gap: '10px',
             }}
           >
-            {/* Credits Badge */}
+            {/* Hours Badge */}
             <div
-              className="flex items-baseline"
+              className="flex flex-col items-center"
               style={{
                 backgroundColor: colors.primary,
-                paddingTop: '8px',
-                paddingBottom: '8px',
-                paddingLeft: '16px',
-                paddingRight: '16px',
+                paddingTop: '10px',
+                paddingBottom: '10px',
+                paddingLeft: '20px',
+                paddingRight: '20px',
                 borderRadius: '20px',
                 boxShadow: shadows.elevated.boxShadow,
-                gap: '6px',
+                gap: '2px',
               }}
             >
-              <span style={{ fontSize: '24px', fontWeight: '700', color: colors.white }}>
-                {balance.toFixed(1)}
+              <span style={{ fontSize: '24px', fontWeight: '700', color: colors.white, lineHeight: '1' }}>
+                {formatCreditsDisplay(balance)}
               </span>
-              <span style={{ fontSize: '12px', fontWeight: '500', color: colors.white, opacity: 0.9 }}>
-                credits
+              <span style={{ fontSize: '11px', fontWeight: '500', color: colors.whiteAlpha(0.8) }}>
+                {balance.toFixed(0)} credits
               </span>
             </div>
 
-            {/* Minutes Display */}
-            <span style={{ fontSize: '13px', color: colors.silverAlpha(0.6), fontWeight: '500' }}>
-              ≈ {balance.toFixed(0)} min
-            </span>
-
             {/* Low Credits Warning */}
             {isLowOnCredits && (
-              <div style={{ backgroundColor: '#FF6B6B', paddingTop: '4px', paddingBottom: '4px', paddingLeft: '10px', paddingRight: '10px', borderRadius: '12px' }}>
+              <div style={{ backgroundColor: colors.warning, paddingTop: '4px', paddingBottom: '4px', paddingLeft: '10px', paddingRight: '10px', borderRadius: '12px' }}>
                 <span style={{ fontSize: '11px', color: colors.white, fontWeight: '600' }}>
-                  ⚠️ Low
+                  ⚠️ Low credits
                 </span>
               </div>
             )}

@@ -9,9 +9,12 @@ import { Language, RecordingState } from '@/types';
 import { defaultSourceLanguage, defaultTargetLanguage } from '@/lib/languages';
 import { LanguageDropdown } from '@/components/LanguageDropdown';
 import { RecordButton } from '@/components/RecordButton';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useLiveKitRoom } from '@/hooks/useLiveKitRoom';
 import { useTrackUsage } from '@/hooks/useTrackUsage';
+import { useToast } from '@/hooks/useToast';
+import { languageStorage } from '@/utils/languageStorage';
 import { colors } from '@/styles/colors';
 import { shadows } from '@/styles/neumorphic';
 
@@ -28,6 +31,7 @@ export default function MainScreen() {
   const [sourceLanguage, setSourceLanguage] = useState<Language>(defaultSourceLanguage);
   const [targetLanguage, setTargetLanguage] = useState<Language>(defaultTargetLanguage);
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
+  const { toast } = useToast();
 
   // LiveKit integration
   const { room, connect, disconnect, isConnected, error } = useLiveKitRoom();
@@ -38,7 +42,7 @@ export default function MainScreen() {
     onInsufficientCredits: () => {
       // Stop recording if credits run out
       handleRecordingStateChange('idle');
-      alert('You have run out of credits. Please purchase more to continue using the translation service.');
+      toast.error('You have run out of credits. Please purchase more to continue using the translation service.');
     },
   });
 
@@ -55,6 +59,11 @@ export default function MainScreen() {
     // If selected language is same as target, swap them
     if (language.code === targetLanguage.code) {
       setTargetLanguage(sourceLanguage);
+      // Save swapped pair
+      languageStorage.saveLanguagePair(language, sourceLanguage);
+    } else {
+      // Save new pair
+      languageStorage.saveLanguagePair(language, targetLanguage);
     }
   };
 
@@ -63,6 +72,11 @@ export default function MainScreen() {
     // If selected language is same as source, swap them
     if (language.code === sourceLanguage.code) {
       setSourceLanguage(targetLanguage);
+      // Save swapped pair
+      languageStorage.saveLanguagePair(targetLanguage, language);
+    } else {
+      // Save new pair
+      languageStorage.saveLanguagePair(sourceLanguage, language);
     }
   };
 
@@ -80,7 +94,7 @@ export default function MainScreen() {
         setRecordingState('idle');
         // Show the actual error message for debugging
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        alert(`Failed to connect to translation service.\n\nError: ${errorMessage}\n\nPlease check your microphone permissions and try again.`);
+        toast.error(`Failed to connect: ${errorMessage}. Please check your microphone permissions.`, 6000);
       }
     } else if (state === 'idle') {
       // Disconnect from LiveKit
@@ -128,6 +142,15 @@ export default function MainScreen() {
     }
   };
 
+  // Format credits display: show minutes if under 1 hour, otherwise hours
+  const formatCreditsDisplay = (credits: number): string => {
+    if (credits < 60) {
+      return `${credits.toFixed(0)} min`;
+    } else {
+      return `${(credits / 60).toFixed(1)} hrs`;
+    }
+  };
+
   const balance = credits || 0;
   const isLowOnCredits = balance > 0 && balance < 5;
 
@@ -137,14 +160,10 @@ export default function MainScreen() {
         className="h-screen flex items-center justify-center overflow-hidden"
         style={{ backgroundColor: colors.background }}
       >
-        <div className="flex flex-col items-center gap-3">
-          <div
-            className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin"
-            style={{ borderColor: colors.primary, borderTopColor: 'transparent' }}
-          />
-          <p className="text-sm" style={{ color: colors.muted }}>
-            Loading...
-          </p>
+        <div className="flex flex-col items-center gap-4 w-full max-w-xs px-6">
+          <SkeletonLoader variant="rectangle" width="100%" height="60px" />
+          <SkeletonLoader variant="circle" width="120px" height="120px" />
+          <SkeletonLoader variant="text" width="150px" height="20px" />
         </div>
       </div>
     );
@@ -213,7 +232,7 @@ export default function MainScreen() {
 
       {/* Main Content */}
       <main
-        className="flex-1 flex flex-col items-center justify-center py-5 relative"
+        className="flex-1 flex flex-col items-center justify-center relative overflow-hidden"
         style={{
           paddingLeft: 'max(20px, env(safe-area-inset-left))',
           paddingRight: 'max(20px, env(safe-area-inset-right))',
@@ -221,22 +240,21 @@ export default function MainScreen() {
       >
         {/* Credit Display */}
         <div className="absolute top-5 flex flex-col items-center">
-          <div className="font-bold" style={{ fontSize: '32px', color: colors.primary }}>
-            {balance.toFixed(0)}
-            <span className="font-bold" style={{ fontSize: '32px', color: colors.silverAlpha(0.6) }}>
-              /{(balance / 60).toFixed(1)}hr
-            </span>
-          </div>
-          <div className="text-xs mt-1" style={{ color: colors.silverAlpha(0.6) }}>
-            remaining
+          <div className="flex flex-col items-center gap-1">
+            <div className="font-bold" style={{ fontSize: '32px', color: colors.primary, lineHeight: '1' }}>
+              {formatCreditsDisplay(balance)}
+            </div>
+            <div className="text-xs font-medium" style={{ color: colors.silverAlpha(0.6) }}>
+              {balance.toFixed(0)} credits remaining
+            </div>
           </div>
           {recordingState === 'recording' && (
-            <div className="text-xs italic mt-0.5" style={{ color: colors.blueMunsell }}>
+            <div className="text-xs italic mt-2" style={{ color: colors.blueMunsell }}>
               Using ~1 credit/minute
             </div>
           )}
           {recordingState === 'idle' && balance > 0 && balance < 0.05 && (
-            <div className="text-[11px] mt-0.5" style={{ color: '#FFA500' }}>
+            <div className="text-[11px] mt-1" style={{ color: colors.warning }}>
               Minimum charge: 0.05 credits
             </div>
           )}
@@ -258,6 +276,7 @@ export default function MainScreen() {
         {/* Record Button */}
         <div className="my-auto">
           <RecordButton
+            state={recordingState}
             onStateChange={handleRecordingStateChange}
             disabled={balance < 0.05}
           />
@@ -275,7 +294,7 @@ export default function MainScreen() {
 
         {/* Timer Display - Separate with fade animation */}
         <motion.div
-          className="mt-10 min-h-[30px] flex items-center justify-center"
+          className="mt-6 min-h-[30px] flex items-center justify-center"
           animate={{ opacity: recordingState === 'recording' ? 1 : 0 }}
           transition={{ duration: 0.3 }}
         >

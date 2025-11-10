@@ -149,7 +149,7 @@ export default function BillingHistoryScreen() {
     }}>
       {/* Header */}
       <header
-        className="flex items-center"
+        className="flex items-center sticky top-0 z-10"
         style={{
           gap: '15px',
           paddingTop: 'max(20px, env(safe-area-inset-top))',
@@ -157,6 +157,7 @@ export default function BillingHistoryScreen() {
           paddingLeft: 'max(20px, env(safe-area-inset-left))',
           paddingRight: 'max(20px, env(safe-area-inset-right))',
           borderBottom: `1px solid ${colors.silverAlpha(0.2)}`,
+          backgroundColor: colors.background,
         }}
       >
         <button
