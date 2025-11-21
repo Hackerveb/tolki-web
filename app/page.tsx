@@ -14,6 +14,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useLiveKitRoom } from '@/hooks/useLiveKitRoom';
 import { useTrackUsage } from '@/hooks/useTrackUsage';
 import { useToast } from '@/hooks/useToast';
+import { useAgentMode } from '@/hooks/useAgentMode';
 import { languageStorage } from '@/utils/languageStorage';
 import { colors } from '@/styles/colors';
 import { shadows } from '@/styles/neumorphic';
@@ -25,20 +26,34 @@ const SettingsIcon = () => (
   </svg>
 );
 
+type ConnectionStatus = 'idle' | 'connecting' | 'connected';
+
 export default function MainScreen() {
   const router = useRouter();
   const { credits, isLoaded, isSignedIn } = useCurrentUser();
   const [sourceLanguage, setSourceLanguage] = useState<Language>(defaultSourceLanguage);
   const [targetLanguage, setTargetLanguage] = useState<Language>(defaultTargetLanguage);
-  const [recordingState, setRecordingState] = useState<RecordingState>('idle');
+
+  // Local connection state
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
+
   const { toast } = useToast();
 
   // LiveKit integration
   const { room, connect, disconnect, isConnected, error } = useLiveKitRoom();
 
+  // Agent Mode (Listening/Thinking/Speaking)
+  const agentMode = useAgentMode(room);
+
+  // Derived RecordingState for UI
+  const currentRecordingState: RecordingState =
+    connectionStatus === 'idle' ? 'idle' :
+      connectionStatus === 'connecting' ? 'connecting' :
+        agentMode; // When connected, use the agent mode
+
   // Usage tracking
   const { secondsUsed, reset: resetUsage } = useTrackUsage({
-    isActive: recordingState === 'recording',
+    isActive: connectionStatus === 'connected',
     onInsufficientCredits: () => {
       // Stop recording if credits run out
       handleRecordingStateChange('idle');
@@ -80,46 +95,49 @@ export default function MainScreen() {
     }
   };
 
-  const handleRecordingStateChange = async (state: RecordingState) => {
-    setRecordingState(state);
-    console.log('Recording state changed:', state);
+  const handleRecordingStateChange = async (newState: RecordingState) => {
+    // Map UI state changes back to connection logic
+    if (newState === 'connecting') {
+      setConnectionStatus('connecting');
+      console.log('Starting connection...');
 
-    if (state === 'connecting') {
-      // Start connecting to LiveKit
       try {
         await connect(sourceLanguage.name, targetLanguage.name);
-        // Once connected, RecordButton will auto-transition to 'recording' state
+        // Connection successful - state will update via useEffect below
       } catch (err) {
         console.error('Failed to connect to LiveKit:', err);
-        setRecordingState('idle');
-        // Show the actual error message for debugging
+        setConnectionStatus('idle');
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         toast.error(`Failed to connect: ${errorMessage}. Please check your microphone permissions.`, 6000);
       }
-    } else if (state === 'idle') {
-      // Disconnect from LiveKit
+    } else if (newState === 'idle') {
+      setConnectionStatus('idle');
+      console.log('Disconnecting...');
       await disconnect();
-      // Reset usage tracking
       resetUsage();
     }
   };
 
-  // Sync recording state with LiveKit connection state
+  // Sync connection status with LiveKit
   useEffect(() => {
-    if (isConnected && recordingState === 'connecting') {
-      setRecordingState('recording');
+    if (isConnected && connectionStatus === 'connecting') {
+      setConnectionStatus('connected');
     }
-  }, [isConnected, recordingState]);
+  }, [isConnected, connectionStatus]);
 
   const getStatusText = () => {
     if (error) {
       return 'Connection failed - Please try again';
     }
-    switch (recordingState) {
+    switch (currentRecordingState) {
       case 'connecting':
         return 'Connecting to translator...';
-      case 'recording':
-        return 'Listening & Translating';
+      case 'listening':
+        return 'Listening...';
+      case 'thinking':
+        return 'Thinking...';
+      case 'translating':
+        return 'Translating...';
       default:
         return 'Tap to start translating';
     }
@@ -132,11 +150,15 @@ export default function MainScreen() {
   };
 
   const getStatusColor = () => {
-    switch (recordingState) {
+    switch (currentRecordingState) {
       case 'connecting':
         return colors.connectingBlue;
-      case 'recording':
-        return colors.recordingRed;
+      case 'listening':
+        return colors.success;
+      case 'thinking':
+        return colors.warning;
+      case 'translating':
+        return colors.primary;
       default:
         return colors.muted;
     }
@@ -248,17 +270,17 @@ export default function MainScreen() {
                 {balance.toFixed(0)} credits remaining
               </div>
             </div>
-            {recordingState === 'recording' && (
+            {connectionStatus === 'connected' && (
               <div className="text-xs italic mt-2" style={{ color: colors.blueMunsell }}>
                 Using ~1 credit/minute
               </div>
             )}
-            {recordingState === 'idle' && balance > 0 && balance < 0.05 && (
+            {connectionStatus === 'idle' && balance > 0 && balance < 0.05 && (
               <div className="text-[11px] mt-1" style={{ color: colors.warning }}>
                 Minimum charge: 0.05 credits
               </div>
             )}
-            {isLowOnCredits && recordingState === 'idle' && (
+            {isLowOnCredits && connectionStatus === 'idle' && (
               <Link
                 href="/settings/credits"
                 prefetch={true}
@@ -276,7 +298,7 @@ export default function MainScreen() {
           {/* Record Button */}
           <div className="my-auto">
             <RecordButton
-              state={recordingState}
+              state={currentRecordingState}
               onStateChange={handleRecordingStateChange}
               disabled={balance < 0.05}
             />
@@ -295,7 +317,7 @@ export default function MainScreen() {
           {/* Timer Display - Separate with fade animation */}
           <motion.div
             className="mt-6 min-h-[30px] flex items-center justify-center"
-            animate={{ opacity: recordingState === 'recording' ? 1 : 0 }}
+            animate={{ opacity: connectionStatus === 'connected' ? 1 : 0 }}
             transition={{ duration: 0.3 }}
           >
             <div

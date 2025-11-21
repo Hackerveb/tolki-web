@@ -5,4 +5,4 @@ export interface Language {
   deepgramSupport?: boolean;
 }
 
-export type RecordingState = 'idle' | 'connecting' | 'recording';
+export type RecordingState = 'idle' | 'connecting' | 'listening' | 'thinking' | 'translating';

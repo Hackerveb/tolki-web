@@ -18,51 +18,62 @@ const RecordButtonComponent: React.FC<RecordButtonProps> = ({ state, onStateChan
 
         if (state === 'idle') {
             onStateChange('connecting');
-        } else if (state === 'recording' || state === 'connecting') {
-            // Stop recording or cancel connecting
+        } else {
+            // Any active state (connecting, listening, thinking, translating) -> Stop
             onStateChange('idle');
         }
     };
 
     const getButtonColor = () => {
         switch (state) {
-            case 'recording':
-                return colors.recordingRed;
+            case 'listening':
+                return colors.success; // Teal/Green for user speaking
+            case 'thinking':
+                return colors.warning; // Amber/Orange for processing
+            case 'translating':
+                return colors.primary; // Purple for agent speaking
             case 'connecting':
                 return colors.connectingBlue;
+            case 'idle':
             default:
                 return colors.primary;
         }
     };
 
     const getIconBorderRadius = () => {
-        return state === 'recording' ? 8 : 20;
+        return state === 'idle' || state === 'connecting' ? 20 : 8;
     };
+
+    // Helper to determine if we are in an active session
+    const isActive = state !== 'idle';
 
     return (
         <div className="relative flex items-center justify-center w-[120px] h-[120px]">
-            {/* Pulse Rings - Match React Native: 3 rings with different scales */}
-            {(state === 'connecting' || state === 'recording') && (
+            {/* Pulse Rings */}
+            {isActive && (
                 <>
                     {[0, 1, 2].map((index) => (
                         <motion.div
                             key={index}
                             className="absolute w-[120px] h-[120px] rounded-full border-[8px]"
                             style={{
-                                borderColor: state === 'recording'
-                                    ? 'rgba(231, 76, 60, 0.3)'
-                                    : 'rgba(98, 146, 158, 0.4)',
+                                borderColor: state === 'listening' ? 'rgba(46, 204, 113, 0.3)' :
+                                    state === 'thinking' ? 'rgba(241, 196, 15, 0.3)' :
+                                        state === 'translating' ? 'rgba(155, 89, 182, 0.3)' :
+                                            'rgba(98, 146, 158, 0.4)', // connecting
                             }}
                             initial={{ scale: 1, opacity: 0 }}
                             animate={{
-                                scale: index === 0 ? [1, 1.3, 1] : index === 1 ? [1, 1.8, 1] : [1, 2.2, 1],
+                                scale: state === 'thinking'
+                                    ? [1, 1.1, 1] // Tight pulse for thinking
+                                    : index === 0 ? [1, 1.3, 1] : index === 1 ? [1, 1.8, 1] : [1, 2.2, 1],
                                 opacity: index === 0 ? [0, 0.4, 0] : index === 1 ? [0, 0.2, 0] : [0, 0.1, 0],
                             }}
                             transition={{
-                                duration: state === 'connecting' ? 1.2 : 2,
-                                delay: state === 'connecting' ? index * 0.4 : index * 0.667,
+                                duration: state === 'thinking' ? 1.5 : (state === 'connecting' ? 1.2 : 2),
+                                delay: state === 'thinking' ? index * 0.2 : (state === 'connecting' ? index * 0.4 : index * 0.667),
                                 repeat: Infinity,
-                                ease: 'easeOut',
+                                ease: state === 'thinking' ? 'linear' : 'easeOut',
                             }}
                         />
                     ))}
@@ -79,22 +90,16 @@ const RecordButtonComponent: React.FC<RecordButtonProps> = ({ state, onStateChan
                     boxShadow: shadows.elevated.boxShadow,
                 }}
                 animate={{
-                    rotate: state === 'connecting' ? 360 : 0,
                     scale: state === 'connecting'
                         ? [1, 1.05, 1.08, 1.05, 1]
-                        : state === 'recording'
-                            ? [1, 1.02, 1]
+                        : state === 'translating'
+                            ? [1, 1.05, 1] // Pulse when speaking
                             : 1,
                 }}
                 transition={{
-                    rotate: {
-                        duration: 1.2,
-                        repeat: state === 'connecting' ? Infinity : 0,
-                        ease: 'linear',
-                    },
                     scale: {
-                        duration: state === 'connecting' ? 1.2 : state === 'recording' ? 2 : 0.3,
-                        repeat: state === 'connecting' || state === 'recording' ? Infinity : 0,
+                        duration: state === 'connecting' ? 1.2 : 0.5,
+                        repeat: state === 'connecting' || state === 'translating' ? Infinity : 0,
                         ease: 'easeInOut',
                     },
                 }}
