@@ -177,163 +177,163 @@ export default function MainScreen() {
         className="h-screen flex flex-col overflow-hidden"
         style={{ backgroundColor: colors.background }}
       >
-      {/* Header */}
-      <header
-        className="flex items-center"
-        style={{
-          gap: '15px',
-          paddingTop: 'max(24px, env(safe-area-inset-top))',
-          paddingBottom: '24px',
-          paddingLeft: 'max(24px, env(safe-area-inset-left))',
-          paddingRight: 'max(24px, env(safe-area-inset-right))',
-        }}
-      >
-        {/* Source Language */}
-        <LanguageDropdown
-          selectedLanguage={sourceLanguage}
-          onLanguageSelect={handleSourceLanguageSelect}
-          dropDirection="down"
-          className="flex-1"
-        />
-
-        {/* Separator Dot */}
-        <div
-          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-          style={{ backgroundColor: colors.silver }}
-        />
-
-        {/* Target Language */}
-        <LanguageDropdown
-          selectedLanguage={targetLanguage}
-          onLanguageSelect={handleTargetLanguageSelect}
-          dropDirection="down"
-          className="flex-1"
-        />
-
-        {/* Settings Button */}
-        <motion.div
-          whileTap={{ rotate: 90, scale: 0.95 }}
-          transition={{ duration: 0.2 }}
+        {/* Header */}
+        <header
+          className="flex items-center"
+          style={{
+            gap: '15px',
+            paddingTop: 'max(24px, env(safe-area-inset-top))',
+            paddingBottom: '24px',
+            paddingLeft: 'max(24px, env(safe-area-inset-left))',
+            paddingRight: 'max(24px, env(safe-area-inset-right))',
+          }}
         >
-          <Link
-            href="/settings"
-            prefetch={true}
-            className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
-            style={{
-              backgroundColor: colors.background,
-              boxShadow: shadows.subtle.boxShadow,
-              display: 'flex',
-            }}
-          >
-            <SettingsIcon />
-          </Link>
-        </motion.div>
-      </header>
-
-      {/* Main Content */}
-      <main
-        className="flex-1 flex flex-col items-center justify-center relative overflow-hidden"
-        style={{
-          paddingLeft: 'max(20px, env(safe-area-inset-left))',
-          paddingRight: 'max(20px, env(safe-area-inset-right))',
-        }}
-      >
-        {/* Credit Display */}
-        <div className="absolute top-5 flex flex-col items-center">
-          <div className="flex flex-col items-center gap-1">
-            <div className="font-bold" style={{ fontSize: '32px', color: colors.primary, lineHeight: '1' }}>
-              {formatCreditsDisplay(balance)}
-            </div>
-            <div className="text-xs font-medium" style={{ color: colors.silverAlpha(0.6) }}>
-              {balance.toFixed(0)} credits remaining
-            </div>
-          </div>
-          {recordingState === 'recording' && (
-            <div className="text-xs italic mt-2" style={{ color: colors.blueMunsell }}>
-              Using ~1 credit/minute
-            </div>
-          )}
-          {recordingState === 'idle' && balance > 0 && balance < 0.05 && (
-            <div className="text-[11px] mt-1" style={{ color: colors.warning }}>
-              Minimum charge: 0.05 credits
-            </div>
-          )}
-          {isLowOnCredits && recordingState === 'idle' && (
-            <Link
-              href="/settings/credits"
-              prefetch={true}
-              className="mt-2 px-3 py-1.5 rounded-xl text-xs font-semibold"
-              style={{
-                backgroundColor: colors.primaryAlpha(0.1),
-                color: colors.primary,
-              }}
-            >
-              Buy more credits →
-            </Link>
-          )}
-        </div>
-
-        {/* Record Button */}
-        <div className="my-auto">
-          <RecordButton
-            state={recordingState}
-            onStateChange={handleRecordingStateChange}
-            disabled={balance < 0.05}
+          {/* Source Language */}
+          <LanguageDropdown
+            selectedLanguage={sourceLanguage}
+            onLanguageSelect={handleSourceLanguageSelect}
+            dropDirection="down"
+            className="flex-1"
           />
-        </div>
 
-        {/* Status Text */}
-        <div className="mt-12 min-h-[24px] flex items-center justify-center">
-          <p
-            className="text-sm font-medium"
-            style={{ color: getStatusColor() }}
-          >
-            {getStatusText()}
-          </p>
-        </div>
-
-        {/* Timer Display - Separate with fade animation */}
-        <motion.div
-          className="mt-6 min-h-[30px] flex items-center justify-center"
-          animate={{ opacity: recordingState === 'recording' ? 1 : 0 }}
-          transition={{ duration: 0.3 }}
-        >
+          {/* Separator Dot */}
           <div
-            className="text-2xl font-medium"
-            style={{
-              color: colors.blueMunsell,
-              fontFeatureSettings: '"tnum"',
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
-            {formatTime(secondsUsed)}
-          </div>
-        </motion.div>
+            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: colors.silver }}
+          />
 
-        {/* Warning if insufficient credits */}
-        {balance < 0.05 && (
-          <div className="mt-8 px-4 py-3 rounded-xl text-center max-w-xs" style={{ backgroundColor: colors.primaryAlpha(0.1) }}>
-            <p className="text-sm font-semibold mb-2" style={{ color: colors.primary }}>
-              Insufficient Credits
-            </p>
-            <p className="text-xs mb-3" style={{ color: colors.muted }}>
-              You need at least 0.05 credits to start a session (minimum charge).
-            </p>
+          {/* Target Language */}
+          <LanguageDropdown
+            selectedLanguage={targetLanguage}
+            onLanguageSelect={handleTargetLanguageSelect}
+            dropDirection="down"
+            className="flex-1"
+          />
+
+          {/* Settings Button */}
+          <motion.div
+            whileTap={{ rotate: 90, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+          >
             <Link
-              href="/settings/credits"
+              href="/settings"
               prefetch={true}
-              className="inline-block px-4 py-2 rounded-xl text-sm font-semibold"
+              className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
               style={{
-                backgroundColor: colors.primary,
-                color: colors.white,
+                backgroundColor: colors.background,
+                boxShadow: shadows.subtle.boxShadow,
+                display: 'flex',
               }}
             >
-              Buy Credits
+              <SettingsIcon />
             </Link>
+          </motion.div>
+        </header>
+
+        {/* Main Content */}
+        <main
+          className="flex-1 flex flex-col items-center justify-center relative overflow-hidden"
+          style={{
+            paddingLeft: 'max(20px, env(safe-area-inset-left))',
+            paddingRight: 'max(20px, env(safe-area-inset-right))',
+          }}
+        >
+          {/* Credit Display */}
+          <div className="absolute top-5 flex flex-col items-center">
+            <div className="flex flex-col items-center gap-1">
+              <div className="font-bold" style={{ fontSize: '32px', color: colors.primary, lineHeight: '1' }}>
+                {formatCreditsDisplay(balance)}
+              </div>
+              <div className="text-xs font-medium" style={{ color: colors.silverAlpha(0.6) }}>
+                {balance.toFixed(0)} credits remaining
+              </div>
+            </div>
+            {recordingState === 'recording' && (
+              <div className="text-xs italic mt-2" style={{ color: colors.blueMunsell }}>
+                Using ~1 credit/minute
+              </div>
+            )}
+            {recordingState === 'idle' && balance > 0 && balance < 0.05 && (
+              <div className="text-[11px] mt-1" style={{ color: colors.warning }}>
+                Minimum charge: 0.05 credits
+              </div>
+            )}
+            {isLowOnCredits && recordingState === 'idle' && (
+              <Link
+                href="/settings/credits"
+                prefetch={true}
+                className="mt-2 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                style={{
+                  backgroundColor: colors.primaryAlpha(0.1),
+                  color: colors.primary,
+                }}
+              >
+                Buy more credits →
+              </Link>
+            )}
           </div>
-        )}
-      </main>
-    </div>
+
+          {/* Record Button */}
+          <div className="my-auto">
+            <RecordButton
+              state={recordingState}
+              onStateChange={handleRecordingStateChange}
+              disabled={balance < 0.05}
+            />
+          </div>
+
+          {/* Status Text */}
+          <div className="mt-12 min-h-[24px] flex items-center justify-center">
+            <p
+              className="text-sm font-medium"
+              style={{ color: getStatusColor() }}
+            >
+              {getStatusText()}
+            </p>
+          </div>
+
+          {/* Timer Display - Separate with fade animation */}
+          <motion.div
+            className="mt-6 min-h-[30px] flex items-center justify-center"
+            animate={{ opacity: recordingState === 'recording' ? 1 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div
+              className="text-2xl font-medium"
+              style={{
+                color: colors.blueMunsell,
+                fontFeatureSettings: '"tnum"',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {formatTime(secondsUsed)}
+            </div>
+          </motion.div>
+
+          {/* Warning if insufficient credits */}
+          {balance < 0.05 && (
+            <div className="mt-8 px-4 py-3 rounded-xl text-center max-w-xs" style={{ backgroundColor: colors.primaryAlpha(0.1) }}>
+              <p className="text-sm font-semibold mb-2" style={{ color: colors.primary }}>
+                Insufficient Credits
+              </p>
+              <p className="text-xs mb-3" style={{ color: colors.muted }}>
+                You need at least 0.05 credits to start a session (minimum charge).
+              </p>
+              <Link
+                href="/settings/credits"
+                prefetch={true}
+                className="inline-block px-4 py-2 rounded-xl text-sm font-semibold"
+                style={{
+                  backgroundColor: colors.primary,
+                  color: colors.white,
+                }}
+              >
+                Buy Credits
+              </Link>
+            </div>
+          )}
+        </main>
+      </div>
     </RoomContext.Provider>
   );
 }

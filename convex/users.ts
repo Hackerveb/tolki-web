@@ -242,3 +242,12 @@ export const deleteUserAccount = mutation({
   },
 });
 
+// List all users (for dashboard)
+export const list = query({
+  args: {},
+  handler: async (ctx) => {
+    const users = await ctx.db.query("users").collect();
+    return users;
+  },
+});
+

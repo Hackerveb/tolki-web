@@ -256,13 +256,14 @@ export const getRecentPurchases = query({
 
     // Filter for completed purchases and format for display
     return purchases
-      .filter(p => p.status === "completed")
+      .filter(p => p.status === "completed" && p.stripeSessionId)
       .map(purchase => ({
         id: purchase._id,
         date: purchase.purchasedAt,
         amount: purchase.amount / 100, // Convert cents to dollars
         credits: purchase.credits,
         status: purchase.status,
+        stripeSessionId: purchase.stripeSessionId,
         description: `${purchase.credits} credits purchased`,
       }));
   },
@@ -301,5 +302,14 @@ export const simulatePurchase = action({
     });
 
     return result;
+  },
+});
+
+// Get all purchases (for dashboard)
+export const getAllPurchases = query({
+  args: {},
+  handler: async (ctx) => {
+    const purchases = await ctx.db.query("creditPurchases").collect();
+    return purchases;
   },
 });
