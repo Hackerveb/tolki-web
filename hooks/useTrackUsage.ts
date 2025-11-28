@@ -37,43 +37,51 @@ export const useTrackUsage = ({
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastDeductionRef = useRef<number>(0);
+  // Use refs to avoid stale closures and prevent effect re-runs
+  const secondsUsedRef = useRef(0);
+  const isTrackingRef = useRef(false);
+  const onInsufficientCreditsRef = useRef(onInsufficientCredits);
+
+  // Keep callback ref updated
+  useEffect(() => {
+    onInsufficientCreditsRef.current = onInsufficientCredits;
+  }, [onInsufficientCredits]);
 
   // Track seconds and deduct credits periodically
   useEffect(() => {
     if (isActive && user?.id) {
+      isTrackingRef.current = true;
       setIsTracking(true);
 
       // Start counting seconds
       intervalRef.current = setInterval(() => {
-        setSecondsUsed((prev) => {
-          const newSeconds = prev + 1;
+        secondsUsedRef.current += 1;
+        const newSeconds = secondsUsedRef.current;
+        setSecondsUsed(newSeconds);
 
-          // Deduct credits every DEDUCTION_INTERVAL_SECONDS
-          if (newSeconds - lastDeductionRef.current >= DEDUCTION_INTERVAL_SECONDS) {
-            const secondsSinceLastDeduction = newSeconds - lastDeductionRef.current;
-            const creditsToDeduct = secondsSinceLastDeduction * CREDITS_PER_SECOND;
+        // Deduct credits every DEDUCTION_INTERVAL_SECONDS
+        if (newSeconds - lastDeductionRef.current >= DEDUCTION_INTERVAL_SECONDS) {
+          const secondsSinceLastDeduction = newSeconds - lastDeductionRef.current;
+          const creditsToDeduct = secondsSinceLastDeduction * CREDITS_PER_SECOND;
 
-            // Deduct credits from Convex
-            deductCredits({
-              clerkId: user.id,
-              credits: creditsToDeduct,
+          // Deduct credits from Convex
+          deductCredits({
+            clerkId: user.id,
+            credits: creditsToDeduct,
+          })
+            .then(() => {
+              // Success - mutation returns new balance
+              setCreditsDeducted((prev) => prev + creditsToDeduct);
+              lastDeductionRef.current = newSeconds;
             })
-              .then(() => {
-                // Success - mutation returns new balance
-                setCreditsDeducted((prev) => prev + creditsToDeduct);
-                lastDeductionRef.current = newSeconds;
-              })
-              .catch((error) => {
-                // Error (e.g., insufficient credits)
-                console.warn('Error deducting credits, stopping tracking:', error);
-                if (onInsufficientCredits) {
-                  onInsufficientCredits();
-                }
-              });
-          }
-
-          return newSeconds;
-        });
+            .catch((error) => {
+              // Error (e.g., insufficient credits)
+              console.warn('Error deducting credits, stopping tracking:', error);
+              if (onInsufficientCreditsRef.current) {
+                onInsufficientCreditsRef.current();
+              }
+            });
+        }
       }, 1000);
     } else {
       // Cleanup when stopped
@@ -83,8 +91,8 @@ export const useTrackUsage = ({
       }
 
       // Final deduction for remaining seconds
-      if (isTracking && user?.id) {
-        const remainingSeconds = secondsUsed - lastDeductionRef.current;
+      if (isTrackingRef.current && user?.id) {
+        const remainingSeconds = secondsUsedRef.current - lastDeductionRef.current;
         if (remainingSeconds > 0) {
           const finalCredits = remainingSeconds * CREDITS_PER_SECOND;
           deductCredits({
@@ -101,6 +109,7 @@ export const useTrackUsage = ({
         }
       }
 
+      isTrackingRef.current = false;
       setIsTracking(false);
     }
 
@@ -109,11 +118,12 @@ export const useTrackUsage = ({
         clearInterval(intervalRef.current);
       }
     };
-  }, [isActive, user, deductCredits, onInsufficientCredits, secondsUsed, isTracking]);
+  }, [isActive, user?.id, deductCredits]);
 
   const reset = useCallback(() => {
     setSecondsUsed(0);
     setCreditsDeducted(0);
+    secondsUsedRef.current = 0;
     lastDeductionRef.current = 0;
   }, []);
 

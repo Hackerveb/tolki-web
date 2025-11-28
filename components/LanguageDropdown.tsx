@@ -94,6 +94,8 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
       {/* Dropdown Button - NO FLAG, only language name */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
         whileTap={{ scale: 0.98 }}
         className="w-full px-4 rounded-[20px] flex items-center justify-between"
         style={{
@@ -140,7 +142,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
               backgroundColor: colors.background,
               boxShadow: shadows.elevated.boxShadow,
               [dropDirection === 'down' ? 'top' : 'bottom']: '50px',
-              maxHeight: '450px',
+              maxHeight: 'min(450px, 60vh)',
               zIndex: 9999,
             }}
           >
@@ -159,7 +161,8 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder=""
+                  placeholder="Search languages"
+                  aria-label="Search languages"
                   className="w-full text-sm"
                   style={{
                     backgroundColor: colors.background,

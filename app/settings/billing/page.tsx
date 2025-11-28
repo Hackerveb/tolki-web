@@ -182,61 +182,37 @@ export default function BillingHistoryScreen() {
         WebkitOverflowScrolling: 'touch',
       }}>
         {isLoading ? (
-          // Loading State
+          // Loading State with spinner
           <div style={{
             display: 'flex',
+            flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
             padding: '40px 20px',
+            gap: '12px',
           }}>
+            <div
+              style={{
+                width: '24px',
+                height: '24px',
+                border: `2px solid ${colors.silverAlpha(0.3)}`,
+                borderTopColor: colors.primary,
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+              }}
+            />
             <p style={{ fontSize: '14px', color: colors.muted }}>
               Loading...
             </p>
+            <style jsx>{`
+              @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
           </div>
         ) : (
           <>
-            {/* Summary Card */}
-            <NeumorphicCard style={{
-              margin: '20px',
-              padding: '20px',
-            }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingTop: '8px',
-                paddingBottom: '8px',
-              }}>
-                <span style={{ fontSize: '14px', color: colors.silverAlpha(0.8) }}>
-                  Current Period
-                </span>
-                <span style={{ fontSize: '14px', color: colors.foreground }}>
-                  Jan 1 - Jan 31, 2024
-                </span>
-              </div>
-
-              <div style={{
-                height: '1px',
-                backgroundColor: colors.silverAlpha(0.1),
-                margin: '4px 0',
-              }} />
-
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                paddingTop: '8px',
-                paddingBottom: '8px',
-              }}>
-                <span style={{ fontSize: '14px', color: colors.silverAlpha(0.8) }}>
-                  Next Billing Date
-                </span>
-                <span style={{ fontSize: '14px', color: colors.foreground }}>
-                  Feb 15, 2024
-                </span>
-              </div>
-            </NeumorphicCard>
-
             {/* Transactions List */}
             <div style={{ paddingLeft: '20px', paddingRight: '20px', paddingBottom: '20px' }}>
               <h3 style={{

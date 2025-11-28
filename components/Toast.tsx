@@ -109,6 +109,8 @@ export const Toast: React.FC<ToastProps> = ({
   return (
     <motion.div
       layout
+      role="alert"
+      aria-live="polite"
       initial={{ opacity: 0, y: -20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -20, scale: 0.95 }}

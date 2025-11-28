@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { AccessToken } from 'livekit-server-sdk';
 import { RoomConfiguration } from '@livekit/protocol';
+import { languages } from '@/lib/languages';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,21 +35,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate language names against supported languages
+    const validLanguageNames = languages.map(l => l.name);
+    if (!validLanguageNames.includes(language1) || !validLanguageNames.includes(language2)) {
+      return NextResponse.json(
+        { error: 'Invalid language specified' },
+        { status: 400 }
+      );
+    }
+
     // Get LiveKit credentials from environment
     const apiKey = process.env.LIVEKIT_API_KEY;
     const apiSecret = process.env.LIVEKIT_API_SECRET;
     const wsUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
 
-    // DIAGNOSTIC LOGGING - Remove after debugging
-    console.log('[LiveKit Token Debug]', {
-      hasApiKey: !!apiKey,
-      apiKeyPrefix: apiKey?.substring(0, 6) + '...',
-      apiKeyLength: apiKey?.length,
-      hasApiSecret: !!apiSecret,
-      apiSecretLength: apiSecret?.length,
-      wsUrl: wsUrl,
-      timestamp: new Date().toISOString(),
-    });
 
     if (!apiKey || !apiSecret || !wsUrl) {
       console.error('LiveKit credentials not configured');
@@ -110,15 +110,6 @@ export async function POST(request: NextRequest) {
     });
 
     const jwt = await token.toJwt();
-
-    // DIAGNOSTIC LOGGING - Remove after debugging
-    console.log('[LiveKit Token Success]', {
-      roomName,
-      wsUrl,
-      tokenLength: jwt.length,
-      agentConfigured: !!token.roomConfig,
-      agentName: token.roomConfig?.agents?.[0]?.agentName,
-    });
 
     return NextResponse.json({
       token: jwt,

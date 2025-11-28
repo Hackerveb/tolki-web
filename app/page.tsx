@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -19,6 +19,7 @@ import { languageStorage } from '@/utils/languageStorage';
 import { colors } from '@/styles/colors';
 import { shadows } from '@/styles/neumorphic';
 
+// Moved outside component to prevent recreation on every render
 const SettingsIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={colors.foreground} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
@@ -68,34 +69,40 @@ export default function MainScreen() {
     }
   }, [isLoaded, isSignedIn, router]);
 
-  // Smart language selection handlers
-  const handleSourceLanguageSelect = (language: Language) => {
+  // Smart language selection handlers - memoized to prevent child re-renders
+  const handleSourceLanguageSelect = useCallback((language: Language) => {
     setSourceLanguage(language);
     // If selected language is same as target, swap them
-    if (language.code === targetLanguage.code) {
-      setTargetLanguage(sourceLanguage);
-      // Save swapped pair
-      languageStorage.saveLanguagePair(language, sourceLanguage);
-    } else {
-      // Save new pair
-      languageStorage.saveLanguagePair(language, targetLanguage);
-    }
-  };
+    setTargetLanguage((currentTarget) => {
+      if (language.code === currentTarget.code) {
+        setSourceLanguage((currentSource) => {
+          languageStorage.saveLanguagePair(language, currentSource);
+          return language;
+        });
+        return sourceLanguage;
+      }
+      languageStorage.saveLanguagePair(language, currentTarget);
+      return currentTarget;
+    });
+  }, [sourceLanguage]);
 
-  const handleTargetLanguageSelect = (language: Language) => {
+  const handleTargetLanguageSelect = useCallback((language: Language) => {
     setTargetLanguage(language);
     // If selected language is same as source, swap them
-    if (language.code === sourceLanguage.code) {
-      setSourceLanguage(targetLanguage);
-      // Save swapped pair
-      languageStorage.saveLanguagePair(targetLanguage, language);
-    } else {
-      // Save new pair
-      languageStorage.saveLanguagePair(sourceLanguage, language);
-    }
-  };
+    setSourceLanguage((currentSource) => {
+      if (language.code === currentSource.code) {
+        setTargetLanguage((currentTarget) => {
+          languageStorage.saveLanguagePair(currentTarget, language);
+          return language;
+        });
+        return targetLanguage;
+      }
+      languageStorage.saveLanguagePair(currentSource, language);
+      return currentSource;
+    });
+  }, [targetLanguage]);
 
-  const handleRecordingStateChange = async (newState: RecordingState) => {
+  const handleRecordingStateChange = useCallback(async (newState: RecordingState) => {
     // Map UI state changes back to connection logic
     if (newState === 'connecting') {
       setConnectionStatus('connecting');
@@ -116,7 +123,7 @@ export default function MainScreen() {
       await disconnect();
       resetUsage();
     }
-  };
+  }, [connect, disconnect, resetUsage, sourceLanguage.name, targetLanguage.name, toast]);
 
   // Sync connection status with LiveKit
   useEffect(() => {
@@ -240,6 +247,7 @@ export default function MainScreen() {
             <Link
               href="/settings"
               prefetch={true}
+              aria-label="Settings"
               className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
               style={{
                 backgroundColor: colors.background,

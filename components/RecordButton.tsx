@@ -84,6 +84,7 @@ const RecordButtonComponent: React.FC<RecordButtonProps> = ({ state, onStateChan
             <motion.button
                 onClick={handlePress}
                 disabled={disabled}
+                aria-label={state === 'idle' ? 'Start recording' : 'Stop recording'}
                 className="relative w-[120px] h-[120px] rounded-full flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                     backgroundColor: colors.background,

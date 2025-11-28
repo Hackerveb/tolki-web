@@ -20,7 +20,7 @@ interface ToastStore {
 const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
   addToast: (toast) => {
-    const id = Math.random().toString(36).substring(2, 9);
+    const id = crypto.randomUUID();
     set((state) => ({
       toasts: [...state.toasts, { ...toast, id }],
     }));

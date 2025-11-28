@@ -522,6 +522,7 @@ const OnboardingPage = () => {
             boxShadow: currentSlide === 0 ? 'none' : shadows.elevated.boxShadow,
             opacity: currentSlide === 0 ? 0 : 1,
             cursor: currentSlide === 0 ? 'default' : 'pointer',
+            pointerEvents: currentSlide === 0 ? 'none' : 'auto',
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -554,6 +555,7 @@ const OnboardingPage = () => {
             boxShadow: currentSlide === slides.length - 1 ? 'none' : shadows.elevated.boxShadow,
             opacity: currentSlide === slides.length - 1 ? 0 : 1,
             cursor: currentSlide === slides.length - 1 ? 'default' : 'pointer',
+            pointerEvents: currentSlide === slides.length - 1 ? 'none' : 'auto',
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">

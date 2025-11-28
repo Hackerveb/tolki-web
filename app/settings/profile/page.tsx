@@ -10,6 +10,7 @@ import { LanguageDropdown } from '@/components/LanguageDropdown';
 import { Language } from '@/types';
 import { languages } from '@/lib/languages';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useToast } from '@/hooks/useToast';
 import { colors } from '@/styles/colors';
 import { shadows } from '@/styles/neumorphic';
 
@@ -30,6 +31,7 @@ export default function EditProfileScreen() {
   const { user } = useUser();
   const { email: userEmail, initials, convexUser } = useCurrentUser();
   const updateDefaultLanguage = useMutation(api.users.updateDefaultLanguage);
+  const { toast } = useToast();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -72,11 +74,11 @@ export default function EditProfileScreen() {
         });
       }
 
-      alert('Profile updated successfully');
+      toast.success('Profile updated successfully');
       router.push('/settings');
     } catch (error) {
       console.error('Update profile error:', error);
-      alert('Failed to update profile. Please try again.');
+      toast.error('Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -146,32 +148,12 @@ export default function EditProfileScreen() {
               borderRadius: '50px',
               backgroundColor: colors.primary,
               boxShadow: shadows.elevated.boxShadow,
-              marginBottom: '15px',
             }}
           >
             <span style={{ fontSize: '40px', fontWeight: '600', color: colors.white }}>
               {initials}
             </span>
           </div>
-
-          {/* Change Photo Button */}
-          <button
-            className="transition-all hover:opacity-80 active:scale-95"
-            style={{
-              paddingTop: '8px',
-              paddingBottom: '8px',
-              paddingLeft: '20px',
-              paddingRight: '20px',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-            onClick={() => alert('Photo upload functionality coming soon')}
-          >
-            <span style={{ fontSize: '14px', fontWeight: '500', color: colors.primary }}>
-              Change Photo
-            </span>
-          </button>
         </motion.div>
 
         {/* Form Section */}
