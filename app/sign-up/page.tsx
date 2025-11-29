@@ -7,7 +7,6 @@ import { SocialAuthButton } from '@/components/auth/SocialAuthButton';
 import { AuthDivider } from '@/components/auth/AuthDivider';
 import { useToast } from '@/hooks/useToast';
 import { colors } from '@/styles/colors';
-import { shadows } from '@/styles/neumorphic';
 import {
   validateEmail,
   validatePassword,
@@ -179,28 +178,28 @@ export default function SignUpPage() {
       <div
         className="min-h-screen flex items-center justify-center"
         style={{
-          backgroundColor: colors.background,
+          backgroundColor: 'var(--color-background)',
           paddingLeft: 'max(24px, env(safe-area-inset-left))',
           paddingRight: 'max(24px, env(safe-area-inset-right))',
           paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
         }}
       >
         <div
-          className="w-full max-w-sm rounded-2xl"
-          style={{ padding: '20px', backgroundColor: colors.background }}
+          className="w-full max-w-sm rounded-xl"
+          style={{ padding: '20px', backgroundColor: 'var(--color-background)' }}
         >
           {/* Header */}
           <div style={{ marginBottom: '16px', textAlign: 'center' }}>
             <h1
               className="text-xl font-bold"
-              style={{ color: colors.foreground, marginBottom: '4px' }}
+              style={{ color: 'var(--color-text-primary)', marginBottom: '4px' }}
             >
               Verify Email
             </h1>
-            <p className="text-xs" style={{ color: colors.silverAlpha(0.7) }}>
+            <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
               We&apos;ve sent a verification code to {emailAddress}
             </p>
-            <p className="text-xs mt-2" style={{ color: colors.silverAlpha(0.6) }}>
+            <p className="text-xs mt-2" style={{ color: 'var(--color-text-tertiary)' }}>
               Please check your spam/trash folder if you don&apos;t see it
             </p>
           </div>
@@ -209,7 +208,7 @@ export default function SignUpPage() {
           <div style={{ marginBottom: '12px' }}>
             <label
               className="block font-semibold"
-              style={{ color: colors.foreground, fontSize: '12px', marginBottom: '6px' }}
+              style={{ color: 'var(--color-text-primary)', fontSize: '12px', marginBottom: '6px' }}
             >
               Verification Code
             </label>
@@ -222,10 +221,10 @@ export default function SignUpPage() {
               maxLength={6}
               className="w-full text-base"
               style={{
-                backgroundColor: colors.background,
-                color: colors.foreground,
-                boxShadow: shadows.pressed.boxShadow,
-                border: 'none',
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-text-primary)',
+                boxShadow: 'var(--shadow-inner)',
+                border: '1px solid var(--color-border)',
                 borderRadius: '12px',
                 padding: '10px 12px',
                 minHeight: '40px',
@@ -240,14 +239,14 @@ export default function SignUpPage() {
             disabled={loading}
             className="w-full font-semibold transition-all"
             style={{
-              backgroundColor: loading ? colors.silverAlpha(0.3) : colors.primary,
-              color: loading ? colors.silverAlpha(0.5) : colors.white,
+              backgroundColor: loading ? 'var(--color-neutral-200)' : 'var(--color-primary)',
+              color: loading ? 'var(--color-text-tertiary)' : 'var(--color-on-primary)',
               opacity: loading ? 0.5 : 1,
               minHeight: '44px',
               borderRadius: '12px',
               fontSize: '15px',
               marginBottom: '12px',
-              boxShadow: !loading ? shadows.elevated.boxShadow : 'none',
+              boxShadow: !loading ? 'var(--shadow-md)' : 'none',
             }}
           >
             {loading ? 'Verifying...' : 'Verify Email'}
@@ -255,14 +254,14 @@ export default function SignUpPage() {
 
           {/* Resend Link */}
           <div className="flex items-center justify-center" style={{ gap: '4px' }}>
-            <span style={{ color: colors.silverAlpha(0.7), fontSize: '15px' }}>
+            <span style={{ color: 'var(--color-text-secondary)', fontSize: '15px' }}>
               Didn&apos;t receive the code?
             </span>
             <button
               onClick={onResendCode}
               disabled={loading}
               className="font-semibold hover:underline"
-              style={{ color: colors.primary, fontSize: '15px' }}
+              style={{ color: 'var(--color-primary)', fontSize: '15px' }}
             >
               Resend
             </button>
@@ -277,7 +276,7 @@ export default function SignUpPage() {
     <div
       className="min-h-screen flex items-center justify-center overflow-y-auto"
       style={{
-        backgroundColor: colors.background,
+        backgroundColor: 'var(--color-background)',
         paddingLeft: 'max(24px, env(safe-area-inset-left))',
         paddingRight: 'max(24px, env(safe-area-inset-right))',
         paddingTop: 'max(32px, env(safe-area-inset-top))',
@@ -285,18 +284,18 @@ export default function SignUpPage() {
       }}
     >
       <div
-        className="w-full max-w-sm rounded-2xl"
-        style={{ padding: '20px', marginTop: '16px', marginBottom: '16px', backgroundColor: colors.background }}
+        className="w-full max-w-sm rounded-xl"
+        style={{ padding: '20px', marginTop: '16px', marginBottom: '16px', backgroundColor: 'var(--color-background)' }}
       >
         {/* Header */}
         <div style={{ marginBottom: '16px', textAlign: 'center' }}>
           <h1
             className="text-xl font-bold"
-            style={{ color: colors.foreground, marginBottom: '4px' }}
+            style={{ color: 'var(--color-text-primary)', marginBottom: '4px' }}
           >
             Create Account
           </h1>
-          <p className="text-xs" style={{ color: colors.silverAlpha(0.7) }}>
+          <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
             Join TolKI to start translating
           </p>
         </div>
@@ -306,7 +305,7 @@ export default function SignUpPage() {
           <div className="flex-1">
             <label
               className="block font-semibold"
-              style={{ color: colors.foreground, fontSize: '12px', marginBottom: '6px' }}
+              style={{ color: 'var(--color-text-primary)', fontSize: '12px', marginBottom: '6px' }}
             >
               First Name
             </label>
@@ -318,10 +317,10 @@ export default function SignUpPage() {
               disabled={loading}
               className="w-full text-base"
               style={{
-                backgroundColor: colors.background,
-                color: colors.foreground,
-                boxShadow: shadows.pressed.boxShadow,
-                border: 'none',
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-text-primary)',
+                boxShadow: 'var(--shadow-inner)',
+                border: '1px solid var(--color-border)',
                 borderRadius: '12px',
                 padding: '10px 12px',
                 minHeight: '40px',
@@ -333,7 +332,7 @@ export default function SignUpPage() {
           <div className="flex-1">
             <label
               className="block font-semibold"
-              style={{ color: colors.foreground, fontSize: '12px', marginBottom: '6px' }}
+              style={{ color: 'var(--color-text-primary)', fontSize: '12px', marginBottom: '6px' }}
             >
               Last Name
             </label>
@@ -345,10 +344,10 @@ export default function SignUpPage() {
               disabled={loading}
               className="w-full text-base"
               style={{
-                backgroundColor: colors.background,
-                color: colors.foreground,
-                boxShadow: shadows.pressed.boxShadow,
-                border: 'none',
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-text-primary)',
+                boxShadow: 'var(--shadow-inner)',
+                border: '1px solid var(--color-border)',
                 borderRadius: '12px',
                 padding: '10px 12px',
                 minHeight: '40px',
@@ -362,7 +361,7 @@ export default function SignUpPage() {
         <div style={{ marginBottom: '12px' }}>
           <label
             className="block font-semibold"
-            style={{ color: colors.foreground, fontSize: '12px', marginBottom: '6px' }}
+            style={{ color: 'var(--color-text-primary)', fontSize: '12px', marginBottom: '6px' }}
           >
             Email
           </label>
@@ -376,10 +375,10 @@ export default function SignUpPage() {
             disabled={loading}
             className="w-full text-base"
             style={{
-              backgroundColor: colors.background,
-              color: colors.foreground,
-              boxShadow: shadows.pressed.boxShadow,
-              border: emailError ? `1px solid #FF6B6B` : 'none',
+              backgroundColor: 'var(--color-surface)',
+              color: 'var(--color-text-primary)',
+              boxShadow: 'var(--shadow-inner)',
+              border: emailError ? '1px solid var(--color-error)' : '1px solid var(--color-border)',
               borderRadius: '12px',
               padding: '10px 12px',
               minHeight: '40px',
@@ -387,7 +386,7 @@ export default function SignUpPage() {
             }}
           />
           {emailError && (
-            <p className="text-xs mt-1 ml-1" style={{ color: '#FF6B6B' }}>
+            <p className="text-xs mt-1 ml-1" style={{ color: 'var(--color-error)' }}>
               {emailError}
             </p>
           )}
@@ -398,7 +397,7 @@ export default function SignUpPage() {
           <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
             <label
               className="block font-semibold"
-              style={{ color: colors.foreground, fontSize: '12px' }}
+              style={{ color: 'var(--color-text-primary)', fontSize: '12px' }}
             >
               Password
             </label>
@@ -409,7 +408,7 @@ export default function SignUpPage() {
               >
                 <span
                   className="text-xs font-semibold"
-                  style={{ color: colors.white }}
+                  style={{ color: 'var(--color-on-primary)' }}
                 >
                   {passwordValidation.strength === 'weak' && 'Weak'}
                   {passwordValidation.strength === 'medium' && 'Good'}
@@ -429,10 +428,10 @@ export default function SignUpPage() {
               disabled={loading}
               className="w-full text-base"
               style={{
-                backgroundColor: colors.background,
-                color: colors.foreground,
-                boxShadow: shadows.pressed.boxShadow,
-                border: 'none',
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-text-primary)',
+                boxShadow: 'var(--shadow-inner)',
+                border: '1px solid var(--color-border)',
                 borderRadius: '12px',
                 padding: '10px 44px 10px 12px',
                 minHeight: '40px',
@@ -445,25 +444,25 @@ export default function SignUpPage() {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:opacity-80"
               style={{
-                backgroundColor: colors.background,
-                boxShadow: shadows.subtle.boxShadow,
+                backgroundColor: 'var(--color-surface)',
+                boxShadow: 'var(--shadow-sm)',
               }}
             >
               {showPassword ? (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
-                    stroke={colors.muted}
+                    stroke="var(--color-text-secondary)"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
-                  <line x1="1" y1="1" x2="23" y2="23" stroke={colors.muted} strokeWidth="2" strokeLinecap="round" />
+                  <line x1="1" y1="1" x2="23" y2="23" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round" />
                 </svg>
               ) : (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke={colors.muted} strokeWidth="2" />
-                  <circle cx="12" cy="12" r="3" stroke={colors.muted} strokeWidth="2" />
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="var(--color-text-secondary)" strokeWidth="2" />
+                  <circle cx="12" cy="12" r="3" stroke="var(--color-text-secondary)" strokeWidth="2" />
                 </svg>
               )}
             </button>
@@ -474,13 +473,14 @@ export default function SignUpPage() {
             <div
               className="mt-2 p-2 rounded-lg"
               style={{
-                backgroundColor: colors.background,
-                boxShadow: shadows.subtle.boxShadow,
+                backgroundColor: 'var(--color-surface)',
+                boxShadow: 'var(--shadow-sm)',
+                border: '1px solid var(--color-border)',
               }}
             >
               <p
                 className="text-xs font-semibold mb-1"
-                style={{ color: colors.foreground }}
+                style={{ color: 'var(--color-text-primary)' }}
               >
                 Password must contain:
               </p>
@@ -491,13 +491,13 @@ export default function SignUpPage() {
                     <div
                       className="w-1.5 h-1.5 rounded-full mr-2"
                       style={{
-                        backgroundColor: isMet ? '#66BB6A' : colors.silverAlpha(0.4),
+                        backgroundColor: isMet ? 'var(--color-success)' : 'var(--color-neutral-300)',
                       }}
                     />
                     <span
                       className="text-xs"
                       style={{
-                        color: isMet ? '#66BB6A' : colors.silverAlpha(0.7),
+                        color: isMet ? 'var(--color-success)' : 'var(--color-text-secondary)',
                         fontWeight: isMet ? '500' : 'normal',
                       }}
                     >
@@ -516,15 +516,15 @@ export default function SignUpPage() {
           disabled={isButtonDisabled}
           className="w-full font-semibold transition-all"
           style={{
-            backgroundColor: isButtonDisabled ? colors.silverAlpha(0.3) : colors.primary,
-            color: isButtonDisabled ? colors.silverAlpha(0.5) : colors.white,
+            backgroundColor: isButtonDisabled ? 'var(--color-neutral-200)' : 'var(--color-primary)',
+            color: isButtonDisabled ? 'var(--color-text-tertiary)' : 'var(--color-on-primary)',
             opacity: isButtonDisabled ? 0.5 : 1,
             minHeight: '44px',
             borderRadius: '12px',
             fontSize: '15px',
             marginTop: '12px',
             marginBottom: '16px',
-            boxShadow: !isButtonDisabled ? shadows.elevated.boxShadow : 'none',
+            boxShadow: !isButtonDisabled ? 'var(--shadow-md)' : 'none',
           }}
         >
           {loading ? 'Creating Account...' : 'Sign Up'}
@@ -556,14 +556,14 @@ export default function SignUpPage() {
 
         {/* Sign In Link */}
         <div className="flex items-center justify-center" style={{ gap: '4px' }}>
-          <span style={{ color: colors.silverAlpha(0.7), fontSize: '13px' }}>
+          <span style={{ color: 'var(--color-text-secondary)', fontSize: '13px' }}>
             Already have an account?
           </span>
           <button
             onClick={() => router.push('/onboarding')}
             disabled={loading}
             className="font-semibold hover:underline"
-            style={{ color: colors.primary, fontSize: '13px' }}
+            style={{ color: 'var(--color-primary)', fontSize: '13px' }}
           >
             Sign In
           </button>

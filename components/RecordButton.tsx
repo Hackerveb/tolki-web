@@ -4,7 +4,6 @@ import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { RecordingState } from '@/types';
 import { colors } from '@/styles/colors';
-import { shadows } from '@/styles/neumorphic';
 
 interface RecordButtonProps {
     state: RecordingState;
@@ -24,19 +23,35 @@ const RecordButtonComponent: React.FC<RecordButtonProps> = ({ state, onStateChan
         }
     };
 
+    // Enterprise color palette - muted, professional
     const getButtonColor = () => {
         switch (state) {
             case 'listening':
-                return colors.success; // Teal/Green for user speaking
+                return colors.listening;    // Muted emerald #059669
             case 'thinking':
-                return colors.warning; // Amber/Orange for processing
+                return colors.thinking;     // Deep amber #D97706
             case 'translating':
-                return colors.primary; // Purple for agent speaking
+                return colors.translating;  // Primary blue #2563EB
             case 'connecting':
-                return colors.connectingBlue;
+                return colors.connecting;   // Primary blue #2563EB
             case 'idle':
             default:
-                return colors.primary;
+                return colors.primary;      // Primary blue #2563EB
+        }
+    };
+
+    // Get pulse ring color with theme-aware opacity
+    const getPulseColor = () => {
+        switch (state) {
+            case 'listening':
+                return 'var(--color-listening-pulse)';
+            case 'thinking':
+                return 'var(--color-thinking-pulse)';
+            case 'translating':
+                return 'var(--color-translating-pulse)';
+            case 'connecting':
+            default:
+                return 'var(--color-connecting-pulse)';
         }
     };
 
@@ -48,36 +63,25 @@ const RecordButtonComponent: React.FC<RecordButtonProps> = ({ state, onStateChan
     const isActive = state !== 'idle';
 
     return (
-        <div className="relative flex items-center justify-center w-[120px] h-[120px]">
-            {/* Pulse Rings */}
+        <div className="relative flex items-center justify-center w-[100px] h-[100px]">
+            {/* Single Subtle Pulse Ring */}
             {isActive && (
-                <>
-                    {[0, 1, 2].map((index) => (
-                        <motion.div
-                            key={index}
-                            className="absolute w-[120px] h-[120px] rounded-full border-[8px]"
-                            style={{
-                                borderColor: state === 'listening' ? 'rgba(46, 204, 113, 0.3)' :
-                                    state === 'thinking' ? 'rgba(241, 196, 15, 0.3)' :
-                                        state === 'translating' ? 'rgba(155, 89, 182, 0.3)' :
-                                            'rgba(98, 146, 158, 0.4)', // connecting
-                            }}
-                            initial={{ scale: 1, opacity: 0 }}
-                            animate={{
-                                scale: state === 'thinking'
-                                    ? [1, 1.1, 1] // Tight pulse for thinking
-                                    : index === 0 ? [1, 1.3, 1] : index === 1 ? [1, 1.8, 1] : [1, 2.2, 1],
-                                opacity: index === 0 ? [0, 0.4, 0] : index === 1 ? [0, 0.2, 0] : [0, 0.1, 0],
-                            }}
-                            transition={{
-                                duration: state === 'thinking' ? 1.5 : (state === 'connecting' ? 1.2 : 2),
-                                delay: state === 'thinking' ? index * 0.2 : (state === 'connecting' ? index * 0.4 : index * 0.667),
-                                repeat: Infinity,
-                                ease: state === 'thinking' ? 'linear' : 'easeOut',
-                            }}
-                        />
-                    ))}
-                </>
+                <motion.div
+                    className="absolute w-[100px] h-[100px] rounded-full"
+                    style={{
+                        border: `2px solid ${getPulseColor()}`,
+                    }}
+                    initial={{ scale: 1, opacity: 0 }}
+                    animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [0.4, 0.1, 0.4],
+                    }}
+                    transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                    }}
+                />
             )}
 
             {/* Main Button */}
@@ -85,30 +89,21 @@ const RecordButtonComponent: React.FC<RecordButtonProps> = ({ state, onStateChan
                 onClick={handlePress}
                 disabled={disabled}
                 aria-label={state === 'idle' ? 'Start recording' : 'Stop recording'}
-                className="relative w-[120px] h-[120px] rounded-full flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative w-[100px] h-[100px] rounded-full flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
-                    backgroundColor: colors.background,
-                    boxShadow: shadows.elevated.boxShadow,
+                    backgroundColor: 'var(--color-surface)',
+                    boxShadow: 'var(--shadow-sm)',
+                    border: '1px solid var(--color-border)',
                 }}
-                animate={{
-                    scale: state === 'connecting'
-                        ? [1, 1.05, 1.08, 1.05, 1]
-                        : state === 'translating'
-                            ? [1, 1.05, 1] // Pulse when speaking
-                            : 1,
+                whileHover={{
+                    boxShadow: 'var(--shadow-md)',
                 }}
-                transition={{
-                    scale: {
-                        duration: state === 'connecting' ? 1.2 : 0.5,
-                        repeat: state === 'connecting' || state === 'translating' ? Infinity : 0,
-                        ease: 'easeInOut',
-                    },
-                }}
-                whileTap={{ scale: disabled ? 1 : 0.95 }}
+                whileTap={{ scale: disabled ? 1 : 0.98 }}
+                transition={{ duration: 0.15 }}
             >
-                {/* Icon - 40x40 size, dynamic border radius */}
+                {/* Icon - 36x36 size, dynamic border radius */}
                 <motion.div
-                    className="w-10 h-10 relative overflow-hidden"
+                    className="w-9 h-9 relative overflow-hidden"
                     style={{
                         backgroundColor: getButtonColor(),
                     }}
@@ -116,7 +111,7 @@ const RecordButtonComponent: React.FC<RecordButtonProps> = ({ state, onStateChan
                         backgroundColor: getButtonColor(),
                         borderRadius: getIconBorderRadius(),
                     }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.2 }}
                 />
             </motion.button>
         </div>

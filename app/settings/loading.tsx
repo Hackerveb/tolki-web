@@ -1,11 +1,8 @@
-import { colors } from '@/styles/colors';
-import { shadows } from '@/styles/neumorphic';
-
 export default function SettingsLoading() {
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ backgroundColor: colors.background }}
+      style={{ backgroundColor: 'var(--color-background)' }}
     >
       {/* Header Skeleton */}
       <header
@@ -16,20 +13,20 @@ export default function SettingsLoading() {
           paddingBottom: '20px',
           paddingLeft: 'max(20px, env(safe-area-inset-left))',
           paddingRight: 'max(20px, env(safe-area-inset-right))',
-          borderBottom: `1px solid ${colors.silverAlpha(0.2)}`,
+          borderBottom: '1px solid var(--color-border)',
         }}
       >
         <div
           className="w-10 h-10 rounded-full animate-pulse"
           style={{
-            backgroundColor: colors.background,
-            boxShadow: shadows.subtle.boxShadow,
+            backgroundColor: 'var(--color-surface)',
+            boxShadow: 'var(--shadow-sm)',
           }}
         />
         <div
           className="h-6 flex-1 rounded-lg animate-pulse"
           style={{
-            backgroundColor: colors.silverAlpha(0.1),
+            backgroundColor: 'var(--color-neutral-200)',
             maxWidth: '150px',
           }}
         />
@@ -49,11 +46,12 @@ export default function SettingsLoading() {
           className="flex flex-col items-center animate-pulse"
           style={{
             padding: '20px',
-            backgroundColor: colors.background,
-            boxShadow: shadows.subtle.boxShadow,
-            borderRadius: '20px',
+            backgroundColor: 'var(--color-surface)',
+            boxShadow: 'var(--shadow-sm)',
+            borderRadius: '12px',
             marginTop: '20px',
             marginBottom: '20px',
+            border: '1px solid var(--color-border)',
           }}
         >
           <div
@@ -61,7 +59,7 @@ export default function SettingsLoading() {
             style={{
               width: '80px',
               height: '80px',
-              backgroundColor: colors.silverAlpha(0.1),
+              backgroundColor: 'var(--color-neutral-200)',
               marginBottom: '15px',
             }}
           />
@@ -69,7 +67,7 @@ export default function SettingsLoading() {
             className="h-5 rounded-lg"
             style={{
               width: '120px',
-              backgroundColor: colors.silverAlpha(0.1),
+              backgroundColor: 'var(--color-neutral-200)',
               marginBottom: '8px',
             }}
           />
@@ -77,7 +75,7 @@ export default function SettingsLoading() {
             className="h-4 rounded-lg"
             style={{
               width: '160px',
-              backgroundColor: colors.silverAlpha(0.1),
+              backgroundColor: 'var(--color-neutral-200)',
               marginBottom: '20px',
             }}
           />
@@ -88,31 +86,32 @@ export default function SettingsLoading() {
           className="animate-pulse"
           style={{
             padding: '20px',
-            backgroundColor: colors.background,
-            boxShadow: shadows.subtle.boxShadow,
-            borderRadius: '20px',
+            backgroundColor: 'var(--color-surface)',
+            boxShadow: 'var(--shadow-sm)',
+            borderRadius: '12px',
             marginBottom: '20px',
+            border: '1px solid var(--color-border)',
           }}
         >
           <div
             className="h-5 rounded-lg"
             style={{
               width: '100px',
-              backgroundColor: colors.silverAlpha(0.1),
+              backgroundColor: 'var(--color-neutral-200)',
               marginBottom: '20px',
             }}
           />
           <div
-            className="h-12 rounded-2xl"
+            className="h-12 rounded-xl"
             style={{
-              backgroundColor: colors.silverAlpha(0.1),
+              backgroundColor: 'var(--color-neutral-200)',
               marginBottom: '12px',
             }}
           />
           <div
-            className="h-12 rounded-2xl"
+            className="h-12 rounded-xl"
             style={{
-              backgroundColor: colors.silverAlpha(0.1),
+              backgroundColor: 'var(--color-neutral-200)',
             }}
           />
         </div>

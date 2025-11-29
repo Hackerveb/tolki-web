@@ -5,15 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from 'convex/react';
 import { useUser } from '@clerk/nextjs';
 import { api } from '@/convex/_generated/api';
-import { NeumorphicCard } from '@/components/NeumorphicCard';
-import { colors } from '@/styles/colors';
-import { shadows } from '@/styles/neumorphic';
 
 const BackIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <polyline
       points="15 18 9 12 15 6"
-      stroke={colors.foreground}
+      stroke="var(--color-text-primary)"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -34,13 +31,13 @@ const TransactionItem: React.FC<{ transaction: CreditPurchase }> = ({ transactio
   const getStatusColor = () => {
     switch (transaction.status) {
       case 'completed':
-        return '#4caf50'; // colors.success
+        return 'var(--color-success)';
       case 'pending':
-        return '#ff9800'; // colors.warning
+        return 'var(--color-warning)';
       case 'failed':
-        return '#e74c3c'; // colors.error
+        return 'var(--color-error)';
       default:
-        return colors.foreground;
+        return 'var(--color-text-primary)';
     }
   };
 
@@ -54,13 +51,22 @@ const TransactionItem: React.FC<{ transaction: CreditPurchase }> = ({ transactio
   };
 
   return (
-    <NeumorphicCard style={{ marginBottom: '16px', padding: '16px' }}>
+    <div
+      style={{
+        marginBottom: '16px',
+        padding: '16px',
+        backgroundColor: 'var(--color-surface)',
+        borderRadius: '12px',
+        boxShadow: 'var(--shadow-sm)',
+        border: '1px solid var(--color-border)',
+      }}
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         {/* Left Side */}
         <div style={{ flex: 1 }}>
           <p style={{
             fontSize: '12px',
-            color: colors.silverAlpha(0.6),
+            color: 'var(--color-text-tertiary)',
             marginBottom: '4px',
             fontWeight: 400,
           }}>
@@ -69,7 +75,7 @@ const TransactionItem: React.FC<{ transaction: CreditPurchase }> = ({ transactio
           <p style={{
             fontSize: '14px',
             fontWeight: 400,
-            color: colors.foreground,
+            color: 'var(--color-text-primary)',
             marginBottom: '2px',
             lineHeight: '1.4',
           }}>
@@ -77,7 +83,7 @@ const TransactionItem: React.FC<{ transaction: CreditPurchase }> = ({ transactio
           </p>
           <p style={{
             fontSize: '13px',
-            color: colors.primary,
+            color: 'var(--color-primary)',
             fontWeight: 400,
           }}>
             {transaction.credits} credits
@@ -94,7 +100,7 @@ const TransactionItem: React.FC<{ transaction: CreditPurchase }> = ({ transactio
           <p style={{
             fontSize: '17px',
             fontWeight: 600,
-            color: colors.foreground,
+            color: 'var(--color-text-primary)',
             marginBottom: '8px',
           }}>
             ${transaction.amount.toFixed(2)}
@@ -104,7 +110,7 @@ const TransactionItem: React.FC<{ transaction: CreditPurchase }> = ({ transactio
             borderRadius: '4px',
             fontSize: '10px',
             fontWeight: 600,
-            color: colors.white,
+            color: 'var(--color-on-success)',
             backgroundColor: getStatusColor(),
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
@@ -113,7 +119,7 @@ const TransactionItem: React.FC<{ transaction: CreditPurchase }> = ({ transactio
           </div>
         </div>
       </div>
-    </NeumorphicCard>
+    </div>
   );
 };
 
@@ -145,7 +151,7 @@ export default function BillingHistoryScreen() {
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
-      backgroundColor: colors.background,
+      backgroundColor: 'var(--color-background)',
     }}>
       {/* Header */}
       <header
@@ -156,21 +162,21 @@ export default function BillingHistoryScreen() {
           paddingBottom: '20px',
           paddingLeft: 'max(20px, env(safe-area-inset-left))',
           paddingRight: 'max(20px, env(safe-area-inset-right))',
-          borderBottom: `1px solid ${colors.silverAlpha(0.2)}`,
-          backgroundColor: colors.background,
+          borderBottom: '1px solid var(--color-border)',
+          backgroundColor: 'var(--color-background)',
         }}
       >
         <button
           onClick={() => router.back()}
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95"
           style={{
-            backgroundColor: colors.background,
-            boxShadow: shadows.subtle.boxShadow,
+            backgroundColor: 'var(--color-surface)',
+            boxShadow: 'var(--shadow-sm)',
           }}
         >
           <BackIcon />
         </button>
-        <h1 className="text-xl font-semibold flex-1" style={{ color: colors.foreground }}>
+        <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
           Billing History
         </h1>
       </header>
@@ -195,13 +201,13 @@ export default function BillingHistoryScreen() {
               style={{
                 width: '24px',
                 height: '24px',
-                border: `2px solid ${colors.silverAlpha(0.3)}`,
-                borderTopColor: colors.primary,
+                border: '2px solid var(--color-border)',
+                borderTopColor: 'var(--color-primary)',
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite',
               }}
             />
-            <p style={{ fontSize: '14px', color: colors.muted }}>
+            <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
               Loading...
             </p>
             <style jsx>{`
@@ -218,7 +224,7 @@ export default function BillingHistoryScreen() {
               <h3 style={{
                 fontSize: '17px',
                 fontWeight: 600,
-                color: colors.foreground,
+                color: 'var(--color-text-primary)',
                 marginBottom: '16px',
               }}>
                 Transaction History
@@ -229,21 +235,25 @@ export default function BillingHistoryScreen() {
                   <TransactionItem key={transaction.id} transaction={transaction} />
                 ))
               ) : (
-                <NeumorphicCard style={{
+                <div style={{
                   padding: '32px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   textAlign: 'center',
+                  backgroundColor: 'var(--color-surface)',
+                  borderRadius: '12px',
+                  boxShadow: 'var(--shadow-sm)',
+                  border: '1px solid var(--color-border)',
                 }}>
                   <p style={{
                     fontSize: '14px',
-                    color: colors.silverAlpha(0.6),
+                    color: 'var(--color-text-tertiary)',
                     lineHeight: '1.5',
                   }}>
                     No credit purchases yet. Your purchase history will appear here.
                   </p>
-                </NeumorphicCard>
+                </div>
               )}
             </div>
           </>

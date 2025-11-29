@@ -1,32 +1,114 @@
 @import "tailwindcss";
 
-/* TolKI Neumorphic Design System */
+/* TolKI Enterprise Design System */
 :root {
-  /* Core Colors */
-  --color-onyx: #393d3f;
-  --color-white: #fdfdff;
-  --color-silver: #c6c5b9;
+  /* ============================================
+     Color System - Light Mode (Default)
+     ============================================ */
+
+  /* Primary */
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-primary-light: #DBEAFE;
+
+  /* Accent */
+  --color-accent: #62929e;
   --color-blue-munsell: #62929e;
 
-  /* Semantic Colors */
-  --color-background: #fdfdff;
-  --color-foreground: #393d3f;
-  --color-primary: #007AFF;
-  --color-secondary: #c6c5b9;
-  --color-accent: #62929e;
-  --color-muted: #c6c5b9;
+  /* Semantic Status Colors */
+  --color-success: #059669;
+  --color-warning: #D97706;
+  --color-error: #DC2626;
+  --color-info: #0891B2;
 
   /* Recording States */
-  --color-recording-red: #FF3B30;
-  --color-connecting-blue: #007AFF;
+  --color-listening: #059669;
+  --color-thinking: #D97706;
+  --color-translating: #2563EB;
+  --color-connecting: #2563EB;
+  --color-recording-red: #DC2626;
+  --color-connecting-blue: #2563EB;
 
-  /* Status Colors */
-  --color-success: #34C759;
-  --color-warning: #FF9500;
-  --color-error: #FF3B30;
-  --color-info: #5AC8FA;
+  /* Neutral Scale */
+  --color-neutral-0: #FFFFFF;
+  --color-neutral-50: #F8FAFC;
+  --color-neutral-100: #F1F5F9;
+  --color-neutral-200: #E2E8F0;
+  --color-neutral-300: #CBD5E1;
+  --color-neutral-400: #94A3B8;
+  --color-neutral-500: #64748B;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1E293B;
+  --color-neutral-900: #0F172A;
+  --color-neutral-950: #020617;
 
-  /* Spacing */
+  /* Semantic Surface Colors - Light Mode */
+  --color-background: #FFFFFF;
+  --color-surface: #F8FAFC;
+  --color-surface-elevated: #FFFFFF;
+  --color-foreground: #0F172A;
+
+  /* Border Colors */
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+
+  /* Text Colors */
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #94A3B8;
+
+  /* Legacy color aliases */
+  --color-onyx: #0F172A;
+  --color-white: #FFFFFF;
+  --color-silver: #94A3B8;
+  --color-secondary: #94A3B8;
+  --color-muted: #94A3B8;
+
+  /* ============================================
+     Semantic "On-Color" Text
+     (text on colored backgrounds)
+     ============================================ */
+  --color-on-primary: #FFFFFF;
+  --color-on-error: #FFFFFF;
+  --color-on-warning: #FFFFFF;
+  --color-on-success: #FFFFFF;
+  --color-on-info: #FFFFFF;
+
+  /* Primary with alpha for hover states */
+  --color-primary-alpha: rgba(37, 99, 235, 0.1);
+
+  /* Pulse animation colors (for RecordButton) */
+  --color-listening-pulse: rgba(5, 150, 105, 0.25);
+  --color-thinking-pulse: rgba(217, 119, 6, 0.25);
+  --color-translating-pulse: rgba(37, 99, 235, 0.25);
+  --color-connecting-pulse: rgba(37, 99, 235, 0.25);
+
+  /* ============================================
+     Shadow System - Light Mode
+     ============================================ */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 8px 10px rgba(0, 0, 0, 0.04);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+
+  /* ============================================
+     Spacing System (8px base)
+     ============================================ */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem;   /* 4px */
+  --spacing-2: 0.5rem;    /* 8px */
+  --spacing-3: 0.75rem;   /* 12px */
+  --spacing-4: 1rem;      /* 16px */
+  --spacing-5: 1.25rem;   /* 20px */
+  --spacing-6: 1.5rem;    /* 24px */
+  --spacing-8: 2rem;      /* 32px */
+  --spacing-10: 2.5rem;   /* 40px */
+  --spacing-12: 3rem;     /* 48px */
+
+  /* Legacy spacing aliases */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
@@ -34,22 +116,129 @@
   --spacing-xl: 32px;
   --spacing-2xl: 48px;
 
-  /* Border Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  /* ============================================
+     Border Radius
+     ============================================ */
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-DEFAULT: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
   --radius-full: 9999px;
 
-  /* Font */
-  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: var(--font-geist-mono), 'SF Mono', Monaco, monospace;
+  /* ============================================
+     Typography
+     ============================================ */
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), 'SF Mono', Monaco, 'Consolas', monospace;
 
-  /* Safe Area Insets for iOS notch support */
+  /* ============================================
+     Safe Area Insets (iOS notch support)
+     ============================================ */
   --safe-area-inset-top: env(safe-area-inset-top);
   --safe-area-inset-right: env(safe-area-inset-right);
   --safe-area-inset-bottom: env(safe-area-inset-bottom);
   --safe-area-inset-left: env(safe-area-inset-left);
+}
+
+/* ============================================
+   Dark Mode
+   ============================================ */
+.dark {
+  /* Surface Colors */
+  --color-background: #0F172A;
+  --color-surface: #1E293B;
+  --color-surface-elevated: #334155;
+  --color-foreground: #F8FAFC;
+
+  /* Border Colors */
+  --color-border: #334155;
+  --color-border-strong: #475569;
+
+  /* Text Colors */
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-tertiary: #64748B;
+
+  /* Legacy aliases */
+  --color-onyx: #F8FAFC;
+  --color-white: #0F172A;
+  --color-silver: #64748B;
+
+  /* On-color text (same as light - white on colored backgrounds) */
+  --color-on-primary: #FFFFFF;
+  --color-on-error: #FFFFFF;
+  --color-on-warning: #FFFFFF;
+  --color-on-success: #FFFFFF;
+  --color-on-info: #FFFFFF;
+
+  /* Primary with alpha - slightly more visible in dark mode */
+  --color-primary-alpha: rgba(37, 99, 235, 0.2);
+
+  /* Pulse animation colors - more visible in dark mode */
+  --color-listening-pulse: rgba(5, 150, 105, 0.35);
+  --color-thinking-pulse: rgba(217, 119, 6, 0.35);
+  --color-translating-pulse: rgba(37, 99, 235, 0.35);
+  --color-connecting-pulse: rgba(37, 99, 235, 0.35);
+
+  /* Shadows - more visible in dark mode */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.3), 0 8px 10px rgba(0, 0, 0, 0.15);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* System preference dark mode */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    /* Surface Colors */
+    --color-background: #0F172A;
+    --color-surface: #1E293B;
+    --color-surface-elevated: #334155;
+    --color-foreground: #F8FAFC;
+
+    /* Border Colors */
+    --color-border: #334155;
+    --color-border-strong: #475569;
+
+    /* Text Colors */
+    --color-text-primary: #F8FAFC;
+    --color-text-secondary: #94A3B8;
+    --color-text-tertiary: #64748B;
+
+    /* Legacy aliases */
+    --color-onyx: #F8FAFC;
+    --color-white: #0F172A;
+    --color-silver: #64748B;
+
+    /* On-color text */
+    --color-on-primary: #FFFFFF;
+    --color-on-error: #FFFFFF;
+    --color-on-warning: #FFFFFF;
+    --color-on-success: #FFFFFF;
+    --color-on-info: #FFFFFF;
+
+    /* Primary with alpha */
+    --color-primary-alpha: rgba(37, 99, 235, 0.2);
+
+    /* Pulse animation colors */
+    --color-listening-pulse: rgba(5, 150, 105, 0.35);
+    --color-thinking-pulse: rgba(217, 119, 6, 0.35);
+    --color-translating-pulse: rgba(37, 99, 235, 0.35);
+    --color-connecting-pulse: rgba(37, 99, 235, 0.35);
+
+    /* Shadows */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.2);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.3), 0 8px 10px rgba(0, 0, 0, 0.15);
+    --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+  }
 }
 
 @theme inline {
@@ -80,50 +269,95 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Neumorphic Utility Classes */
+/* ============================================
+   Modern Shadow Utility Classes
+   ============================================ */
+.shadow-xs {
+  box-shadow: var(--shadow-xs);
+}
+
+.shadow-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.shadow-md {
+  box-shadow: var(--shadow-md);
+}
+
+.shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+.shadow-xl {
+  box-shadow: var(--shadow-xl);
+}
+
+.shadow-inner {
+  box-shadow: var(--shadow-inner);
+}
+
+/* Elevated card/button style */
+.elevated {
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+}
+
+.elevated:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Pressed/active state */
+.pressed {
+  background: var(--color-surface);
+  box-shadow: var(--shadow-inner);
+}
+
+/* ============================================
+   Legacy Neumorphic Classes (deprecated)
+   Now render as modern shadows
+   ============================================ */
 .neumorphic-elevated {
-  background: var(--color-background);
-  box-shadow:
-    -6px -6px 12px rgba(253, 253, 255, 0.8),
-    6px 6px 12px rgba(198, 197, 185, 0.4);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .neumorphic-pressed {
-  background: var(--color-background);
-  box-shadow:
-    inset 2px 2px 4px rgba(198, 197, 185, 0.3),
-    inset -2px -2px 4px rgba(253, 253, 255, 0.5);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-inner);
 }
 
 .neumorphic-subtle {
-  background: var(--color-background);
-  box-shadow:
-    -4px -4px 8px rgba(253, 253, 255, 0.6),
-    4px 4px 8px rgba(198, 197, 185, 0.2);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
 }
 
 .neumorphic-hover {
-  background: var(--color-background);
-  box-shadow:
-    -8px -8px 16px rgba(253, 253, 255, 0.9),
-    8px 8px 16px rgba(198, 197, 185, 0.5);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
 }
 
-/* Mobile Optimizations */
+/* ============================================
+   Mobile Optimizations
+   ============================================ */
 @media (max-width: 768px) {
   body {
     font-size: 16px; /* Prevent zoom on input focus on iOS */
   }
 }
 
-/* Smooth transitions for interactive elements */
+/* ============================================
+   Transitions
+   ============================================ */
 button,
 a,
 .interactive {
-  transition: all 0.2s ease-in-out;
+  transition: all 0.15s ease-out;
 }
 
-/* Custom scrollbar for webkit browsers */
+/* ============================================
+   Custom Scrollbar
+   ============================================ */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -134,10 +368,19 @@ a,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-silver);
+  background: var(--color-neutral-400);
   border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-onyx);
+  background: var(--color-neutral-500);
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-600);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-500);
 }

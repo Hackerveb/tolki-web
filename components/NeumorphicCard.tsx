@@ -1,10 +1,8 @@
 import React from 'react';
-import { shadows } from '@/styles/neumorphic';
-import { colors } from '@/styles/colors';
 
 interface NeumorphicCardProps {
   children: React.ReactNode;
-  variant?: 'elevated' | 'pressed' | 'subtle';
+  variant?: 'elevated' | 'pressed' | 'subtle' | 'bordered';
   padding?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -17,30 +15,44 @@ export const NeumorphicCard: React.FC<NeumorphicCardProps> = ({
   className = '',
   style = {},
 }) => {
-  const getVariantShadow = () => {
+  const getVariantStyles = (): React.CSSProperties => {
     switch (variant) {
       case 'pressed':
-        return shadows.pressed;
+        return {
+          boxShadow: 'var(--shadow-inner)',
+          border: '1px solid var(--color-border)',
+        };
       case 'subtle':
-        return shadows.subtle;
+        return {
+          boxShadow: 'var(--shadow-xs)',
+          border: '1px solid var(--color-border)',
+        };
+      case 'bordered':
+        return {
+          boxShadow: 'none',
+          border: '1px solid var(--color-border)',
+        };
       case 'elevated':
       default:
-        return shadows.elevated;
+        return {
+          boxShadow: 'var(--shadow-sm)',
+          border: '1px solid var(--color-border)',
+        };
     }
   };
 
-  const variantShadow = getVariantShadow();
+  const variantStyles = getVariantStyles();
 
   return (
     <div
       className={`
-        rounded-2xl
+        rounded-xl
         ${padding ? 'p-4' : ''}
         ${className}
       `}
       style={{
-        backgroundColor: colors.background,
-        boxShadow: variantShadow.boxShadow,
+        backgroundColor: 'var(--color-surface)',
+        ...variantStyles,
         ...style,
       }}
     >

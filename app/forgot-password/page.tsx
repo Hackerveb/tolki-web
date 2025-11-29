@@ -3,9 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSignIn } from '@clerk/nextjs';
-import { NeumorphicCard } from '@/components/NeumorphicCard';
 import { colors } from '@/styles/colors';
-import { shadows } from '@/styles/neumorphic';
 import {
   validateEmail,
   validatePassword,
@@ -175,26 +173,33 @@ export default function ForgotPasswordPage() {
       <div
         className="min-h-screen flex items-center justify-center overflow-y-auto"
         style={{
-          backgroundColor: colors.background,
+          backgroundColor: 'var(--color-background)',
           paddingLeft: 'max(24px, env(safe-area-inset-left))',
           paddingRight: 'max(24px, env(safe-area-inset-right))',
           paddingTop: 'max(32px, env(safe-area-inset-top))',
           paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
         }}
       >
-        <NeumorphicCard
-          className="w-full max-w-sm"
-          style={{ padding: '20px', marginTop: '16px', marginBottom: '16px' }}
+        <div
+          className="w-full max-w-sm rounded-xl"
+          style={{
+            padding: '20px',
+            marginTop: '16px',
+            marginBottom: '16px',
+            backgroundColor: 'var(--color-surface)',
+            boxShadow: 'var(--shadow-sm)',
+            border: '1px solid var(--color-border)',
+          }}
         >
           {/* Header */}
           <div style={{ marginBottom: '16px', textAlign: 'center' }}>
             <h1
               className="text-xl font-bold"
-              style={{ color: colors.foreground, marginBottom: '4px' }}
+              style={{ color: 'var(--color-text-primary)', marginBottom: '4px' }}
             >
               Reset Password
             </h1>
-            <p className="text-xs" style={{ color: colors.silverAlpha(0.7) }}>
+            <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
               Enter your email address and we&apos;ll send you a verification code
             </p>
           </div>
@@ -203,7 +208,7 @@ export default function ForgotPasswordPage() {
           <div style={{ marginBottom: '12px' }}>
             <label
               className="block font-semibold"
-              style={{ color: colors.foreground, fontSize: '12px', marginBottom: '6px' }}
+              style={{ color: 'var(--color-text-primary)', fontSize: '12px', marginBottom: '6px' }}
             >
               Email
             </label>
@@ -217,10 +222,10 @@ export default function ForgotPasswordPage() {
               disabled={loading}
               className="w-full text-base"
               style={{
-                backgroundColor: colors.background,
-                color: colors.foreground,
-                boxShadow: shadows.pressed.boxShadow,
-                border: emailError ? `1px solid #FF6B6B` : 'none',
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-text-primary)',
+                boxShadow: 'var(--shadow-inner)',
+                border: emailError ? '1px solid var(--color-error)' : '1px solid var(--color-border)',
                 borderRadius: '12px',
                 padding: '10px 12px',
                 minHeight: '40px',
@@ -228,7 +233,7 @@ export default function ForgotPasswordPage() {
               }}
             />
             {emailError && (
-              <p className="text-xs mt-1 ml-1" style={{ color: '#FF6B6B' }}>
+              <p className="text-xs mt-1 ml-1" style={{ color: 'var(--color-error)' }}>
                 {emailError}
               </p>
             )}
@@ -240,14 +245,14 @@ export default function ForgotPasswordPage() {
             disabled={!emailValidation.isValid || loading}
             className="w-full font-semibold transition-all"
             style={{
-              backgroundColor: (!emailValidation.isValid || loading) ? colors.silverAlpha(0.3) : colors.primary,
-              color: (!emailValidation.isValid || loading) ? colors.silverAlpha(0.5) : colors.white,
+              backgroundColor: (!emailValidation.isValid || loading) ? 'var(--color-neutral-200)' : 'var(--color-primary)',
+              color: (!emailValidation.isValid || loading) ? 'var(--color-text-tertiary)' : '#FFFFFF',
               opacity: (!emailValidation.isValid || loading) ? 0.5 : 1,
               minHeight: '44px',
               borderRadius: '12px',
               fontSize: '15px',
               marginBottom: '12px',
-              boxShadow: (!emailValidation.isValid || loading) ? 'none' : shadows.elevated.boxShadow,
+              boxShadow: (!emailValidation.isValid || loading) ? 'none' : 'var(--shadow-md)',
             }}
           >
             {loading ? 'Sending...' : 'Send Code'}
@@ -255,19 +260,19 @@ export default function ForgotPasswordPage() {
 
           {/* Sign In Link */}
           <div className="flex items-center justify-center" style={{ gap: '4px' }}>
-            <span style={{ color: colors.silverAlpha(0.7), fontSize: '13px' }}>
+            <span style={{ color: 'var(--color-text-secondary)', fontSize: '13px' }}>
               Remember your password?
             </span>
             <button
               onClick={onBackToSignIn}
               disabled={loading}
               className="font-semibold hover:underline"
-              style={{ color: colors.primary, fontSize: '13px' }}
+              style={{ color: 'var(--color-primary)', fontSize: '13px' }}
             >
               Sign In
             </button>
           </div>
-        </NeumorphicCard>
+        </div>
       </div>
     );
   }
@@ -278,25 +283,30 @@ export default function ForgotPasswordPage() {
       <div
         className="min-h-screen flex items-center justify-center"
         style={{
-          backgroundColor: colors.background,
+          backgroundColor: 'var(--color-background)',
           paddingLeft: 'max(24px, env(safe-area-inset-left))',
           paddingRight: 'max(24px, env(safe-area-inset-right))',
           paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
         }}
       >
-        <NeumorphicCard
-          className="w-full max-w-sm"
-          style={{ padding: '20px' }}
+        <div
+          className="w-full max-w-sm rounded-xl"
+          style={{
+            padding: '20px',
+            backgroundColor: 'var(--color-surface)',
+            boxShadow: 'var(--shadow-sm)',
+            border: '1px solid var(--color-border)',
+          }}
         >
           {/* Header */}
           <div style={{ marginBottom: '16px', textAlign: 'center' }}>
             <h1
               className="text-xl font-bold"
-              style={{ color: colors.foreground, marginBottom: '4px' }}
+              style={{ color: 'var(--color-text-primary)', marginBottom: '4px' }}
             >
               Enter Code
             </h1>
-            <p className="text-xs" style={{ color: colors.silverAlpha(0.7) }}>
+            <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
               We&apos;ve sent a 6-digit code to {emailAddress}
             </p>
           </div>
@@ -305,7 +315,7 @@ export default function ForgotPasswordPage() {
           <div style={{ marginBottom: '12px' }}>
             <label
               className="block font-semibold"
-              style={{ color: colors.foreground, fontSize: '12px', marginBottom: '6px' }}
+              style={{ color: 'var(--color-text-primary)', fontSize: '12px', marginBottom: '6px' }}
             >
               Verification Code
             </label>
@@ -318,10 +328,10 @@ export default function ForgotPasswordPage() {
               maxLength={6}
               className="w-full text-base"
               style={{
-                backgroundColor: colors.background,
-                color: colors.foreground,
-                boxShadow: shadows.pressed.boxShadow,
-                border: 'none',
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-text-primary)',
+                boxShadow: 'var(--shadow-inner)',
+                border: '1px solid var(--color-border)',
                 borderRadius: '12px',
                 padding: '10px 12px',
                 minHeight: '40px',
@@ -336,14 +346,14 @@ export default function ForgotPasswordPage() {
             disabled={code.length !== 6 || loading}
             className="w-full font-semibold transition-all"
             style={{
-              backgroundColor: (code.length !== 6 || loading) ? colors.silverAlpha(0.3) : colors.primary,
-              color: (code.length !== 6 || loading) ? colors.silverAlpha(0.5) : colors.white,
+              backgroundColor: (code.length !== 6 || loading) ? 'var(--color-neutral-200)' : 'var(--color-primary)',
+              color: (code.length !== 6 || loading) ? 'var(--color-text-tertiary)' : '#FFFFFF',
               opacity: (code.length !== 6 || loading) ? 0.5 : 1,
               minHeight: '44px',
               borderRadius: '12px',
               fontSize: '15px',
               marginBottom: '12px',
-              boxShadow: (code.length !== 6 || loading) ? 'none' : shadows.elevated.boxShadow,
+              boxShadow: (code.length !== 6 || loading) ? 'none' : 'var(--shadow-md)',
             }}
           >
             {loading ? 'Verifying...' : 'Verify Code'}
@@ -351,19 +361,19 @@ export default function ForgotPasswordPage() {
 
           {/* Resend Link */}
           <div className="flex items-center justify-center" style={{ gap: '4px' }}>
-            <span style={{ color: colors.silverAlpha(0.7), fontSize: '13px' }}>
+            <span style={{ color: 'var(--color-text-secondary)', fontSize: '13px' }}>
               Didn&apos;t receive the code?
             </span>
             <button
               onClick={onResendCode}
               disabled={loading}
               className="font-semibold hover:underline"
-              style={{ color: colors.primary, fontSize: '13px' }}
+              style={{ color: 'var(--color-primary)', fontSize: '13px' }}
             >
               Resend
             </button>
           </div>
-        </NeumorphicCard>
+        </div>
       </div>
     );
   }
@@ -374,26 +384,33 @@ export default function ForgotPasswordPage() {
       <div
         className="min-h-screen flex items-center justify-center overflow-y-auto"
         style={{
-          backgroundColor: colors.background,
+          backgroundColor: 'var(--color-background)',
           paddingLeft: 'max(24px, env(safe-area-inset-left))',
           paddingRight: 'max(24px, env(safe-area-inset-right))',
           paddingTop: 'max(32px, env(safe-area-inset-top))',
           paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
         }}
       >
-        <NeumorphicCard
-          className="w-full max-w-sm"
-          style={{ padding: '20px', marginTop: '16px', marginBottom: '16px' }}
+        <div
+          className="w-full max-w-sm rounded-xl"
+          style={{
+            padding: '20px',
+            marginTop: '16px',
+            marginBottom: '16px',
+            backgroundColor: 'var(--color-surface)',
+            boxShadow: 'var(--shadow-sm)',
+            border: '1px solid var(--color-border)',
+          }}
         >
           {/* Header */}
           <div style={{ marginBottom: '16px', textAlign: 'center' }}>
             <h1
               className="text-xl font-bold"
-              style={{ color: colors.foreground, marginBottom: '4px' }}
+              style={{ color: 'var(--color-text-primary)', marginBottom: '4px' }}
             >
               New Password
             </h1>
-            <p className="text-xs" style={{ color: colors.silverAlpha(0.7) }}>
+            <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
               Create a strong password for your account
             </p>
           </div>
@@ -403,7 +420,7 @@ export default function ForgotPasswordPage() {
             <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
               <label
                 className="block font-semibold"
-                style={{ color: colors.foreground, fontSize: '12px' }}
+                style={{ color: 'var(--color-text-primary)', fontSize: '12px' }}
               >
                 Password
               </label>
@@ -414,7 +431,7 @@ export default function ForgotPasswordPage() {
                 >
                   <span
                     className="text-xs font-semibold"
-                    style={{ color: colors.white }}
+                    style={{ color: '#FFFFFF' }}
                   >
                     {passwordValidation.strength === 'weak' && 'Weak'}
                     {passwordValidation.strength === 'medium' && 'Good'}
@@ -433,10 +450,10 @@ export default function ForgotPasswordPage() {
               disabled={loading}
               className="w-full text-base"
               style={{
-                backgroundColor: colors.background,
-                color: colors.foreground,
-                boxShadow: shadows.pressed.boxShadow,
-                border: 'none',
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-text-primary)',
+                boxShadow: 'var(--shadow-inner)',
+                border: '1px solid var(--color-border)',
                 borderRadius: '12px',
                 padding: '10px 12px',
                 minHeight: '40px',
@@ -449,13 +466,14 @@ export default function ForgotPasswordPage() {
               <div
                 className="mt-2 p-2 rounded-lg"
                 style={{
-                  backgroundColor: colors.background,
-                  boxShadow: shadows.subtle.boxShadow,
+                  backgroundColor: 'var(--color-surface)',
+                  boxShadow: 'var(--shadow-sm)',
+                  border: '1px solid var(--color-border)',
                 }}
               >
                 <p
                   className="text-xs font-semibold mb-1"
-                  style={{ color: colors.foreground }}
+                  style={{ color: 'var(--color-text-primary)' }}
                 >
                   Password must contain:
                 </p>
@@ -466,13 +484,13 @@ export default function ForgotPasswordPage() {
                       <div
                         className="w-1.5 h-1.5 rounded-full mr-2"
                         style={{
-                          backgroundColor: isMet ? '#66BB6A' : colors.silverAlpha(0.4),
+                          backgroundColor: isMet ? 'var(--color-success)' : 'var(--color-neutral-300)',
                         }}
                       />
                       <span
                         className="text-xs"
                         style={{
-                          color: isMet ? '#66BB6A' : colors.silverAlpha(0.7),
+                          color: isMet ? 'var(--color-success)' : 'var(--color-text-secondary)',
                           fontWeight: isMet ? '500' : 'normal',
                         }}
                       >
@@ -491,18 +509,18 @@ export default function ForgotPasswordPage() {
             disabled={!passwordValidation.isValid || loading}
             className="w-full font-semibold transition-all"
             style={{
-              backgroundColor: (!passwordValidation.isValid || loading) ? colors.silverAlpha(0.3) : colors.primary,
-              color: (!passwordValidation.isValid || loading) ? colors.silverAlpha(0.5) : colors.white,
+              backgroundColor: (!passwordValidation.isValid || loading) ? 'var(--color-neutral-200)' : 'var(--color-primary)',
+              color: (!passwordValidation.isValid || loading) ? 'var(--color-text-tertiary)' : '#FFFFFF',
               opacity: (!passwordValidation.isValid || loading) ? 0.5 : 1,
               minHeight: '44px',
               borderRadius: '12px',
               fontSize: '15px',
-              boxShadow: (!passwordValidation.isValid || loading) ? 'none' : shadows.elevated.boxShadow,
+              boxShadow: (!passwordValidation.isValid || loading) ? 'none' : 'var(--shadow-md)',
             }}
           >
             {loading ? 'Resetting...' : 'Reset Password'}
           </button>
-        </NeumorphicCard>
+        </div>
       </div>
     );
   }
@@ -512,31 +530,38 @@ export default function ForgotPasswordPage() {
     <div
       className="min-h-screen flex items-center justify-center"
       style={{
-        backgroundColor: colors.background,
+        backgroundColor: 'var(--color-background)',
         paddingLeft: 'max(24px, env(safe-area-inset-left))',
         paddingRight: 'max(24px, env(safe-area-inset-right))',
       }}
     >
-      <NeumorphicCard
-        className="w-full max-w-sm"
-        style={{ padding: '24px' }}
+      <div
+        className="w-full max-w-sm rounded-xl"
+        style={{
+          padding: '24px',
+          backgroundColor: 'var(--color-surface)',
+          boxShadow: 'var(--shadow-sm)',
+          border: '1px solid var(--color-border)',
+        }}
       >
         <div style={{ textAlign: 'center' }}>
           <div
-            className="text-4xl mb-3"
-            style={{ color: colors.primary }}
+            className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3"
+            style={{ backgroundColor: 'var(--color-success)', color: '#FFFFFF' }}
           >
-            ✓
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </div>
           <h1
             className="text-xl font-bold"
-            style={{ color: colors.foreground, marginBottom: '8px' }}
+            style={{ color: 'var(--color-text-primary)', marginBottom: '8px' }}
           >
             Password Reset!
           </h1>
           <p
             className="text-xs"
-            style={{ color: colors.silverAlpha(0.7), marginBottom: '20px' }}
+            style={{ color: 'var(--color-text-secondary)', marginBottom: '20px' }}
           >
             Your password has been successfully reset. You can now sign in with your new password.
           </p>
@@ -545,18 +570,18 @@ export default function ForgotPasswordPage() {
             onClick={onBackToSignIn}
             className="w-full font-semibold transition-all"
             style={{
-              backgroundColor: colors.primary,
-              color: colors.white,
+              backgroundColor: 'var(--color-primary)',
+              color: '#FFFFFF',
               minHeight: '44px',
               borderRadius: '12px',
               fontSize: '15px',
-              boxShadow: shadows.elevated.boxShadow,
+              boxShadow: 'var(--shadow-md)',
             }}
           >
             Back to Sign In
           </button>
         </div>
-      </NeumorphicCard>
+      </div>
     </div>
   );
 }

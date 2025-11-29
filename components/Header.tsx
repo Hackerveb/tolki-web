@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { colors } from '@/styles/colors';
 
 interface HeaderProps {
   title?: string;
@@ -12,6 +11,18 @@ interface HeaderProps {
   transparent?: boolean;
   className?: string;
 }
+
+const BackArrowIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M19 12H5M12 19l-7-7 7-7"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 export const Header: React.FC<HeaderProps> = ({
   title,
@@ -44,11 +55,11 @@ export const Header: React.FC<HeaderProps> = ({
           {showBack && (
             <button
               onClick={handleBack}
-              className="p-2 -ml-2 text-2xl transition-opacity hover:opacity-70 active:opacity-50"
-              style={{ color: colors.foreground }}
+              className="p-2 -ml-2 transition-opacity hover:opacity-70 active:opacity-50"
+              style={{ color: 'var(--color-text-primary)' }}
               aria-label="Go back"
             >
-              ←
+              <BackArrowIcon />
             </button>
           )}
         </div>
@@ -58,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
           {title && (
             <h1
               className="text-base font-medium text-center"
-              style={{ color: colors.foreground }}
+              style={{ color: 'var(--color-text-primary)' }}
             >
               {title}
             </h1>

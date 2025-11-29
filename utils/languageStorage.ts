@@ -1,7 +1,9 @@
 import { Language } from '@/types';
 
 const STORAGE_KEY = 'tolki_recently_used_languages';
+const RECENT_LANGS_KEY = 'tolki_recent_languages';
 const MAX_RECENT = 3;
+const MAX_RECENT_LANGS = 5;
 
 interface RecentLanguagePair {
   sourceCode: string;
@@ -69,5 +71,32 @@ export const languageStorage = {
   isRecent: (code: string): boolean => {
     const recent = languageStorage.getRecentPairs();
     return recent.some(pair => pair.sourceCode === code || pair.targetCode === code);
+  },
+
+  /**
+   * Save a single language code to recently used (for dropdown)
+   */
+  saveRecentLanguage: (code: string): void => {
+    try {
+      const existing = languageStorage.getRecentLanguages();
+      const filtered = existing.filter((c: string) => c !== code);
+      const updated = [code, ...filtered].slice(0, MAX_RECENT_LANGS);
+      localStorage.setItem(RECENT_LANGS_KEY, JSON.stringify(updated));
+    } catch (error) {
+      console.error('Failed to save recent language:', error);
+    }
+  },
+
+  /**
+   * Get recently used language codes (for dropdown)
+   */
+  getRecentLanguages: (): string[] => {
+    try {
+      const stored = localStorage.getItem(RECENT_LANGS_KEY);
+      if (!stored) return [];
+      return JSON.parse(stored);
+    } catch {
+      return [];
+    }
   },
 };

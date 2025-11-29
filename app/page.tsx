@@ -17,11 +17,10 @@ import { useToast } from '@/hooks/useToast';
 import { useAgentMode } from '@/hooks/useAgentMode';
 import { languageStorage } from '@/utils/languageStorage';
 import { colors } from '@/styles/colors';
-import { shadows } from '@/styles/neumorphic';
 
-// Moved outside component to prevent recreation on every render
+// Settings icon component
 const SettingsIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={colors.foreground} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
     <circle cx="12" cy="12" r="3" />
   </svg>
@@ -142,9 +141,9 @@ export default function MainScreen() {
       case 'listening':
         return 'Listening...';
       case 'thinking':
-        return 'Thinking...';
+        return 'Processing...';
       case 'translating':
-        return 'Translating...';
+        return 'Speaking...';
       default:
         return 'Tap to start translating';
     }
@@ -159,15 +158,15 @@ export default function MainScreen() {
   const getStatusColor = () => {
     switch (currentRecordingState) {
       case 'connecting':
-        return colors.connectingBlue;
+        return colors.connecting;
       case 'listening':
-        return colors.success;
+        return colors.listening;
       case 'thinking':
-        return colors.warning;
+        return colors.thinking;
       case 'translating':
-        return colors.primary;
+        return colors.translating;
       default:
-        return colors.muted;
+        return 'var(--color-text-tertiary)';
     }
   };
 
@@ -187,11 +186,11 @@ export default function MainScreen() {
     return (
       <div
         className="h-screen flex items-center justify-center overflow-hidden"
-        style={{ backgroundColor: colors.background }}
+        style={{ backgroundColor: 'var(--color-background)' }}
       >
         <div className="flex flex-col items-center gap-4 w-full max-w-xs px-6">
           <SkeletonLoader variant="rectangle" width="100%" height="60px" />
-          <SkeletonLoader variant="circle" width="120px" height="120px" />
+          <SkeletonLoader variant="circle" width="100px" height="100px" />
           <SkeletonLoader variant="text" width="150px" height="20px" />
         </div>
       </div>
@@ -204,17 +203,16 @@ export default function MainScreen() {
       <StartAudio label="Start Audio" />
       <div
         className="h-screen flex flex-col overflow-hidden"
-        style={{ backgroundColor: colors.background }}
+        style={{ backgroundColor: 'var(--color-background)' }}
       >
         {/* Header */}
         <header
-          className="flex items-center"
+          className="flex items-center gap-3"
           style={{
-            gap: '15px',
-            paddingTop: 'max(24px, env(safe-area-inset-top))',
-            paddingBottom: '24px',
-            paddingLeft: 'max(24px, env(safe-area-inset-left))',
-            paddingRight: 'max(24px, env(safe-area-inset-right))',
+            paddingTop: 'max(20px, env(safe-area-inset-top))',
+            paddingBottom: '16px',
+            paddingLeft: 'max(20px, env(safe-area-inset-left))',
+            paddingRight: 'max(20px, env(safe-area-inset-right))',
           }}
         >
           {/* Source Language */}
@@ -225,11 +223,10 @@ export default function MainScreen() {
             className="flex-1"
           />
 
-          {/* Separator Dot */}
-          <div
-            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-            style={{ backgroundColor: colors.silver }}
-          />
+          {/* Separator */}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+            <path d="M5 12h14M12 5l7 7-7 7" stroke="var(--color-text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
 
           {/* Target Language */}
           <LanguageDropdown
@@ -240,24 +237,17 @@ export default function MainScreen() {
           />
 
           {/* Settings Button */}
-          <motion.div
-            whileTap={{ rotate: 90, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
+          <Link
+            href="/settings"
+            prefetch={true}
+            aria-label="Settings"
+            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-all hover:bg-[var(--color-neutral-100)]"
+            style={{
+              color: 'var(--color-text-secondary)',
+            }}
           >
-            <Link
-              href="/settings"
-              prefetch={true}
-              aria-label="Settings"
-              className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105"
-              style={{
-                backgroundColor: colors.background,
-                boxShadow: shadows.subtle.boxShadow,
-                display: 'flex',
-              }}
-            >
-              <SettingsIcon />
-            </Link>
-          </motion.div>
+            <SettingsIcon />
+          </Link>
         </header>
 
         {/* Main Content */}
@@ -269,36 +259,37 @@ export default function MainScreen() {
           }}
         >
           {/* Credit Display */}
-          <div className="absolute top-5 flex flex-col items-center">
-            <div className="flex flex-col items-center gap-1">
-              <div className="font-bold" style={{ fontSize: '32px', color: colors.primary, lineHeight: '1' }}>
+          <div className="absolute top-4 flex flex-col items-center">
+            <div className="flex items-baseline gap-1">
+              <span
+                className="text-2xl font-semibold"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
                 {formatCreditsDisplay(balance)}
-              </div>
-              <div className="text-xs font-medium" style={{ color: colors.silverAlpha(0.6) }}>
-                {balance.toFixed(0)} credits remaining
-              </div>
+              </span>
+              <span
+                className="text-xs"
+                style={{ color: 'var(--color-text-tertiary)' }}
+              >
+                remaining
+              </span>
             </div>
             {connectionStatus === 'connected' && (
-              <div className="text-xs italic mt-2" style={{ color: colors.blueMunsell }}>
-                Using ~1 credit/minute
-              </div>
-            )}
-            {connectionStatus === 'idle' && balance > 0 && balance < 0.05 && (
-              <div className="text-[11px] mt-1" style={{ color: colors.warning }}>
-                Minimum charge: 0.05 credits
+              <div className="text-xs mt-1" style={{ color: 'var(--color-text-tertiary)' }}>
+                ~1 credit/minute
               </div>
             )}
             {isLowOnCredits && connectionStatus === 'idle' && (
               <Link
                 href="/settings/credits"
                 prefetch={true}
-                className="mt-2 px-3 py-1.5 rounded-xl text-xs font-semibold"
+                className="mt-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:opacity-90"
                 style={{
                   backgroundColor: colors.primaryAlpha(0.1),
                   color: colors.primary,
                 }}
               >
-                Buy more credits →
+                Buy more credits
               </Link>
             )}
           </div>
@@ -313,7 +304,7 @@ export default function MainScreen() {
           </div>
 
           {/* Status Text */}
-          <div className="mt-12 min-h-[24px] flex items-center justify-center">
+          <div className="mt-8 min-h-[24px] flex items-center justify-center">
             <p
               className="text-sm font-medium"
               style={{ color: getStatusColor() }}
@@ -322,16 +313,16 @@ export default function MainScreen() {
             </p>
           </div>
 
-          {/* Timer Display - Separate with fade animation */}
+          {/* Timer Display */}
           <motion.div
-            className="mt-6 min-h-[30px] flex items-center justify-center"
+            className="mt-4 min-h-[28px] flex items-center justify-center"
             animate={{ opacity: connectionStatus === 'connected' ? 1 : 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2 }}
           >
             <div
-              className="text-2xl font-medium"
+              className="text-xl font-medium"
               style={{
-                color: colors.blueMunsell,
+                color: 'var(--color-text-secondary)',
                 fontFeatureSettings: '"tnum"',
                 fontVariantNumeric: 'tabular-nums',
               }}
@@ -342,20 +333,27 @@ export default function MainScreen() {
 
           {/* Warning if insufficient credits */}
           {balance < 0.05 && (
-            <div className="mt-8 px-4 py-3 rounded-xl text-center max-w-xs" style={{ backgroundColor: colors.primaryAlpha(0.1) }}>
-              <p className="text-sm font-semibold mb-2" style={{ color: colors.primary }}>
+            <div
+              className="mt-8 px-5 py-4 rounded-xl text-center max-w-xs"
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                boxShadow: 'var(--shadow-sm)',
+              }}
+            >
+              <p className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-primary)' }}>
                 Insufficient Credits
               </p>
-              <p className="text-xs mb-3" style={{ color: colors.muted }}>
-                You need at least 0.05 credits to start a session (minimum charge).
+              <p className="text-xs mb-3" style={{ color: 'var(--color-text-tertiary)' }}>
+                You need at least 0.05 credits to start a session.
               </p>
               <Link
                 href="/settings/credits"
                 prefetch={true}
-                className="inline-block px-4 py-2 rounded-xl text-sm font-semibold"
+                className="inline-block px-4 py-2 rounded-lg text-sm font-medium"
                 style={{
                   backgroundColor: colors.primary,
-                  color: colors.white,
+                  color: 'var(--color-on-primary)',
                 }}
               >
                 Buy Credits

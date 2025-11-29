@@ -3,11 +3,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { colors } from '@/styles/colors';
-import { shadows } from '@/styles/neumorphic';
 
 interface NeumorphicButtonProps {
   title?: string;
-  variant?: 'default' | 'primary' | 'secondary';
+  variant?: 'default' | 'primary' | 'secondary' | 'ghost' | 'destructive';
   children?: React.ReactNode;
   disabled?: boolean;
   className?: string;
@@ -33,6 +32,7 @@ export const NeumorphicButton: React.FC<NeumorphicButtonProps> = ({
   type = 'button',
 }) => {
   const [isPressed, setIsPressed] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
     setIsPressed(true);
@@ -46,31 +46,77 @@ export const NeumorphicButton: React.FC<NeumorphicButtonProps> = ({
 
   const handleMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
     setIsPressed(false);
+    setIsHovered(false);
     onMouseLeave?.(e);
   };
 
-  const getVariantStyles = () => {
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const getVariantStyles = (): {
+    backgroundColor: string;
+    background?: string;
+    color: string;
+    border: string;
+    hoverBg?: string;
+  } => {
     switch (variant) {
       case 'primary':
         return {
           backgroundColor: colors.primary,
-          color: colors.white,
+          background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryHover} 100%)`,
+          color: 'var(--color-on-primary)',
+          border: 'none',
+          hoverBg: colors.primaryHover,
         };
       case 'secondary':
         return {
-          backgroundColor: colors.secondary,
-          color: colors.white,
+          backgroundColor: 'var(--color-surface)',
+          color: 'var(--color-text-primary)',
+          border: '1px solid var(--color-border)',
+        };
+      case 'ghost':
+        return {
+          backgroundColor: 'transparent',
+          color: 'var(--color-text-primary)',
+          border: 'none',
+        };
+      case 'destructive':
+        return {
+          backgroundColor: colors.error,
+          color: 'var(--color-on-error)',
+          border: 'none',
         };
       default:
         return {
-          backgroundColor: colors.background,
-          color: colors.foreground,
+          backgroundColor: 'var(--color-surface)',
+          color: 'var(--color-text-primary)',
+          border: '1px solid var(--color-border)',
         };
     }
   };
 
   const variantStyles = getVariantStyles();
-  const currentShadow = isPressed ? shadows.buttonPressed : shadows.button;
+
+  // Modern shadow system
+  const getShadow = () => {
+    if (isPressed) return 'inset 0 2px 6px rgba(0,0,0,0.15)';
+    if (isHovered) return 'var(--shadow-md)';
+    if (variant === 'ghost') return 'none';
+    return 'var(--shadow-sm)';
+  };
+
+  // Background on hover
+  const getBackground = () => {
+    if (isHovered && variantStyles.hoverBg) {
+      return variantStyles.hoverBg;
+    }
+    if (isHovered && variant === 'ghost') {
+      return 'var(--color-neutral-100)';
+    }
+    return variantStyles.background || variantStyles.backgroundColor;
+  };
 
   return (
     <motion.button
@@ -80,32 +126,34 @@ export const NeumorphicButton: React.FC<NeumorphicButtonProps> = ({
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
-      whileTap={{ scale: 0.95 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+      onMouseEnter={handleMouseEnter}
+      whileTap={{ scale: disabled ? 1 : 0.97, y: disabled ? 0 : 1 }}
+      transition={{ duration: 0.15 }}
       className={`
         relative
-        px-6 py-4
-        rounded-2xl
+        px-4 py-3
+        rounded-lg
         flex items-center justify-center
-        min-h-[48px]
+        min-h-[44px]
         cursor-pointer
         select-none
-        border-none
         outline-none
-        transition-all duration-200
+        transition-all duration-150
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         ${className}
       `}
       style={{
-        backgroundColor: variantStyles.backgroundColor,
-        boxShadow: currentShadow.boxShadow,
+        background: getBackground(),
+        boxShadow: getShadow(),
+        border: variantStyles.border,
+        color: variantStyles.color,
       }}
     >
       {children || (
         title && (
           <span
             className={`
-              text-sm font-medium tracking-wide uppercase
+              text-sm font-medium tracking-wide
               ${disabled ? 'opacity-70' : ''}
               ${textClassName}
             `}

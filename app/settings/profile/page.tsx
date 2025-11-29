@@ -11,14 +11,12 @@ import { Language } from '@/types';
 import { languages } from '@/lib/languages';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/useToast';
-import { colors } from '@/styles/colors';
-import { shadows } from '@/styles/neumorphic';
 
 const BackIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <polyline
       points="15 18 9 12 15 6"
-      stroke={colors.foreground}
+      stroke="var(--color-text-primary)"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -87,7 +85,7 @@ export default function EditProfileScreen() {
   return (
     <div
       className="h-screen flex flex-col overflow-hidden"
-      style={{ backgroundColor: colors.background }}
+      style={{ backgroundColor: 'var(--color-background)' }}
     >
       {/* Header */}
       <header
@@ -98,20 +96,20 @@ export default function EditProfileScreen() {
           paddingBottom: '20px',
           paddingLeft: 'max(20px, env(safe-area-inset-left))',
           paddingRight: 'max(20px, env(safe-area-inset-right))',
-          borderBottom: `1px solid ${colors.silverAlpha(0.2)}`,
+          borderBottom: '1px solid var(--color-border)',
         }}
       >
         <button
           onClick={() => router.back()}
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95"
           style={{
-            backgroundColor: colors.background,
-            boxShadow: shadows.subtle.boxShadow,
+            backgroundColor: 'var(--color-surface)',
+            boxShadow: 'var(--shadow-sm)',
           }}
         >
           <BackIcon />
         </button>
-        <h1 className="text-xl font-semibold flex-1" style={{ color: colors.foreground }}>
+        <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
           Edit Profile
         </h1>
       </header>
@@ -132,11 +130,12 @@ export default function EditProfileScreen() {
           className="flex flex-col items-center"
           style={{
             padding: '24px',
-            backgroundColor: colors.background,
-            boxShadow: shadows.subtle.boxShadow,
-            borderRadius: '20px',
+            backgroundColor: 'var(--color-surface)',
+            boxShadow: 'var(--shadow-sm)',
+            borderRadius: '12px',
             marginTop: '20px',
             marginBottom: '20px',
+            border: '1px solid var(--color-border)',
           }}
         >
           {/* Avatar */}
@@ -146,11 +145,11 @@ export default function EditProfileScreen() {
               width: '100px',
               height: '100px',
               borderRadius: '50px',
-              backgroundColor: colors.primary,
-              boxShadow: shadows.elevated.boxShadow,
+              backgroundColor: 'var(--color-primary)',
+              boxShadow: 'var(--shadow-md)',
             }}
           >
-            <span style={{ fontSize: '40px', fontWeight: '600', color: colors.white }}>
+            <span style={{ fontSize: '40px', fontWeight: '600', color: 'var(--color-on-primary)' }}>
               {initials}
             </span>
           </div>
@@ -163,13 +162,14 @@ export default function EditProfileScreen() {
           transition={{ delay: 0.1 }}
           style={{
             padding: '20px',
-            backgroundColor: colors.background,
-            boxShadow: shadows.subtle.boxShadow,
-            borderRadius: '20px',
+            backgroundColor: 'var(--color-surface)',
+            boxShadow: 'var(--shadow-sm)',
+            borderRadius: '12px',
             marginBottom: '20px',
             overflow: 'visible',
             position: 'relative',
             zIndex: 1,
+            border: '1px solid var(--color-border)',
           }}
         >
           {/* First Name */}
@@ -179,7 +179,7 @@ export default function EditProfileScreen() {
               style={{
                 fontSize: '11px',
                 fontWeight: '600',
-                color: colors.silverAlpha(0.8),
+                color: 'var(--color-text-tertiary)',
                 letterSpacing: '0.5px',
                 marginBottom: '8px',
               }}
@@ -192,21 +192,21 @@ export default function EditProfileScreen() {
               onChange={(e) => setFirstName(e.target.value)}
               disabled={loading}
               placeholder="Enter your first name"
-              className="w-full bg-transparent outline-none transition-all"
+              className="w-full outline-none transition-all"
               style={{
                 fontSize: '16px',
-                color: colors.foreground,
+                color: 'var(--color-text-primary)',
                 padding: '12px 16px',
-                backgroundColor: colors.background,
-                boxShadow: shadows.pressed.boxShadow,
-                borderRadius: '12px',
-                border: 'none',
+                backgroundColor: 'var(--color-background)',
+                boxShadow: 'var(--shadow-inner)',
+                borderRadius: '8px',
+                border: '1px solid var(--color-border)',
               }}
             />
           </div>
 
           {/* Separator */}
-          <div style={{ height: '1px', backgroundColor: colors.silverAlpha(0.1), marginBottom: '20px' }} />
+          <div style={{ height: '1px', backgroundColor: 'var(--color-border)', marginBottom: '20px' }} />
 
           {/* Last Name */}
           <div style={{ marginBottom: '20px' }}>
@@ -215,7 +215,7 @@ export default function EditProfileScreen() {
               style={{
                 fontSize: '11px',
                 fontWeight: '600',
-                color: colors.silverAlpha(0.8),
+                color: 'var(--color-text-tertiary)',
                 letterSpacing: '0.5px',
                 marginBottom: '8px',
               }}
@@ -228,21 +228,21 @@ export default function EditProfileScreen() {
               onChange={(e) => setLastName(e.target.value)}
               disabled={loading}
               placeholder="Enter your last name"
-              className="w-full bg-transparent outline-none transition-all"
+              className="w-full outline-none transition-all"
               style={{
                 fontSize: '16px',
-                color: colors.foreground,
+                color: 'var(--color-text-primary)',
                 padding: '12px 16px',
-                backgroundColor: colors.background,
-                boxShadow: shadows.pressed.boxShadow,
-                borderRadius: '12px',
-                border: 'none',
+                backgroundColor: 'var(--color-background)',
+                boxShadow: 'var(--shadow-inner)',
+                borderRadius: '8px',
+                border: '1px solid var(--color-border)',
               }}
             />
           </div>
 
           {/* Separator */}
-          <div style={{ height: '1px', backgroundColor: colors.silverAlpha(0.1), marginBottom: '20px' }} />
+          <div style={{ height: '1px', backgroundColor: 'var(--color-border)', marginBottom: '20px' }} />
 
           {/* Email (Read-only) */}
           <div style={{ marginBottom: '20px' }}>
@@ -251,7 +251,7 @@ export default function EditProfileScreen() {
               style={{
                 fontSize: '11px',
                 fontWeight: '600',
-                color: colors.silverAlpha(0.8),
+                color: 'var(--color-text-tertiary)',
                 letterSpacing: '0.5px',
                 marginBottom: '8px',
               }}
@@ -262,22 +262,22 @@ export default function EditProfileScreen() {
               type="email"
               value={email}
               disabled
-              className="w-full bg-transparent outline-none"
+              className="w-full outline-none"
               style={{
                 fontSize: '16px',
-                color: colors.silverAlpha(0.7),
+                color: 'var(--color-text-secondary)',
                 padding: '12px 16px',
-                backgroundColor: colors.background,
-                boxShadow: shadows.pressed.boxShadow,
-                borderRadius: '12px',
-                border: 'none',
+                backgroundColor: 'var(--color-background)',
+                boxShadow: 'var(--shadow-inner)',
+                borderRadius: '8px',
+                border: '1px solid var(--color-border)',
                 cursor: 'not-allowed',
               }}
             />
           </div>
 
           {/* Separator */}
-          <div style={{ height: '1px', backgroundColor: colors.silverAlpha(0.1), marginBottom: '20px' }} />
+          <div style={{ height: '1px', backgroundColor: 'var(--color-border)', marginBottom: '20px' }} />
 
           {/* Phone Number (Read-only) */}
           <div style={{ marginBottom: '20px' }}>
@@ -286,7 +286,7 @@ export default function EditProfileScreen() {
               style={{
                 fontSize: '11px',
                 fontWeight: '600',
-                color: colors.silverAlpha(0.8),
+                color: 'var(--color-text-tertiary)',
                 letterSpacing: '0.5px',
                 marginBottom: '8px',
               }}
@@ -298,22 +298,22 @@ export default function EditProfileScreen() {
               value={phone}
               disabled
               placeholder="Not set"
-              className="w-full bg-transparent outline-none"
+              className="w-full outline-none"
               style={{
                 fontSize: '16px',
-                color: colors.silverAlpha(0.7),
+                color: 'var(--color-text-secondary)',
                 padding: '12px 16px',
-                backgroundColor: colors.background,
-                boxShadow: shadows.pressed.boxShadow,
-                borderRadius: '12px',
-                border: 'none',
+                backgroundColor: 'var(--color-background)',
+                boxShadow: 'var(--shadow-inner)',
+                borderRadius: '8px',
+                border: '1px solid var(--color-border)',
                 cursor: 'not-allowed',
               }}
             />
           </div>
 
           {/* Separator */}
-          <div style={{ height: '1px', backgroundColor: colors.silverAlpha(0.1), marginBottom: '20px' }} />
+          <div style={{ height: '1px', backgroundColor: 'var(--color-border)', marginBottom: '20px' }} />
 
           {/* Default Language */}
           <div style={{ position: 'relative', zIndex: 9999, overflow: 'visible' }}>
@@ -322,7 +322,7 @@ export default function EditProfileScreen() {
               style={{
                 fontSize: '11px',
                 fontWeight: '600',
-                color: colors.silverAlpha(0.8),
+                color: 'var(--color-text-tertiary)',
                 letterSpacing: '0.5px',
                 marginBottom: '8px',
               }}
@@ -358,14 +358,14 @@ export default function EditProfileScreen() {
             className="w-full transition-all hover:opacity-90 active:scale-98 disabled:opacity-60"
             style={{
               padding: '16px',
-              backgroundColor: colors.primary,
-              boxShadow: shadows.elevated.boxShadow,
-              borderRadius: '16px',
+              backgroundColor: 'var(--color-primary)',
+              boxShadow: 'var(--shadow-md)',
+              borderRadius: '12px',
               border: 'none',
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
-            <span style={{ fontSize: '16px', fontWeight: '600', color: colors.white }}>
+            <span style={{ fontSize: '16px', fontWeight: '600', color: 'var(--color-on-primary)' }}>
               {loading ? 'Saving...' : 'Save Changes'}
             </span>
           </button>
@@ -377,14 +377,14 @@ export default function EditProfileScreen() {
             className="w-full transition-all hover:opacity-90 active:scale-98 disabled:opacity-60"
             style={{
               padding: '16px',
-              backgroundColor: colors.background,
-              boxShadow: shadows.subtle.boxShadow,
-              borderRadius: '16px',
-              border: 'none',
+              backgroundColor: 'var(--color-surface)',
+              boxShadow: 'var(--shadow-sm)',
+              borderRadius: '12px',
+              border: '1px solid var(--color-border)',
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
-            <span style={{ fontSize: '16px', fontWeight: '500', color: colors.foreground }}>
+            <span style={{ fontSize: '16px', fontWeight: '500', color: 'var(--color-text-primary)' }}>
               Cancel
             </span>
           </button>

@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, PanInfo } from 'framer-motion';
 import { colors } from '@/styles/colors';
-import { shadows } from '@/styles/neumorphic';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -20,11 +19,12 @@ const getToastConfig = (type: ToastType) => {
     case 'success':
       return {
         backgroundColor: colors.success,
+        textColor: 'var(--color-on-success)',
         icon: (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path
               d="M20 6L9 17l-5-5"
-              stroke={colors.white}
+              stroke="var(--color-on-success)"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -35,21 +35,23 @@ const getToastConfig = (type: ToastType) => {
     case 'error':
       return {
         backgroundColor: colors.error,
+        textColor: 'var(--color-on-error)',
         icon: (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke={colors.white} strokeWidth="2" />
-            <path d="M15 9l-6 6M9 9l6 6" stroke={colors.white} strokeWidth="2" strokeLinecap="round" />
+            <circle cx="12" cy="12" r="10" stroke="var(--color-on-error)" strokeWidth="2" />
+            <path d="M15 9l-6 6M9 9l6 6" stroke="var(--color-on-error)" strokeWidth="2" strokeLinecap="round" />
           </svg>
         ),
       };
     case 'warning':
       return {
         backgroundColor: colors.warning,
+        textColor: 'var(--color-on-warning)',
         icon: (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
             <path
               d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              stroke={colors.white}
+              stroke="var(--color-on-warning)"
               strokeWidth="2"
               strokeLinecap="round"
             />
@@ -59,10 +61,11 @@ const getToastConfig = (type: ToastType) => {
     case 'info':
       return {
         backgroundColor: colors.info,
+        textColor: 'var(--color-on-info)',
         icon: (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke={colors.white} strokeWidth="2" />
-            <path d="M12 16v-4M12 8h.01" stroke={colors.white} strokeWidth="2" strokeLinecap="round" />
+            <circle cx="12" cy="12" r="10" stroke="var(--color-on-info)" strokeWidth="2" />
+            <path d="M12 16v-4M12 8h.01" stroke="var(--color-on-info)" strokeWidth="2" strokeLinecap="round" />
           </svg>
         ),
       };
@@ -125,11 +128,11 @@ export const Toast: React.FC<ToastProps> = ({
       }}
     >
       <div
-        className="flex items-center gap-3 rounded-2xl overflow-hidden cursor-pointer"
+        className="flex items-center gap-3 rounded-xl overflow-hidden cursor-pointer"
         onClick={handleDismiss}
         style={{
           backgroundColor: config.backgroundColor,
-          boxShadow: shadows.elevated.boxShadow,
+          boxShadow: 'var(--shadow-md)',
           padding: '14px 16px',
           minHeight: '56px',
         }}
@@ -140,7 +143,7 @@ export const Toast: React.FC<ToastProps> = ({
         {/* Message */}
         <p
           className="text-sm font-medium flex-1 leading-snug"
-          style={{ color: colors.white }}
+          style={{ color: config.textColor }}
         >
           {message}
         </p>
@@ -159,7 +162,7 @@ export const Toast: React.FC<ToastProps> = ({
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
             <path
               d="M18 6L6 18M6 6l12 12"
-              stroke={colors.white}
+              stroke={config.textColor}
               strokeWidth="2.5"
               strokeLinecap="round"
             />
@@ -169,7 +172,7 @@ export const Toast: React.FC<ToastProps> = ({
 
       {/* Progress bar */}
       <motion.div
-        className="absolute bottom-0 left-0 h-1 rounded-b-2xl"
+        className="absolute bottom-0 left-0 h-1 rounded-b-xl"
         style={{
           backgroundColor: 'rgba(255, 255, 255, 0.3)',
           width: `${progress}%`,

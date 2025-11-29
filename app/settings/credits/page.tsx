@@ -5,14 +5,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { colors } from '@/styles/colors';
-import { shadows } from '@/styles/neumorphic';
 
 const BackIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <polyline
       points="15 18 9 12 15 6"
-      stroke={colors.foreground}
+      stroke="var(--color-text-primary)"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -125,7 +123,7 @@ function BuyCreditsContent() {
   return (
     <div
       className="h-screen flex flex-col overflow-hidden"
-      style={{ backgroundColor: colors.background }}
+      style={{ backgroundColor: 'var(--color-background)' }}
     >
       {/* Stripe redirect handler (wrapped in Suspense in parent) */}
       <Suspense fallback={null}>
@@ -141,25 +139,25 @@ function BuyCreditsContent() {
           paddingBottom: '20px',
           paddingLeft: 'max(20px, env(safe-area-inset-left))',
           paddingRight: 'max(20px, env(safe-area-inset-right))',
-          borderBottom: `1px solid ${colors.silverAlpha(0.2)}`,
-          backgroundColor: colors.background,
+          borderBottom: '1px solid var(--color-border)',
+          backgroundColor: 'var(--color-background)',
         }}
       >
         <button
           onClick={() => router.back()}
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95"
           style={{
-            backgroundColor: colors.background,
-            boxShadow: shadows.subtle.boxShadow,
+            backgroundColor: 'var(--color-surface)',
+            boxShadow: 'var(--shadow-sm)',
           }}
         >
           <BackIcon />
         </button>
-        <h1 className="text-xl font-semibold flex-1" style={{ color: colors.foreground }}>
+        <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
           Buy Credits
         </h1>
         {/* Balance in header */}
-        <div style={{ fontSize: '18px', fontWeight: '600', color: colors.primary }}>
+        <div style={{ fontSize: '18px', fontWeight: '600', color: 'var(--color-primary)' }}>
           {balance.toFixed(0)}
         </div>
       </header>
@@ -187,14 +185,14 @@ function BuyCreditsContent() {
                 whileTap={{ scale: 0.98 }}
                 className="relative"
                 style={{
-                  backgroundColor: colors.background,
-                  borderRadius: '16px',
+                  backgroundColor: 'var(--color-surface)',
+                  borderRadius: '12px',
                   paddingTop: '20px',
                   paddingBottom: '20px',
                   paddingLeft: '20px',
                   paddingRight: '20px',
-                  border: isSelected ? `2px solid ${colors.primary}` : '2px solid transparent',
-                  boxShadow: isSelected ? shadows.elevated.boxShadow : shadows.subtle.boxShadow,
+                  border: isSelected ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  boxShadow: isSelected ? 'var(--shadow-md)' : 'var(--shadow-sm)',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}
@@ -206,10 +204,16 @@ function BuyCreditsContent() {
                       position: 'absolute',
                       top: '12px',
                       right: '12px',
-                      fontSize: '16px',
+                      fontSize: '10px',
+                      fontWeight: '600',
+                      backgroundColor: 'var(--color-primary)',
+                      color: 'var(--color-on-primary)',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      textTransform: 'uppercase',
                     }}
                   >
-                    ⭐
+                    Best Value
                   </div>
                 )}
 
@@ -227,7 +231,7 @@ function BuyCreditsContent() {
                     style={{
                       fontSize: '15px',
                       fontWeight: '600',
-                      color: isSelected ? colors.foreground : colors.silverAlpha(0.7),
+                      color: isSelected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
                     }}
                   >
                     {pkg.credits} credits
@@ -235,7 +239,7 @@ function BuyCreditsContent() {
                   <span
                     style={{
                       fontSize: '15px',
-                      color: colors.silverAlpha(0.4),
+                      color: 'var(--color-text-tertiary)',
                     }}
                   >
                     •
@@ -244,7 +248,7 @@ function BuyCreditsContent() {
                     style={{
                       fontSize: '15px',
                       fontWeight: '500',
-                      color: isSelected ? colors.foreground : colors.silverAlpha(0.7),
+                      color: isSelected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
                     }}
                   >
                     {formatTime(pkg.credits)}
@@ -257,7 +261,7 @@ function BuyCreditsContent() {
                     style={{
                       fontSize: '18px',
                       fontWeight: '700',
-                      color: isSelected ? colors.primary : colors.silverAlpha(0.6),
+                      color: isSelected ? 'var(--color-primary)' : 'var(--color-text-tertiary)',
                     }}
                   >
                     ${(pkg.price / 100).toFixed(2)}
@@ -276,12 +280,12 @@ function BuyCreditsContent() {
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: colors.background,
+          backgroundColor: 'var(--color-background)',
           paddingTop: '16px',
           paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
           paddingLeft: 'max(20px, env(safe-area-inset-left))',
           paddingRight: 'max(20px, env(safe-area-inset-right))',
-          borderTop: `1px solid ${colors.silverAlpha(0.2)}`,
+          borderTop: '1px solid var(--color-border)',
           maxWidth: '430px',
           margin: '0 auto',
         }}
@@ -292,12 +296,12 @@ function BuyCreditsContent() {
           whileTap={{ scale: isPurchasing ? 1 : 0.98 }}
           style={{
             width: '100%',
-            backgroundColor: colors.primary,
+            backgroundColor: 'var(--color-primary)',
             paddingTop: '18px',
             paddingBottom: '18px',
-            borderRadius: '16px',
+            borderRadius: '12px',
             border: 'none',
-            boxShadow: shadows.elevated.boxShadow,
+            boxShadow: 'var(--shadow-md)',
             cursor: isPurchasing ? 'not-allowed' : 'pointer',
             opacity: isPurchasing ? 0.6 : 1,
             transition: 'all 0.2s ease',
@@ -314,7 +318,7 @@ function BuyCreditsContent() {
               style={{
                 fontSize: '16px',
                 fontWeight: '700',
-                color: colors.white,
+                color: 'var(--color-on-primary)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
               }}

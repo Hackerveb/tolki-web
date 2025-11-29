@@ -2,8 +2,6 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { colors } from '@/styles/colors';
-import { shadows } from '@/styles/neumorphic';
 
 interface SkeletonLoaderProps {
   variant?: 'circle' | 'rectangle' | 'text';
@@ -18,10 +16,10 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
   height,
   className = '',
 }) => {
-  const getStyles = () => {
-    const baseStyles = {
-      backgroundColor: colors.silverAlpha(0.15),
-      boxShadow: shadows.pressed.boxShadow,
+  const getStyles = (): React.CSSProperties => {
+    const baseStyles: React.CSSProperties = {
+      backgroundColor: 'var(--color-neutral-200)',
+      boxShadow: 'var(--shadow-inner)',
     };
 
     switch (variant) {
