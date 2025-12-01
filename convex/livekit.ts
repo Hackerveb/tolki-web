@@ -43,20 +43,20 @@ export const generateToken = action({
       );
     }
 
-    // Create LiveKit access token with agent configuration
+    // Create LiveKit access token
     const at = new AccessToken(apiKey, apiSecret, {
       identity: args.clerkId,
-      // Include user metadata in the token
+    });
+
+    // CRITICAL: Configure room with metadata and agent
+    // Room metadata is available immediately when agent connects (before participant joins)
+    // This fixes the race condition where first message was missed
+    at.roomConfig = new RoomConfiguration({
       metadata: JSON.stringify({
         language1: args.language1,
         language2: args.language2,
         userId: user._id,
       }),
-    });
-
-    // CRITICAL: Configure room to launch the Translator agent
-    // This tells LiveKit to automatically spawn the agent when room is created
-    at.roomConfig = new RoomConfiguration({
       agents: [
         {
           agentName: "Translator", // Must match agent deployed on LiveKit server

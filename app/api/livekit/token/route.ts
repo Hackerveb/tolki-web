@@ -95,15 +95,14 @@ export async function POST(request: NextRequest) {
       canPublishData: true,
     });
 
-    // Add metadata for translation settings
-    token.metadata = JSON.stringify({
-      language1,
-      language2,
-    });
-
-    // IMPORTANT: Configure the room to connect to the "Translator" agent
-    // This is the key configuration that connects to your LiveKit agent
+    // IMPORTANT: Configure the room with metadata and agent
+    // Room metadata is available immediately when agent connects (before participant joins)
+    // This fixes the race condition where first message was missed
     token.roomConfig = new RoomConfiguration({
+      metadata: JSON.stringify({
+        language1,
+        language2,
+      }),
       agents: [{
         agentName: 'Translator', // Must match your LiveKit agent name
       }],

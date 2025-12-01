@@ -156,15 +156,8 @@ const OnboardingPage = () => {
           </p>
         </div>
 
-        {/* Sign In Card */}
-        <div
-          className="rounded-xl p-6"
-          style={{
-            backgroundColor: 'var(--color-surface)',
-            boxShadow: 'var(--shadow-sm)',
-            border: '1px solid var(--color-border)',
-          }}
-        >
+        {/* Sign In Form */}
+        <div>
           {/* Email Input */}
           <div className="mb-4">
             <label
