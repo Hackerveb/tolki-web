@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
         try {
           console.log(`🔄 Calling Convex mutation to add ${credits} credits to user ${clerkId}`);
 
+          // @ts-expect-error Convex fetchMutation types don't accept internal references, but it works at runtime with deploy key
           const result = await fetchMutation(internal.payments.recordPurchase, {
             clerkId,
             credits,
@@ -116,6 +117,7 @@ export async function POST(request: NextRequest) {
         // Optionally record failed purchase
         const clerkId = session.metadata?.clerkId || session.client_reference_id;
         if (clerkId) {
+          // @ts-expect-error Convex fetchMutation types don't accept internal references, but it works at runtime with deploy key
           await fetchMutation(internal.payments.recordPurchase, {
             clerkId,
             credits: 0,
