@@ -9,7 +9,7 @@ import { Language } from '@/types';
 import { defaultSourceLanguage, defaultTargetLanguage } from '@/lib/languages';
 import { LanguageDropdown } from '@/components/LanguageDropdown';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
-import { AgentAudioVisualizerWave } from '@/components/AgentAudioVisualizerWave';
+import { AgentAudioVisualizerWave } from '@/components/agent-audio-visualizer-wave';
 import { AgentChatTranscript } from '@/components/AgentChatTranscript';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useLiveKitRoom } from '@/hooks/useLiveKitRoom';
@@ -289,60 +289,53 @@ function MainScreenContent() {
           paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
         }}
       >
-        {/* Credits / remaining time — between header and visualizer, larger, alive */}
+        {/* Credits / remaining time — between header and visualizer */}
         <motion.div
-          className="flex flex-col items-center mt-6 mb-2 flex-shrink-0"
+          className="flex flex-col items-center mt-10 mb-4 flex-shrink-0"
           animate={{ opacity: isInsufficientCredits ? 0.5 : 1 }}
         >
-          <AnimatePresence mode="wait">
-            {connectionStatus === 'connected' ? (
+          {/* Always show remaining balance */}
+          <motion.div className="flex items-center gap-2">
+            <motion.span
+              className="text-2xl font-light tracking-tight"
+              style={{
+                color: isLowOnCredits ? 'var(--color-error)' : 'var(--color-text-primary)',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+              animate={isLowOnCredits ? { opacity: [1, 0.5, 1] } : {}}
+              transition={isLowOnCredits ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : {}}
+            >
+              {formatCreditsDisplay(balance)} left
+            </motion.span>
+            {isLowOnCredits && connectionStatus === 'idle' && (
+              <Link
+                href="/settings/credits"
+                prefetch
+                className="text-xs font-semibold"
+                style={{ color: 'var(--color-primary)' }}
+              >
+                Top up →
+              </Link>
+            )}
+          </motion.div>
+
+          {/* Session countdown — smaller font under remaining time */}
+          <AnimatePresence>
+            {connectionStatus === 'connected' && (
               <motion.p
-                key="timer"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
-                className="text-4xl font-extralight tracking-tight"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="text-base font-light tracking-tight mt-1"
                 style={{
-                  color: 'var(--color-text-primary)',
+                  color: 'var(--color-text-secondary)',
                   fontVariantNumeric: 'tabular-nums',
                   fontFeatureSettings: '"tnum"',
-                  letterSpacing: '-0.03em',
                 }}
               >
                 {`${Math.floor(secondsUsed / 60)}:${(secondsUsed % 60).toString().padStart(2, '0')}`}
               </motion.p>
-            ) : (
-              <motion.div
-                key="balance"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
-                className="flex items-center gap-2"
-              >
-                <motion.span
-                  className="text-2xl font-light tracking-tight"
-                  style={{
-                    color: isLowOnCredits ? 'var(--color-error)' : 'var(--color-text-primary)',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                  animate={isLowOnCredits ? { opacity: [1, 0.5, 1] } : {}}
-                  transition={isLowOnCredits ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : {}}
-                >
-                  {formatCreditsDisplay(balance)} left
-                </motion.span>
-                {isLowOnCredits && connectionStatus === 'idle' && (
-                  <Link
-                    href="/settings/credits"
-                    prefetch
-                    className="text-xs font-semibold"
-                    style={{ color: 'var(--color-primary)' }}
-                  >
-                    Top up →
-                  </Link>
-                )}
-              </motion.div>
             )}
           </AnimatePresence>
         </motion.div>

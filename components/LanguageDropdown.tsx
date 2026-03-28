@@ -238,7 +238,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
               {/* Recent section */}
               {showRecentSection && (
                 <>
-                  <div className="px-4 pt-2 pb-1">
+                  <div className="pt-2 pb-1" style={{ paddingLeft: '20px', paddingRight: '16px' }}>
                     <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-tertiary)' }}>
                       Recent
                     </span>
@@ -256,10 +256,10 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                         onClick={() => handleLanguageSelect(language)}
                         onMouseEnter={() => { setHoveredItem(itemKey); setFocusedIndex(itemIndex); }}
                         onMouseLeave={() => setHoveredItem(null)}
-                        className="w-full px-4 flex items-center gap-3 transition-colors duration-100"
+                        className="w-full flex items-center gap-3 transition-colors duration-100"
                         style={{
                           background: isFocused || hoveredItem === itemKey ? 'var(--color-primary-alpha)' : 'transparent',
-                          paddingTop: '11px', paddingBottom: '11px',
+                          paddingTop: '11px', paddingBottom: '11px', paddingLeft: '20px', paddingRight: '16px',
                           borderBottom: index < displayRecentLanguages.length - 1 ? '1px solid var(--glass-border-subtle)' : 'none',
                           outline: isFocused ? '2px solid var(--color-primary)' : 'none',
                           outlineOffset: '-2px',
@@ -298,10 +298,10 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                       onClick={() => handleLanguageSelect(language)}
                       onMouseEnter={() => { setHoveredItem(language.code); setFocusedIndex(itemIndex); }}
                       onMouseLeave={() => setHoveredItem(null)}
-                      className="w-full px-4 flex items-center gap-3 transition-colors duration-100"
+                      className="w-full flex items-center gap-3 transition-colors duration-100"
                       style={{
                         background: isFocused || hoveredItem === language.code ? 'var(--color-primary-alpha)' : 'transparent',
-                        paddingTop: '11px', paddingBottom: '11px',
+                        paddingTop: '11px', paddingBottom: '11px', paddingLeft: '20px', paddingRight: '16px',
                         borderBottom: index < filteredLanguages.length - 1 ? '1px solid var(--glass-border-subtle)' : 'none',
                         outline: isFocused ? '2px solid var(--color-primary)' : 'none',
                         outlineOffset: '-2px',
