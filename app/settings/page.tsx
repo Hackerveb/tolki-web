@@ -198,29 +198,12 @@ function SettingsScreenInner() {
               gap: '8px',
             }}
           >
-            {/* Credits Badge */}
-            <div
-              style={{
-                background: 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
-                paddingTop: '12px',
-                paddingBottom: '12px',
-                paddingLeft: '24px',
-                paddingRight: '24px',
-                borderRadius: '16px',
-                boxShadow: 'var(--glass-glow-primary)',
-                gap: '2px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-              }}
-            >
-              <span style={{ fontSize: '26px', fontWeight: '700', color: '#FFFFFF', lineHeight: '1' }}>
-                {formatCreditsDisplay(balance)}
-              </span>
-              <span style={{ fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.75)' }}>
-                {balance.toFixed(0)} credits remaining
-              </span>
-            </div>
+            <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--color-primary)', lineHeight: '1' }}>
+              {formatCreditsDisplay(balance)}
+            </span>
+            <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--color-text-secondary)' }}>
+              {balance.toFixed(0)} credits remaining
+            </span>
 
             {/* Low Credits Warning */}
             {isLowOnCredits && (

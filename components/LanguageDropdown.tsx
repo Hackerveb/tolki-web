@@ -127,7 +127,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
         aria-controls={isOpen ? 'language-listbox' : undefined}
         aria-activedescendant={focusedIndex >= 0 ? `lang-item-${allItems[focusedIndex]?.key}` : undefined}
         whileTap={{ scale: 0.98 }}
-        className="w-full px-4 rounded-2xl flex items-center justify-between"
+        className="w-full rounded-2xl flex items-center justify-between"
         style={{
           background: isOpen ? 'var(--glass-bg-strong)' : 'var(--glass-bg)',
           backdropFilter: 'var(--glass-blur)',
@@ -136,10 +136,12 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
           boxShadow: isOpen ? 'var(--glass-shadow)' : 'var(--glass-shadow-sm)',
           paddingTop: '12px',
           paddingBottom: '12px',
+          paddingLeft: '20px',
+          paddingRight: '16px',
           transition: 'all 0.15s ease-out',
         }}
       >
-        <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', paddingLeft: '2px' }}>
+        <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
           {selectedLanguage.name}
         </span>
         <motion.svg
