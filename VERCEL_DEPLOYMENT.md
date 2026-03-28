@@ -1,152 +1,187 @@
-# Vercel Deployment Guide
+# TolKI Web App - Vercel Deployment Guide
 
-This guide will help you properly configure your Vercel deployment to fix the connection and payment issues.
+## Overview
 
-## Issues Fixed
+TolKI is a Next.js 15 web app with Clerk auth, Convex real-time DB, LiveKit voice translation, and Stripe payments. This guide covers everything needed to deploy on Vercel.
 
-1. **LiveKit Connection Error**: Microphone permission is now requested explicitly before connecting
-2. **Stripe Payment Error**: Environment variable name corrected and proper fallback added
+## Prerequisites
 
-## Required Steps for Vercel Deployment
+- Vercel account with a project created
+- Accounts on: Clerk, Convex, LiveKit Cloud, Stripe
+- All services configured for production (live keys, not test keys)
+- Custom domain (optional but recommended)
 
-### 1. Update Environment Variables in Vercel
+---
 
-Go to your Vercel project settings → Environment Variables and ensure these are set:
+## Step 1: Environment Variables
 
-#### Required Variables
+Go to **Vercel > Project Settings > Environment Variables** and add each variable below. See `.env.example` for detailed descriptions.
 
-```bash
-# Clerk Authentication
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-CLERK_SECRET_KEY=your_clerk_secret_key
+### Required Variables
 
-# Convex
-NEXT_PUBLIC_CONVEX_URL=https://your-convex-app.convex.cloud
-CONVEX_DEPLOY_KEY=your_convex_deploy_key
+| Variable | Type | Description |
+|----------|------|-------------|
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Public | Clerk publishable key (`pk_live_...`) |
+| `CLERK_SECRET_KEY` | Secret | Clerk secret key (`sk_live_...`) |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Public | Set to `/sign-in` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Public | Set to `/sign-up` |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL` | Public | Set to `/` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL` | Public | Set to `/` |
+| `NEXT_PUBLIC_CONVEX_URL` | Public | Convex deployment URL (`https://xxx.convex.cloud`) |
+| `CONVEX_DEPLOY_KEY` | Secret | Convex deploy key (for server-side mutations) |
+| `NEXT_PUBLIC_LIVEKIT_URL` | Public | LiveKit WebSocket URL (`wss://xxx.livekit.cloud`) |
+| `LIVEKIT_API_KEY` | Secret | LiveKit API key (`API...`) |
+| `LIVEKIT_API_SECRET` | Secret | LiveKit API secret |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Public | Stripe publishable key (`pk_live_...`) |
+| `STRIPE_SECRET_KEY` | Secret | Stripe secret/restricted key |
+| `STRIPE_WEBHOOK_SECRET` | Secret | Stripe webhook signing secret (`whsec_...`) |
+| `NEXT_PUBLIC_URL` | Public | Your deployed URL (`https://your-domain.com`) |
 
-# LiveKit
-NEXT_PUBLIC_LIVEKIT_URL=wss://your-livekit-url.livekit.cloud
-LIVEKIT_API_KEY=your_livekit_api_key
-LIVEKIT_API_SECRET=your_livekit_api_secret
+**Important:**
+- `NEXT_PUBLIC_URL` must exactly match your deployment URL (including `https://`). This controls Stripe checkout redirect URLs.
+- Use **live** Stripe keys for production, not test keys.
+- Add variables to **all environments** (Production, Preview, Development) or scope as needed.
 
-# Stripe (PRODUCTION KEYS - NOT TEST KEYS!)
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...  # You'll get this in step 2
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...
+---
 
-# App URL (CRITICAL - Set this to your actual Vercel URL!)
-NEXT_PUBLIC_URL=https://your-app.vercel.app
-```
+## Step 2: Stripe Webhook
 
-**Important Notes:**
-- Replace `your-app.vercel.app` with your actual Vercel deployment URL
-- Use LIVE Stripe keys for production, not test keys
-- The `NEXT_PUBLIC_URL` must match your actual deployed URL
+Stripe needs a webhook to notify your app when payments complete.
 
-### 2. Configure Stripe Webhook
-
-The Stripe webhook needs to point to your Vercel deployment:
-
-1. Go to [Stripe Dashboard](https://dashboard.stripe.com)
-2. Navigate to **Developers → Webhooks**
-3. Click **Add endpoint**
-4. Enter your webhook URL:
-   ```
-   https://your-app.vercel.app/api/stripe/webhook
-   ```
-   (Replace `your-app.vercel.app` with your actual Vercel URL)
-
-5. Select events to listen to:
+1. Go to **Stripe Dashboard > Developers > Webhooks**
+2. Click **Add endpoint**
+3. URL: `https://your-domain.com/api/stripe/webhook`
+4. Select events:
    - `checkout.session.completed`
    - `checkout.session.expired`
    - `payment_intent.payment_failed`
+5. After creating, reveal the **Signing secret** (`whsec_...`)
+6. Set this as `STRIPE_WEBHOOK_SECRET` in Vercel
 
-6. Click **Add endpoint**
+---
 
-7. Click on the newly created endpoint and reveal the **Signing secret**
+## Step 3: Clerk Configuration
 
-8. Copy the signing secret (starts with `whsec_...`)
+1. In **Clerk Dashboard > Domains**, add your production domain
+2. Under **Paths**, verify sign-in/sign-up URLs match `/sign-in` and `/sign-up`
+3. Under **Authentication > Social connections**, ensure Google/Apple OAuth callbacks include your domain
+4. If using Convex with Clerk, ensure your Convex deployment has the Clerk issuer URL configured
 
-9. Go back to Vercel → Environment Variables and update:
-   ```
-   STRIPE_WEBHOOK_SECRET=whsec_your_new_secret
-   ```
+---
 
-### 3. Redeploy Your Application
+## Step 4: Convex Setup
 
-After updating the environment variables:
+1. In **Convex Dashboard**, ensure your production deployment is active
+2. Verify the deploy key matches `CONVEX_DEPLOY_KEY`
+3. If using Clerk auth with Convex, configure the Clerk JWKS endpoint in Convex auth settings:
+   - Issuer: `https://your-clerk-domain.clerk.accounts.dev`
 
-1. Go to your Vercel project
-2. Navigate to the **Deployments** tab
-3. Click the three dots on your latest deployment
-4. Click **Redeploy**
-5. Wait for the deployment to complete
+---
 
-### 4. Test the Fixes
+## Step 5: LiveKit Agent
 
-#### Test LiveKit Connection:
-1. Open your production URL in a browser
-2. Click the translate button
-3. You should see a microphone permission prompt
-4. Allow microphone access
-5. The connection should now succeed
+The voice translation agent must be running and reachable from LiveKit Cloud.
 
-#### Test Stripe Payments:
-1. Go to Settings → Credits
-2. Select a credit package
-3. Click "Buy Now"
-4. Complete the Stripe checkout (use a test card if in test mode)
-5. You should be redirected back to your app with credits added
+1. Ensure the LiveKit agent is deployed and registered with LiveKit Cloud
+2. The agent name must be `Translator` (this is hardcoded in the token generation)
+3. Verify the agent's LiveKit project matches the `LIVEKIT_API_KEY`
+
+---
+
+## Step 6: Deploy
+
+1. Connect your GitHub repo to Vercel (or use Vercel CLI)
+2. **Build command**: `next build` (Vercel auto-detects Next.js)
+3. **Output directory**: `.next` (default)
+4. **Node.js version**: 20.x (recommended)
+5. Trigger a deployment
+
+The build has been validated and produces no errors. Expected build output:
+- 15 routes (12 static, 3 dynamic API routes)
+- Middleware (Clerk auth protection)
+- ~102 kB shared JS bundle
+
+---
+
+## Step 7: Post-Deploy Verification
+
+### Authentication
+- [ ] Sign up with email works
+- [ ] Google OAuth sign-in works
+- [ ] Protected routes redirect to sign-in
+- [ ] `/api/stripe/webhook` is accessible without auth (verified by Stripe signature instead)
+
+### Payments
+- [ ] Credit purchase flow completes (Stripe Checkout redirects correctly)
+- [ ] Webhook receives events (check Stripe Dashboard > Webhooks > Recent events)
+- [ ] Credits appear in user account after purchase
+- [ ] No duplicate credit additions on webhook retry
+
+### Voice Translation
+- [ ] Microphone permission prompt appears
+- [ ] LiveKit connection establishes successfully
+- [ ] Translation agent responds
+- [ ] Credits deduct during active session
+
+### General
+- [ ] All pages load without console errors
+- [ ] Mobile layout renders correctly
+- [ ] Dark/light mode toggle works
+
+---
+
+## Pre-Deploy Security Checklist
+
+### Headers (configured in next.config.ts)
+- [x] `X-Frame-Options: DENY` - prevents clickjacking
+- [x] `X-Content-Type-Options: nosniff` - prevents MIME sniffing
+- [x] `Referrer-Policy: strict-origin-when-cross-origin` - limits referrer data
+- [x] `Permissions-Policy` - disables camera, geolocation, FLoC
+- [x] `Strict-Transport-Security` - enforces HTTPS (2-year max-age with preload)
+- [x] `X-Powered-By` header removed (`poweredBy: false`)
+
+### Authentication & Authorization
+- [x] Clerk middleware protects all routes except public ones
+- [x] API routes verify `auth()` and check `userId === clerkId`
+- [x] Stripe webhook uses signature verification (not auth)
+- [ ] **BLOCKING: Convex mutations lack auth checks** - see TOL-53. `addCredits`, `deductCredits`, `deleteUserAccount`, and `simulatePurchase` are callable by any authenticated client without ownership verification. **Must fix before production.**
+
+### API Route Security
+- [x] LiveKit token route: auth + userId match + language validation + key format validation
+- [x] Stripe checkout route: auth + userId match + package validation
+- [x] Stripe webhook route: signature verification + idempotency check (duplicate session detection)
+
+### Data Exposure
+- [ ] **BLOCKING: `users.list` and `payments.getAllPurchases`** expose all data with no auth. These are admin-only queries that should be removed or gated. See TOL-53.
+
+### Secrets
+- [x] `.env` files gitignored (`.env*` pattern)
+- [x] No secrets in committed code
+- [x] Webhook handler does not log secrets (fixed in security hardening commit)
+- [ ] Rotate all keys before go-live if they were ever exposed in git history
+
+---
 
 ## Troubleshooting
 
-### LiveKit Connection Still Failing
+### Stripe redirects to localhost
+`NEXT_PUBLIC_URL` is not set or doesn't match the deployed URL. Update it in Vercel and redeploy.
 
-If you still get connection errors:
+### Webhook not receiving events
+1. Verify endpoint URL matches exactly: `https://your-domain.com/api/stripe/webhook`
+2. Check Stripe Dashboard > Webhooks for delivery failures
+3. Verify `STRIPE_WEBHOOK_SECRET` is set correctly
 
-1. Check browser console for error messages
-2. Ensure microphone permission is granted in browser settings
-3. Try in an incognito/private window to rule out cached permissions
-4. Verify your LiveKit credentials are correct in Vercel
+### LiveKit connection fails
+1. Check browser console for errors
+2. Ensure microphone permission is granted
+3. Verify `NEXT_PUBLIC_LIVEKIT_URL` starts with `wss://`
+4. Confirm the translation agent is running
 
-### Stripe Payments Still Not Working
+### Clerk auth errors
+1. Ensure `CLERK_SECRET_KEY` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` are for the same Clerk app
+2. Add your production domain in Clerk Dashboard > Domains
+3. Check that OAuth redirect URLs include your domain
 
-If payments still fail:
-
-1. Check that `NEXT_PUBLIC_URL` exactly matches your Vercel URL (including https://)
-2. Verify the Stripe webhook endpoint URL is correct
-3. Check Stripe webhook logs in the dashboard for errors
-4. Ensure you're using LIVE keys for production (not test keys)
-5. Check your Vercel function logs for errors:
-   - Go to Vercel → Your Project → Logs
-   - Look for `/api/stripe/checkout` and `/api/stripe/webhook` requests
-
-### Common Issues
-
-**Issue**: "Microphone permission denied" error
-- **Solution**: The browser might have previously denied permission. Go to browser settings → Site settings → Camera/Microphone and reset permissions for your domain.
-
-**Issue**: Stripe redirects to localhost instead of production
-- **Solution**: Double-check that `NEXT_PUBLIC_URL` is set correctly in Vercel (not just in `.env.local`)
-
-**Issue**: Webhook not receiving events
-- **Solution**: Make sure the webhook URL in Stripe dashboard exactly matches your Vercel URL, including `https://`
-
-## Verification Checklist
-
-- [ ] All environment variables set in Vercel
-- [ ] `NEXT_PUBLIC_URL` set to actual Vercel URL (https://your-app.vercel.app)
-- [ ] Stripe webhook created and pointing to correct URL
-- [ ] `STRIPE_WEBHOOK_SECRET` updated with signing secret from Stripe
-- [ ] Application redeployed after environment variable changes
-- [ ] LiveKit connection tested and working
-- [ ] Stripe payment tested and credits added successfully
-
-## Need More Help?
-
-If you continue to experience issues:
-
-1. Check Vercel function logs (Vercel Dashboard → Logs)
-2. Check browser console for client-side errors
-3. Check Stripe webhook logs for delivery issues
-4. Ensure all API keys are for the correct environment (production vs test)
+### Build Warnings
+The build produces two unused-variable warnings (LanguageDropdown.tsx, RecordButton.tsx). These are cosmetic and do not affect functionality.
