@@ -33,6 +33,7 @@ function MainScreenContent() {
   const [settingsRotation, setSettingsRotation] = useState(0);
   const muteHintTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const holdTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const agentTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
   const isHoldingRef = useRef(false);
   const { toast } = useToast();
   const { room, connect, disconnect, isConnected, error } = useLiveKitRoom();
@@ -50,8 +51,28 @@ function MainScreenContent() {
     if (isLoaded && !isSignedIn) router.push('/onboarding');
   }, [isLoaded, isSignedIn, router]);
 
+  // When room connects, start waiting for agent to join (timeout 12s)
   useEffect(() => {
     if (isConnected && connectionStatus === 'connecting') {
+      // Don't immediately go to 'connected' — wait for agent to join
+      agentTimeoutRef.current = setTimeout(() => {
+        // Agent never joined — disconnect and show error
+        setConnectionStatus('idle');
+        disconnect();
+        resetUsage();
+        toast.error('No interpreter agent available. The backend may be offline — please try again later.', 8000);
+      }, 12000);
+    }
+    return () => {
+      if (agentTimeoutRef.current) clearTimeout(agentTimeoutRef.current);
+    };
+  }, [isConnected, connectionStatus, disconnect, resetUsage, toast]);
+
+  // When agent actually joins (state moves past 'disconnected'), mark as connected
+  useEffect(() => {
+    if (connectionStatus === 'connecting' && isConnected && agentState !== 'disconnected') {
+      // Agent has joined — clear timeout, show connected
+      if (agentTimeoutRef.current) clearTimeout(agentTimeoutRef.current);
       setConnectionStatus('connected');
       const hasSeen = typeof window !== 'undefined' && localStorage.getItem(HOLD_TO_MUTE_KEY);
       if (!hasSeen) {
@@ -62,12 +83,13 @@ function MainScreenContent() {
         }, 4000);
       }
     }
-  }, [isConnected, connectionStatus]);
+  }, [agentState, connectionStatus, isConnected]);
 
   useEffect(() => {
     return () => {
       if (muteHintTimerRef.current) clearTimeout(muteHintTimerRef.current);
       if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+      if (agentTimeoutRef.current) clearTimeout(agentTimeoutRef.current);
     };
   }, []);
 
@@ -109,6 +131,7 @@ function MainScreenContent() {
   }, [connect, sourceLanguage.name, targetLanguage.name, toast]);
 
   const handleRecordingStop = useCallback(async () => {
+    if (agentTimeoutRef.current) clearTimeout(agentTimeoutRef.current);
     setConnectionStatus('idle');
     await disconnect();
     resetUsage();
