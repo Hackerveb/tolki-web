@@ -69,17 +69,32 @@ export const colors = {
   neutralAlpha: (opacity: number) => `rgba(15, 23, 42, ${opacity})`,
 } as const;
 
-// Dark mode color mappings
+// Dark mode color mappings — Apple HIG iOS dark color system
 export const darkColors = {
-  background: colors.neutral[950],
-  foreground: colors.neutral[50],
-  surface: colors.neutral[900],
-  surfaceElevated: colors.neutral[800],
-  border: colors.neutral[700],
-  borderStrong: colors.neutral[600],
-  textPrimary: colors.neutral[50],
-  textSecondary: colors.neutral[400],
-  textTertiary: colors.neutral[500],
+  // Backgrounds — Apple HIG material layers
+  background: '#000000',           // OLED true black (systemBackground)
+  surface: '#1C1C1E',              // secondarySystemBackground
+  surfaceElevated: '#2C2C2E',      // tertiarySystemBackground
+
+  // Foreground
+  foreground: '#FFFFFF',
+
+  // Borders — iOS separator
+  border: 'rgba(84, 84, 88, 0.65)',
+  borderStrong: 'rgba(84, 84, 88, 0.85)',
+
+  // Text — Apple HIG label hierarchy
+  textPrimary: '#FFFFFF',
+  textSecondary: 'rgba(235, 235, 245, 0.60)',  // ~7:1 on black, WCAG AA ✓
+  textTertiary: 'rgba(235, 235, 245, 0.30)',   // decorative/disabled only
+
+  // System colors — iOS dark mode adaptive variants
+  primary: '#0A84FF',              // systemBlue (dark)
+  primaryHover: '#409CFF',
+  success: '#30D158',              // systemGreen (dark)
+  warning: '#FF9F0A',              // systemOrange (dark)
+  error: '#FF453A',                // systemRed (dark)
+  info: '#64D2FF',                 // systemTeal (dark)
 } as const;
 
 // Semantic "on-color" text (for text on colored backgrounds)

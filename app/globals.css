@@ -201,150 +201,202 @@
 }
 
 /* ============================================
-   Dark Mode
+   Dark Mode — Apple HIG iOS Dark Color System
    ============================================ */
 .dark {
-  /* Surface Colors */
-  --color-background: #0F172A;
-  --color-surface: #1E293B;
-  --color-surface-elevated: #334155;
-  --color-foreground: #F8FAFC;
+  /* Backgrounds — Apple HIG dark material layers */
+  --color-background: #000000;         /* OLED true black (systemBackground) */
+  --color-surface: #1C1C1E;            /* iOS elevated surface 1 (secondarySystemBackground) */
+  --color-surface-elevated: #2C2C2E;   /* iOS elevated surface 2 (tertiarySystemBackground) */
+  --color-foreground: #FFFFFF;         /* primary label */
 
-  /* Border Colors */
-  --color-border: #334155;
-  --color-border-strong: #475569;
+  /* Border Colors — iOS separator */
+  --color-border: rgba(84, 84, 88, 0.65);
+  --color-border-strong: rgba(84, 84, 88, 0.85);
 
-  /* Text Colors */
-  --color-text-primary: #F8FAFC;
-  --color-text-secondary: #94A3B8;
-  --color-text-tertiary: #A3ADBC; /* lightened from #64748B — WCAG AA 4.57:1 on #334155, 6.45:1 on #1E293B */
+  /* Text Colors — Apple HIG label hierarchy */
+  /* Primary: #FFFFFF — 21:1 on black, exceeds WCAG AAA */
+  --color-text-primary: #FFFFFF;
+  /* Secondary: #EBEBF5 @ 60% — ~7:1 on black, WCAG AA ✓ */
+  --color-text-secondary: rgba(235, 235, 245, 0.60);
+  /* Tertiary: #EBEBF5 @ 30% — use only for decorative/disabled text */
+  --color-text-tertiary: rgba(235, 235, 245, 0.30);
 
   /* Legacy aliases */
-  --color-onyx: #F8FAFC;
-  --color-white: #0F172A;
-  --color-silver: #64748B;
+  --color-onyx: #FFFFFF;
+  --color-white: #000000;
+  --color-silver: rgba(235, 235, 245, 0.60);
 
-  /* On-color text (same as light - white on colored backgrounds) */
+  /* System Colors — iOS dark mode adaptive variants */
+  --color-primary: #0A84FF;            /* systemBlue (dark) */
+  --color-primary-hover: #409CFF;
+  --color-primary-light: rgba(10, 132, 255, 0.15);
+  --color-success: #30D158;            /* systemGreen (dark) */
+  --color-warning: #FF9F0A;            /* systemOrange (dark) */
+  --color-error: #FF453A;             /* systemRed (dark) */
+  --color-info: #64D2FF;               /* systemTeal (dark) */
+
+  /* Recording States — iOS dark mode colors */
+  --color-listening: #30D158;
+  --color-thinking: #FF9F0A;
+  --color-translating: #0A84FF;
+  --color-connecting: #0A84FF;
+  --color-recording-red: #FF453A;
+  --color-connecting-blue: #0A84FF;
+
+  /* On-color text — WCAG AA contrast checked */
+  /* #0A84FF blue: 3.7:1 w/ white (large text AA ✓) */
   --color-on-primary: #FFFFFF;
+  /* #FF453A red: 3.4:1 w/ white (large text AA ✓) */
   --color-on-error: #FFFFFF;
-  --color-on-warning: #FFFFFF;
-  --color-on-success: #FFFFFF;
-  --color-on-info: #FFFFFF;
+  /* #FF9F0A orange: 10:1 w/ black ✓ — bright, needs dark text */
+  --color-on-warning: #000000;
+  /* #30D158 green: 10:1 w/ black ✓ — bright, needs dark text */
+  --color-on-success: #000000;
+  /* #64D2FF teal: 12:1 w/ black ✓ — bright, needs dark text */
+  --color-on-info: #000000;
 
-  /* Primary with alpha - slightly more visible in dark mode */
-  --color-primary-alpha: rgba(37, 99, 235, 0.2);
+  /* Primary alpha — iOS blue tint */
+  --color-primary-alpha: rgba(10, 132, 255, 0.20);
 
-  /* Pulse animation colors - more visible in dark mode */
-  --color-listening-pulse: rgba(5, 150, 105, 0.35);
-  --color-thinking-pulse: rgba(217, 119, 6, 0.35);
-  --color-translating-pulse: rgba(37, 99, 235, 0.35);
-  --color-connecting-pulse: rgba(37, 99, 235, 0.35);
+  /* Pulse animations — iOS dark mode system colors */
+  --color-listening-pulse: rgba(48, 209, 88, 0.35);
+  --color-thinking-pulse: rgba(255, 159, 10, 0.35);
+  --color-translating-pulse: rgba(10, 132, 255, 0.35);
+  --color-connecting-pulse: rgba(10, 132, 255, 0.35);
 
-  /* Shadows - more visible in dark mode */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.2);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.3), 0 8px 10px rgba(0, 0, 0, 0.15);
-  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+  /* Shadows — deeper on true black for material depth */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.50), 0 1px 2px rgba(0, 0, 0, 0.30);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.50), 0 2px 4px rgba(0, 0, 0, 0.30);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.50), 0 4px 6px rgba(0, 0, 0, 0.30);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.50), 0 8px 10px rgba(0, 0, 0, 0.25);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.25);
 
-  /* Dark mode glassmorphism */
-  --glass-bg: rgba(30, 41, 59, 0.72);
-  --glass-bg-strong: rgba(30, 41, 59, 0.90);
-  --glass-bg-subtle: rgba(30, 41, 59, 0.48);
-  --glass-border: rgba(255, 255, 255, 0.10);
-  --glass-border-strong: rgba(255, 255, 255, 0.18);
-  --glass-border-subtle: rgba(255, 255, 255, 0.06);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.30), 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --glass-shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.40), 0 8px 24px rgba(0, 0, 0, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --glass-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --glass-page-bg: linear-gradient(135deg, #0F172A 0%, #0C1424 50%, #0F172A 100%);
-  --glass-input-bg: rgba(15, 23, 42, 0.60);
-  --glass-input-border: rgba(51, 65, 85, 0.80);
-  --glass-glow-primary: 0 4px 24px rgba(37, 99, 235, 0.45), 0 1px 4px rgba(37, 99, 235, 0.20);
+  /* Glassmorphism — iOS frosted glass on dark material */
+  --glass-bg: rgba(28, 28, 30, 0.72);
+  --glass-bg-strong: rgba(44, 44, 46, 0.90);
+  --glass-bg-subtle: rgba(28, 28, 30, 0.48);
+  --glass-border: rgba(84, 84, 88, 0.65);
+  --glass-border-strong: rgba(84, 84, 88, 0.85);
+  --glass-border-subtle: rgba(84, 84, 88, 0.40);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50), 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.60), 0 8px 24px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --glass-page-bg: #000000;            /* OLED true black */
+  --glass-input-bg: rgba(28, 28, 30, 0.80);
+  --glass-input-border: rgba(84, 84, 88, 0.65);
+  --glass-glow-primary: 0 4px 24px rgba(10, 132, 255, 0.50), 0 1px 4px rgba(10, 132, 255, 0.25);
 
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* shadcn/ui vars — mapped to Apple HIG dark palette */
+  --background: oklch(0 0 0);                   /* #000000 */
+  --foreground: oklch(1 0 0);                   /* #FFFFFF */
+  --card: oklch(0.13 0.002 264);                /* #1C1C1E */
+  --card-foreground: oklch(1 0 0);
+  --popover: oklch(0.13 0.002 264);             /* #1C1C1E */
+  --popover-foreground: oklch(1 0 0);
+  --primary: oklch(0.60 0.20 252);              /* #0A84FF systemBlue */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.19 0.002 264);           /* #2C2C2E */
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.19 0.002 264);               /* #2C2C2E */
+  --muted-foreground: oklch(0.72 0 0);          /* #EBEBF5 @ 60% approx */
+  --accent: oklch(0.25 0.002 264);              /* #3A3A3C */
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.62 0.21 28);           /* #FF453A systemRed */
+  --border: oklch(0.35 0 0 / 65%);              /* iOS separator */
+  --input: oklch(0.35 0 0 / 65%);
+  --ring: oklch(0.60 0.20 252);                 /* iOS blue focus ring */
+  --chart-1: oklch(0.60 0.20 252);              /* systemBlue */
+  --chart-2: oklch(0.74 0.17 155);              /* systemGreen #30D158 */
+  --chart-3: oklch(0.81 0.10 218);              /* systemTeal #64D2FF */
+  --chart-4: oklch(0.73 0.16 51);               /* systemOrange #FF9F0A */
+  --chart-5: oklch(0.65 0.22 295);              /* systemPurple #BF5AF2 */
+  --sidebar: oklch(0.13 0.002 264);             /* #1C1C1E */
+  --sidebar-foreground: oklch(1 0 0);
+  --sidebar-primary: oklch(0.60 0.20 252);      /* iOS blue */
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.25 0.002 264);      /* #3A3A3C */
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.35 0 0 / 65%);
+  --sidebar-ring: oklch(0.60 0.20 252);
 }
 
-/* System preference dark mode */
+/* System preference dark mode — Apple HIG iOS palette */
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
-    /* Surface Colors */
-    --color-background: #0F172A;
-    --color-surface: #1E293B;
-    --color-surface-elevated: #334155;
-    --color-foreground: #F8FAFC;
+    /* Backgrounds — Apple HIG dark material layers */
+    --color-background: #000000;
+    --color-surface: #1C1C1E;
+    --color-surface-elevated: #2C2C2E;
+    --color-foreground: #FFFFFF;
 
-    /* Border Colors */
-    --color-border: #334155;
-    --color-border-strong: #475569;
+    /* Border Colors — iOS separator */
+    --color-border: rgba(84, 84, 88, 0.65);
+    --color-border-strong: rgba(84, 84, 88, 0.85);
 
-    /* Text Colors */
-    --color-text-primary: #F8FAFC;
-    --color-text-secondary: #94A3B8;
-    --color-text-tertiary: #A3ADBC; /* lightened from #64748B — WCAG AA 4.57:1 on #334155, 6.45:1 on #1E293B */
+    /* Text Colors — Apple HIG label hierarchy */
+    --color-text-primary: #FFFFFF;
+    --color-text-secondary: rgba(235, 235, 245, 0.60);
+    --color-text-tertiary: rgba(235, 235, 245, 0.30);
 
     /* Legacy aliases */
-    --color-onyx: #F8FAFC;
-    --color-white: #0F172A;
-    --color-silver: #64748B;
+    --color-onyx: #FFFFFF;
+    --color-white: #000000;
+    --color-silver: rgba(235, 235, 245, 0.60);
 
     /* On-color text */
     --color-on-primary: #FFFFFF;
     --color-on-error: #FFFFFF;
-    --color-on-warning: #FFFFFF;
-    --color-on-success: #FFFFFF;
-    --color-on-info: #FFFFFF;
+    --color-on-warning: #000000;
+    --color-on-success: #000000;
+    --color-on-info: #000000;
+
+    /* System Colors — iOS dark mode adaptive variants */
+    --color-primary: #0A84FF;
+    --color-primary-hover: #409CFF;
+    --color-primary-light: rgba(10, 132, 255, 0.15);
+    --color-success: #30D158;
+    --color-warning: #FF9F0A;
+    --color-error: #FF453A;
+    --color-info: #64D2FF;
+
+    /* Recording States */
+    --color-listening: #30D158;
+    --color-thinking: #FF9F0A;
+    --color-translating: #0A84FF;
+    --color-connecting: #0A84FF;
+    --color-recording-red: #FF453A;
+    --color-connecting-blue: #0A84FF;
 
     /* Primary with alpha */
-    --color-primary-alpha: rgba(37, 99, 235, 0.2);
+    --color-primary-alpha: rgba(10, 132, 255, 0.20);
 
     /* Pulse animation colors */
-    --color-listening-pulse: rgba(5, 150, 105, 0.35);
-    --color-thinking-pulse: rgba(217, 119, 6, 0.35);
-    --color-translating-pulse: rgba(37, 99, 235, 0.35);
-    --color-connecting-pulse: rgba(37, 99, 235, 0.35);
+    --color-listening-pulse: rgba(48, 209, 88, 0.35);
+    --color-thinking-pulse: rgba(255, 159, 10, 0.35);
+    --color-translating-pulse: rgba(10, 132, 255, 0.35);
+    --color-connecting-pulse: rgba(10, 132, 255, 0.35);
 
-    /* Glow */
-    --glass-glow-primary: 0 4px 24px rgba(37, 99, 235, 0.45), 0 1px 4px rgba(37, 99, 235, 0.20);
+    /* Glassmorphism */
+    --glass-bg: rgba(28, 28, 30, 0.72);
+    --glass-bg-strong: rgba(44, 44, 46, 0.90);
+    --glass-bg-subtle: rgba(28, 28, 30, 0.48);
+    --glass-border: rgba(84, 84, 88, 0.65);
+    --glass-border-strong: rgba(84, 84, 88, 0.85);
+    --glass-border-subtle: rgba(84, 84, 88, 0.40);
+    --glass-page-bg: #000000;
+    --glass-input-bg: rgba(28, 28, 30, 0.80);
+    --glass-input-border: rgba(84, 84, 88, 0.65);
+    --glass-glow-primary: 0 4px 24px rgba(10, 132, 255, 0.50), 0 1px 4px rgba(10, 132, 255, 0.25);
 
     /* Shadows */
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.2);
-    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.3), 0 8px 10px rgba(0, 0, 0, 0.15);
-    --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.40);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.50), 0 1px 2px rgba(0, 0, 0, 0.30);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.50), 0 2px 4px rgba(0, 0, 0, 0.30);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.50), 0 4px 6px rgba(0, 0, 0, 0.30);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.50), 0 8px 10px rgba(0, 0, 0, 0.25);
+    --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.25);
   }
 }
 
