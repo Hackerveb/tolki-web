@@ -15,6 +15,7 @@ import { useLiveKitRoom } from '@/hooks/useLiveKitRoom';
 import { useTrackUsage } from '@/hooks/useTrackUsage';
 import { useToast } from '@/hooks/useToast';
 import { useAgentMode } from '@/hooks/useAgentMode';
+import { useAudioVisualizer } from '@/hooks/useAudioVisualizer';
 import { languageStorage } from '@/utils/languageStorage';
 import { colors } from '@/styles/colors';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -46,11 +47,17 @@ function MainScreenInner() {
   // Agent Mode (Listening/Thinking/Speaking)
   const agentMode = useAgentMode(room);
 
+  // Hold-to-mute state
+  const [isMuted, setIsMuted] = useState(false);
+
   // Derived RecordingState for UI
   const currentRecordingState: RecordingState =
     connectionStatus === 'idle' ? 'idle' :
       connectionStatus === 'connecting' ? 'connecting' :
         agentMode; // When connected, use the agent mode
+
+  // Audio visualizer frequency data
+  const frequencyData = useAudioVisualizer(room, currentRecordingState);
 
   // Usage tracking
   const { secondsUsed, reset: resetUsage } = useTrackUsage({
@@ -116,6 +123,26 @@ function MainScreenInner() {
       resetUsage();
     }
   }, [connect, disconnect, resetUsage, sourceLanguage.name, targetLanguage.name, toast]);
+
+  // Hold-to-mute handlers
+  const handleMuteStart = useCallback(() => {
+    if (!room) return;
+    setIsMuted(true);
+    room.localParticipant.setMicrophoneEnabled(false).catch(console.error);
+  }, [room]);
+
+  const handleMuteEnd = useCallback(() => {
+    if (!room) return;
+    setIsMuted(false);
+    room.localParticipant.setMicrophoneEnabled(true).catch(console.error);
+  }, [room]);
+
+  // Reset mute on disconnect
+  useEffect(() => {
+    if (connectionStatus === 'idle' && isMuted) {
+      setIsMuted(false);
+    }
+  }, [connectionStatus, isMuted]);
 
   // Sync connection status with LiveKit
   useEffect(() => {
@@ -292,6 +319,10 @@ function MainScreenInner() {
             <RecordButton
               state={currentRecordingState}
               onStateChange={handleRecordingStateChange}
+              onMuteStart={handleMuteStart}
+              onMuteEnd={handleMuteEnd}
+              isMuted={isMuted}
+              frequencyData={frequencyData}
               disabled={balance < 0.05}
             />
           </div>
