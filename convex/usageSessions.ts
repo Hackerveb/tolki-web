@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
+import { MIN_SESSION_CREDITS, MIN_SESSION_DURATION_SEC } from "../constants/billing";
 
 // Start a new translation session
 export const startSession = mutation({
@@ -40,23 +41,22 @@ export const startSession = mutation({
       });
     }
 
-    // Deduct minimum session charge (0.05 credits = 3 seconds at 1 credit/minute)
-    const minimumCharge = 0.05;
-    if (user.credits < minimumCharge) {
-      throw new Error("Insufficient credits. Minimum 0.05 credits required");
+    // Deduct minimum session charge upfront
+    if (user.credits < MIN_SESSION_CREDITS) {
+      throw new Error("Insufficient credits. Minimum credits required to start a session");
     }
 
     // Deduct minimum charge immediately
     await ctx.db.patch(user._id, {
-      credits: Math.round((user.credits - minimumCharge) * 100) / 100,
+      credits: Math.round((user.credits - MIN_SESSION_CREDITS) * 100) / 100,
       lastActive: Date.now(),
     });
 
     // Create new session with minimum charge already applied
     const sessionId = await ctx.db.insert("usageSessions", {
       userId: user._id,
-      creditsUsed: minimumCharge,
-      secondsUsed: 3, // Minimum 3 seconds
+      creditsUsed: MIN_SESSION_CREDITS,
+      secondsUsed: MIN_SESSION_DURATION_SEC,
       languageFrom: args.languageFrom,
       languageTo: args.languageTo,
       startedAt: Date.now(),
@@ -93,7 +93,7 @@ export const endSession = mutation({
     const storedSecondsUsed = session.secondsUsed || 0;
     const totalSecondsUsed = Math.max(actualSecondsUsed, storedSecondsUsed);
     const finalCreditsUsed = Math.max(
-      0.05, // Minimum charge
+      MIN_SESSION_CREDITS,
       Math.round((totalSecondsUsed / 60) * 1 * 100) / 100
     );
 
@@ -332,13 +332,10 @@ export const getCreditsUsedToday = query({
     const sessions = await ctx.db
       .query("usageSessions")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .filter((q) => q.gte(q.field("startedAt"), todayStartTime))
       .collect();
 
-    const todaySessions = sessions.filter(
-      session => session.startedAt >= todayStartTime
-    );
-
-    const totalCreditsToday = todaySessions.reduce(
+    const totalCreditsToday = sessions.reduce(
       (sum, session) => sum + session.creditsUsed,
       0
     );

@@ -58,20 +58,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate API key format
-    if (!apiKey.startsWith('API')) {
-      console.error('[LiveKit Token Error] API key does not start with "API". Got:', apiKey.substring(0, 10));
+    // Validate API key format: must start with "API" followed by at least 8 alphanumeric chars
+    if (!/^API[a-zA-Z0-9]{8,}$/.test(apiKey)) {
+      console.error('[LiveKit Token Error] Invalid API key format');
       return NextResponse.json(
-        { error: 'Invalid API key format. LiveKit API keys must start with "API"' },
+        { error: 'Server configuration error' },
         { status: 500 }
       );
     }
 
     // Validate URL format
     if (!wsUrl.startsWith('wss://')) {
-      console.error('[LiveKit Token Error] URL does not start with "wss://". Got:', wsUrl);
+      console.error('[LiveKit Token Error] Invalid LiveKit URL format');
       return NextResponse.json(
-        { error: 'Invalid LiveKit URL format. Must start with "wss://"' },
+        { error: 'Server configuration error' },
         { status: 500 }
       );
     }
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     const token = new AccessToken(apiKey, apiSecret, {
       identity: clerkId,
       name: clerkId, // You could use user's display name here
-      ttl: '1h', // Token valid for 1 hour
+      ttl: '15m', // Token valid for 15 minutes; sessions can request new tokens as needed
     });
 
     // Grant permissions

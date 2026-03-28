@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useUser } from '@clerk/nextjs';
+import { CREDIT_DEDUCTION_INTERVAL_SEC } from '@/constants/billing';
 
 interface UseTrackUsageOptions {
   isActive: boolean; // Whether to track usage (e.g., when recording)
@@ -20,9 +21,6 @@ interface UseTrackUsageReturn {
 // Credit deduction rate: 1 credit per minute of usage
 const CREDITS_PER_MINUTE = 1;
 const CREDITS_PER_SECOND = CREDITS_PER_MINUTE / 60;
-
-// Deduct credits every 10 seconds
-const DEDUCTION_INTERVAL_SECONDS = 10;
 
 export const useTrackUsage = ({
   isActive,
@@ -60,7 +58,7 @@ export const useTrackUsage = ({
         setSecondsUsed(newSeconds);
 
         // Deduct credits every DEDUCTION_INTERVAL_SECONDS
-        if (newSeconds - lastDeductionRef.current >= DEDUCTION_INTERVAL_SECONDS) {
+        if (newSeconds - lastDeductionRef.current >= CREDIT_DEDUCTION_INTERVAL_SEC) {
           const secondsSinceLastDeduction = newSeconds - lastDeductionRef.current;
           const creditsToDeduct = secondsSinceLastDeduction * CREDITS_PER_SECOND;
 

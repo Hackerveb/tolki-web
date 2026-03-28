@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
+import { FREE_SIGNUP_CREDITS } from "../constants/billing";
 
 // Create or update user when they sign in via Clerk
 export const createOrUpdateUser = mutation({
@@ -24,12 +25,12 @@ export const createOrUpdateUser = mutation({
       });
       return existingUser._id;
     } else {
-      // Create new user with 10 free credits
+      // Create new user with free credits
       const userId = await ctx.db.insert("users", {
         clerkId: args.clerkId,
         email: args.email,
         name: args.name,
-        credits: 10, // 10 free credits for new users
+        credits: FREE_SIGNUP_CREDITS,
         totalCreditsEverPurchased: 0,
         createdAt: Date.now(),
         lastActive: Date.now(),

@@ -11,8 +11,6 @@ export default defineSchema({
     defaultLanguage: v.optional(v.string()),
     createdAt: v.number(),
     lastActive: v.number(),
-    // TEMPORARY: Remove this line AFTER running migrations:removeHasSeenOnboardingField
-    hasSeenOnboarding: v.optional(v.boolean()),
   })
     .index("by_clerk_id", ["clerkId"]),
 
@@ -21,8 +19,6 @@ export default defineSchema({
     amount: v.number(), // Amount in cents
     credits: v.number(),
     stripeSessionId: v.optional(v.string()),
-    // DEPRECATED: Old field name, kept for backward compatibility during migration
-    stripePaymentIntentId: v.optional(v.string()),
     status: v.union(v.literal("pending"), v.literal("completed"), v.literal("failed")),
     purchasedAt: v.number(),
   })
