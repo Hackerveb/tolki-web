@@ -291,7 +291,7 @@ function MainScreenContent() {
       >
         {/* Credits / remaining time — between header and visualizer */}
         <motion.div
-          className="flex flex-col items-center mt-10 mb-4 flex-shrink-0"
+          className="flex flex-col items-center mt-14 mb-6 flex-shrink-0"
           animate={{ opacity: isInsufficientCredits ? 0.5 : 1 }}
         >
           {/* Always show remaining balance */}

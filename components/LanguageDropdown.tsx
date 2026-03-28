@@ -182,7 +182,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
           >
             {/* Search */}
             <div
-              className="sticky top-0 px-3 py-3"
+              className="sticky top-0 px-4 py-3"
               style={{
                 background: 'var(--glass-bg-strong)',
                 backdropFilter: 'var(--glass-blur)',
