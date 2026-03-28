@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { useMutation } from 'convex/react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { api } from '@/convex/_generated/api';
 import { LanguageDropdown } from '@/components/LanguageDropdown';
 import { Language } from '@/types';
@@ -34,7 +34,7 @@ export default function EditProfileScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email] = useState(userEmail);
-  const [phone] = useState(''); // Read-only phone field
+  const [phone] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(languages[0]);
   const [loading, setLoading] = useState(false);
 
@@ -44,7 +44,6 @@ export default function EditProfileScreen() {
       setLastName(user.lastName || '');
     }
 
-    // Set default language from database if available
     if (convexUser?.defaultLanguage) {
       const savedLanguage = languages.find(lang => lang.code === convexUser.defaultLanguage);
       if (savedLanguage) {
@@ -58,13 +57,11 @@ export default function EditProfileScreen() {
 
     setLoading(true);
     try {
-      // Update Clerk profile
       await user.update({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
       });
 
-      // Update default language in Convex database
       if (user.id && selectedLanguage) {
         await updateDefaultLanguage({
           clerkId: user.id,
@@ -84,28 +81,25 @@ export default function EditProfileScreen() {
 
   return (
     <div
-      className="h-screen flex flex-col overflow-hidden"
-      style={{ backgroundColor: 'var(--color-background)' }}
+      className="h-screen flex flex-col overflow-hidden glass-page"
     >
-      {/* Header */}
+      {/* Glass Header */}
       <header
-        className="flex items-center"
+        className="flex items-center glass-strong"
         style={{
           gap: '15px',
           paddingTop: 'max(20px, env(safe-area-inset-top))',
           paddingBottom: '20px',
           paddingLeft: 'max(20px, env(safe-area-inset-left))',
           paddingRight: 'max(20px, env(safe-area-inset-right))',
-          borderBottom: '1px solid var(--color-border)',
+          borderBottom: '1px solid var(--glass-border)',
+          borderRadius: 0,
         }}
       >
         <button
           onClick={() => router.back()}
-          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95"
-          style={{
-            backgroundColor: 'var(--color-surface)',
-            boxShadow: 'var(--shadow-sm)',
-          }}
+          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
+          aria-label="Go back"
         >
           <BackIcon />
         </button>
@@ -120,38 +114,43 @@ export default function EditProfileScreen() {
         style={{
           paddingLeft: 'max(20px, env(safe-area-inset-left))',
           paddingRight: 'max(20px, env(safe-area-inset-right))',
-          paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
+          paddingBottom: 'max(28px, env(safe-area-inset-bottom))',
         }}
       >
         {/* Avatar Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center"
+          className="flex flex-col items-center glass"
           style={{
-            padding: '24px',
-            backgroundColor: 'var(--color-surface)',
-            boxShadow: 'var(--shadow-sm)',
-            borderRadius: '12px',
+            padding: '28px 24px',
+            borderRadius: '20px',
             marginTop: '20px',
-            marginBottom: '20px',
-            border: '1px solid var(--color-border)',
+            marginBottom: '16px',
           }}
         >
-          {/* Avatar */}
+          {/* Avatar with gradient ring */}
           <div
-            className="flex items-center justify-center"
             style={{
-              width: '100px',
-              height: '100px',
-              borderRadius: '50px',
-              backgroundColor: 'var(--color-primary)',
-              boxShadow: 'var(--shadow-md)',
+              padding: '3px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, var(--color-primary), #818CF8, #38BDF8)',
+              boxShadow: 'var(--glass-glow-primary)',
             }}
           >
-            <span style={{ fontSize: '40px', fontWeight: '600', color: 'var(--color-on-primary)' }}>
-              {initials}
-            </span>
+            <div
+              className="flex items-center justify-center"
+              style={{
+                width: '100px',
+                height: '100px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--color-primary)',
+              }}
+            >
+              <span style={{ fontSize: '40px', fontWeight: '600', color: 'var(--color-on-primary)' }}>
+                {initials}
+              </span>
+            </div>
           </div>
         </motion.div>
 
@@ -160,16 +159,14 @@ export default function EditProfileScreen() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="glass"
           style={{
-            padding: '20px',
-            backgroundColor: 'var(--color-surface)',
-            boxShadow: 'var(--shadow-sm)',
-            borderRadius: '12px',
-            marginBottom: '20px',
+            padding: '24px',
+            borderRadius: '20px',
+            marginBottom: '16px',
             overflow: 'visible',
             position: 'relative',
             zIndex: 1,
-            border: '1px solid var(--color-border)',
           }}
         >
           {/* First Name */}
@@ -178,9 +175,9 @@ export default function EditProfileScreen() {
               className="block uppercase"
               style={{
                 fontSize: '11px',
-                fontWeight: '600',
+                fontWeight: '700',
                 color: 'var(--color-text-tertiary)',
-                letterSpacing: '0.5px',
+                letterSpacing: '0.6px',
                 marginBottom: '8px',
               }}
             >
@@ -192,21 +189,18 @@ export default function EditProfileScreen() {
               onChange={(e) => setFirstName(e.target.value)}
               disabled={loading}
               placeholder="Enter your first name"
-              className="w-full outline-none transition-all"
+              className="w-full glass-input"
               style={{
                 fontSize: '16px',
                 color: 'var(--color-text-primary)',
                 padding: '12px 16px',
-                backgroundColor: 'var(--color-background)',
-                boxShadow: 'var(--shadow-inner)',
-                borderRadius: '8px',
-                border: '1px solid var(--color-border)',
+                borderRadius: '10px',
+                outline: 'none',
               }}
             />
           </div>
 
-          {/* Separator */}
-          <div style={{ height: '1px', backgroundColor: 'var(--color-border)', marginBottom: '20px' }} />
+          <div style={{ height: '1px', backgroundColor: 'var(--glass-border)', marginBottom: '20px' }} />
 
           {/* Last Name */}
           <div style={{ marginBottom: '20px' }}>
@@ -214,9 +208,9 @@ export default function EditProfileScreen() {
               className="block uppercase"
               style={{
                 fontSize: '11px',
-                fontWeight: '600',
+                fontWeight: '700',
                 color: 'var(--color-text-tertiary)',
-                letterSpacing: '0.5px',
+                letterSpacing: '0.6px',
                 marginBottom: '8px',
               }}
             >
@@ -228,21 +222,18 @@ export default function EditProfileScreen() {
               onChange={(e) => setLastName(e.target.value)}
               disabled={loading}
               placeholder="Enter your last name"
-              className="w-full outline-none transition-all"
+              className="w-full glass-input"
               style={{
                 fontSize: '16px',
                 color: 'var(--color-text-primary)',
                 padding: '12px 16px',
-                backgroundColor: 'var(--color-background)',
-                boxShadow: 'var(--shadow-inner)',
-                borderRadius: '8px',
-                border: '1px solid var(--color-border)',
+                borderRadius: '10px',
+                outline: 'none',
               }}
             />
           </div>
 
-          {/* Separator */}
-          <div style={{ height: '1px', backgroundColor: 'var(--color-border)', marginBottom: '20px' }} />
+          <div style={{ height: '1px', backgroundColor: 'var(--glass-border)', marginBottom: '20px' }} />
 
           {/* Email (Read-only) */}
           <div style={{ marginBottom: '20px' }}>
@@ -250,34 +241,33 @@ export default function EditProfileScreen() {
               className="block uppercase"
               style={{
                 fontSize: '11px',
-                fontWeight: '600',
+                fontWeight: '700',
                 color: 'var(--color-text-tertiary)',
-                letterSpacing: '0.5px',
+                letterSpacing: '0.6px',
                 marginBottom: '8px',
               }}
             >
-              Email (Read-only)
+              Email
             </label>
             <input
               type="email"
               value={email}
               disabled
-              className="w-full outline-none"
+              className="w-full"
               style={{
                 fontSize: '16px',
-                color: 'var(--color-text-secondary)',
+                color: 'var(--color-text-tertiary)',
                 padding: '12px 16px',
-                backgroundColor: 'var(--color-background)',
-                boxShadow: 'var(--shadow-inner)',
-                borderRadius: '8px',
-                border: '1px solid var(--color-border)',
+                backgroundColor: 'var(--glass-bg-subtle)',
+                borderRadius: '10px',
+                border: '1px solid var(--glass-border)',
                 cursor: 'not-allowed',
+                outline: 'none',
               }}
             />
           </div>
 
-          {/* Separator */}
-          <div style={{ height: '1px', backgroundColor: 'var(--color-border)', marginBottom: '20px' }} />
+          <div style={{ height: '1px', backgroundColor: 'var(--glass-border)', marginBottom: '20px' }} />
 
           {/* Phone Number (Read-only) */}
           <div style={{ marginBottom: '20px' }}>
@@ -285,9 +275,9 @@ export default function EditProfileScreen() {
               className="block uppercase"
               style={{
                 fontSize: '11px',
-                fontWeight: '600',
+                fontWeight: '700',
                 color: 'var(--color-text-tertiary)',
-                letterSpacing: '0.5px',
+                letterSpacing: '0.6px',
                 marginBottom: '8px',
               }}
             >
@@ -298,22 +288,21 @@ export default function EditProfileScreen() {
               value={phone}
               disabled
               placeholder="Not set"
-              className="w-full outline-none"
+              className="w-full"
               style={{
                 fontSize: '16px',
-                color: 'var(--color-text-secondary)',
+                color: 'var(--color-text-tertiary)',
                 padding: '12px 16px',
-                backgroundColor: 'var(--color-background)',
-                boxShadow: 'var(--shadow-inner)',
-                borderRadius: '8px',
-                border: '1px solid var(--color-border)',
+                backgroundColor: 'var(--glass-bg-subtle)',
+                borderRadius: '10px',
+                border: '1px solid var(--glass-border)',
                 cursor: 'not-allowed',
+                outline: 'none',
               }}
             />
           </div>
 
-          {/* Separator */}
-          <div style={{ height: '1px', backgroundColor: 'var(--color-border)', marginBottom: '20px' }} />
+          <div style={{ height: '1px', backgroundColor: 'var(--glass-border)', marginBottom: '20px' }} />
 
           {/* Default Language */}
           <div style={{ position: 'relative', zIndex: 9999, overflow: 'visible' }}>
@@ -321,9 +310,9 @@ export default function EditProfileScreen() {
               className="block uppercase"
               style={{
                 fontSize: '11px',
-                fontWeight: '600',
+                fontWeight: '700',
                 color: 'var(--color-text-tertiary)',
-                letterSpacing: '0.5px',
+                letterSpacing: '0.6px',
                 marginBottom: '8px',
               }}
             >
@@ -347,7 +336,7 @@ export default function EditProfileScreen() {
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
+            gap: '10px',
             marginBottom: '20px',
           }}
         >
@@ -358,14 +347,16 @@ export default function EditProfileScreen() {
             className="w-full transition-all hover:opacity-90 active:scale-98 disabled:opacity-60"
             style={{
               padding: '16px',
-              backgroundColor: 'var(--color-primary)',
-              boxShadow: 'var(--shadow-md)',
-              borderRadius: '12px',
+              background: loading
+                ? 'var(--color-neutral-300)'
+                : 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
+              boxShadow: loading ? 'none' : 'var(--glass-glow-primary)',
+              borderRadius: '14px',
               border: 'none',
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >
-            <span style={{ fontSize: '16px', fontWeight: '600', color: 'var(--color-on-primary)' }}>
+            <span style={{ fontSize: '16px', fontWeight: '700', color: '#FFFFFF' }}>
               {loading ? 'Saving...' : 'Save Changes'}
             </span>
           </button>
@@ -374,13 +365,10 @@ export default function EditProfileScreen() {
           <button
             onClick={() => router.push('/settings')}
             disabled={loading}
-            className="w-full transition-all hover:opacity-90 active:scale-98 disabled:opacity-60"
+            className="w-full transition-all hover:opacity-90 active:scale-98 disabled:opacity-60 glass"
             style={{
               padding: '16px',
-              backgroundColor: 'var(--color-surface)',
-              boxShadow: 'var(--shadow-sm)',
-              borderRadius: '12px',
-              border: '1px solid var(--color-border)',
+              borderRadius: '14px',
               cursor: loading ? 'not-allowed' : 'pointer',
             }}
           >

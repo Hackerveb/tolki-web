@@ -27,7 +27,6 @@ export default function ForgotPasswordPage() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
 
-  // Validate email on blur
   const handleEmailBlur = () => {
     if (emailAddress.trim().length > 0) {
       const validation = validateEmail(emailAddress);
@@ -35,22 +34,18 @@ export default function ForgotPasswordPage() {
     }
   };
 
-  // Clear email error on focus
   const handleEmailFocus = () => {
     setEmailError(null);
   };
 
-  // Show password requirements when password field is focused
   const handlePasswordFocus = () => {
     setShowPasswordRequirements(true);
   };
 
-  // Hide password requirements when password field loses focus
   const handlePasswordBlur = () => {
     setShowPasswordRequirements(false);
   };
 
-  // Get current password validation
   const passwordValidation = validatePassword(password);
   const emailValidation = validateEmail(emailAddress);
 
@@ -70,6 +65,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
+      // @ts-expect-error — Clerk SDK types omit reset_password_email_code from strategy union
       await signIn.create({
         strategy: 'reset_password_email_code',
         identifier: emailAddress,
@@ -90,6 +86,7 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
+      // @ts-expect-error — Clerk SDK types omit reset_password_email_code from strategy union
       await signIn.create({
         strategy: 'reset_password_email_code',
         identifier: emailAddress,
@@ -173,9 +170,8 @@ export default function ForgotPasswordPage() {
   if (currentStep === 'email') {
     return (
       <div
-        className="min-h-screen flex items-center justify-center overflow-y-auto"
+        className="min-h-screen flex items-center justify-center overflow-y-auto glass-page"
         style={{
-          backgroundColor: 'var(--color-background)',
           paddingLeft: 'max(24px, env(safe-area-inset-left))',
           paddingRight: 'max(24px, env(safe-area-inset-right))',
           paddingTop: 'max(32px, env(safe-area-inset-top))',
@@ -183,34 +179,50 @@ export default function ForgotPasswordPage() {
         }}
       >
         <div
-          className="w-full max-w-sm rounded-xl"
+          className="w-full max-w-sm glass"
           style={{
-            padding: '20px',
+            padding: '28px 24px',
             marginTop: '16px',
             marginBottom: '16px',
-            backgroundColor: 'var(--color-surface)',
-            boxShadow: 'var(--shadow-sm)',
-            border: '1px solid var(--color-border)',
+            borderRadius: '24px',
           }}
         >
           {/* Header */}
-          <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+          <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                boxShadow: '0 8px 24px rgba(37,99,235,0.3)',
+              }}
+            >
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="3" y="11" width="18" height="11" rx="2" stroke="white" strokeWidth="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="white" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </div>
             <h1
               className="text-xl font-bold"
-              style={{ color: 'var(--color-text-primary)', marginBottom: '4px' }}
+              style={{ color: 'var(--color-text-primary)', marginBottom: '6px' }}
             >
               Reset Password
             </h1>
-            <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+            <p className="text-xs" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
               Enter your email address and we&apos;ll send you a verification code
             </p>
           </div>
 
           {/* Email Input */}
-          <div style={{ marginBottom: '12px' }}>
+          <div style={{ marginBottom: '16px' }}>
             <label
-              className="block font-semibold"
-              style={{ color: 'var(--color-text-primary)', fontSize: '12px', marginBottom: '6px' }}
+              className="block font-semibold uppercase"
+              style={{ color: 'var(--color-text-tertiary)', fontSize: '11px', marginBottom: '8px', letterSpacing: '0.5px' }}
             >
               Email
             </label>
@@ -222,16 +234,15 @@ export default function ForgotPasswordPage() {
               onFocus={handleEmailFocus}
               placeholder="Enter your email"
               disabled={loading}
-              className="w-full text-base"
+              className="w-full text-base glass-input"
               style={{
-                backgroundColor: 'var(--color-surface)',
                 color: 'var(--color-text-primary)',
-                boxShadow: 'var(--shadow-inner)',
-                border: emailError ? '1px solid var(--color-error)' : '1px solid var(--color-border)',
                 borderRadius: '12px',
-                padding: '10px 12px',
-                minHeight: '40px',
+                padding: '12px 14px',
+                minHeight: '44px',
                 fontSize: '15px',
+                outline: 'none',
+                borderColor: emailError ? 'var(--color-error)' : undefined,
               }}
             />
             {emailError && (
@@ -247,14 +258,18 @@ export default function ForgotPasswordPage() {
             disabled={!emailValidation.isValid || loading}
             className="w-full font-semibold transition-all"
             style={{
-              backgroundColor: (!emailValidation.isValid || loading) ? 'var(--color-neutral-200)' : 'var(--color-primary)',
+              background: (!emailValidation.isValid || loading)
+                ? 'var(--color-neutral-200)'
+                : `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
               color: (!emailValidation.isValid || loading) ? 'var(--color-text-tertiary)' : '#FFFFFF',
               opacity: (!emailValidation.isValid || loading) ? 0.5 : 1,
-              minHeight: '44px',
-              borderRadius: '12px',
+              minHeight: '48px',
+              borderRadius: '14px',
               fontSize: '15px',
-              marginBottom: '12px',
-              boxShadow: (!emailValidation.isValid || loading) ? 'none' : 'var(--shadow-md)',
+              marginBottom: '16px',
+              boxShadow: (!emailValidation.isValid || loading) ? 'none' : '0 4px 20px rgba(37,99,235,0.3)',
+              border: 'none',
+              cursor: (!emailValidation.isValid || loading) ? 'not-allowed' : 'pointer',
             }}
           >
             {loading ? 'Sending...' : 'Send Code'}
@@ -269,7 +284,7 @@ export default function ForgotPasswordPage() {
               onClick={onBackToSignIn}
               disabled={loading}
               className="font-semibold hover:underline"
-              style={{ color: 'var(--color-primary)', fontSize: '13px' }}
+              style={{ color: colors.primary, fontSize: '13px' }}
             >
               Sign In
             </button>
@@ -283,41 +298,55 @@ export default function ForgotPasswordPage() {
   if (currentStep === 'code') {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
+        className="min-h-screen flex items-center justify-center glass-page"
         style={{
-          backgroundColor: 'var(--color-background)',
           paddingLeft: 'max(24px, env(safe-area-inset-left))',
           paddingRight: 'max(24px, env(safe-area-inset-right))',
           paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
         }}
       >
         <div
-          className="w-full max-w-sm rounded-xl"
+          className="w-full max-w-sm glass"
           style={{
-            padding: '20px',
-            backgroundColor: 'var(--color-surface)',
-            boxShadow: 'var(--shadow-sm)',
-            border: '1px solid var(--color-border)',
+            padding: '28px 24px',
+            borderRadius: '24px',
           }}
         >
           {/* Header */}
-          <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+          <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: 'linear-gradient(135deg, #059669, #10B981)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                boxShadow: '0 8px 24px rgba(5,150,105,0.3)',
+              }}
+            >
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M20 13V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7m16 0v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-5m16 0H4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
             <h1
               className="text-xl font-bold"
-              style={{ color: 'var(--color-text-primary)', marginBottom: '4px' }}
+              style={{ color: 'var(--color-text-primary)', marginBottom: '6px' }}
             >
               Enter Code
             </h1>
-            <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+            <p className="text-xs" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
               We&apos;ve sent a 6-digit code to {emailAddress}
             </p>
           </div>
 
           {/* Code Input */}
-          <div style={{ marginBottom: '12px' }}>
+          <div style={{ marginBottom: '16px' }}>
             <label
-              className="block font-semibold"
-              style={{ color: 'var(--color-text-primary)', fontSize: '12px', marginBottom: '6px' }}
+              className="block font-semibold uppercase"
+              style={{ color: 'var(--color-text-tertiary)', fontSize: '11px', marginBottom: '8px', letterSpacing: '0.5px' }}
             >
               Verification Code
             </label>
@@ -325,19 +354,20 @@ export default function ForgotPasswordPage() {
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder="Enter 6-digit code"
+              placeholder="000000"
               disabled={loading}
               maxLength={6}
-              className="w-full text-base"
+              className="w-full text-base glass-input"
               style={{
-                backgroundColor: 'var(--color-surface)',
                 color: 'var(--color-text-primary)',
-                boxShadow: 'var(--shadow-inner)',
-                border: '1px solid var(--color-border)',
                 borderRadius: '12px',
-                padding: '10px 12px',
-                minHeight: '40px',
-                fontSize: '15px',
+                padding: '12px 14px',
+                minHeight: '44px',
+                fontSize: '22px',
+                letterSpacing: '6px',
+                outline: 'none',
+                textAlign: 'center',
+                fontWeight: '700',
               }}
             />
           </div>
@@ -348,14 +378,18 @@ export default function ForgotPasswordPage() {
             disabled={code.length !== 6 || loading}
             className="w-full font-semibold transition-all"
             style={{
-              backgroundColor: (code.length !== 6 || loading) ? 'var(--color-neutral-200)' : 'var(--color-primary)',
+              background: (code.length !== 6 || loading)
+                ? 'var(--color-neutral-200)'
+                : `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
               color: (code.length !== 6 || loading) ? 'var(--color-text-tertiary)' : '#FFFFFF',
               opacity: (code.length !== 6 || loading) ? 0.5 : 1,
-              minHeight: '44px',
-              borderRadius: '12px',
+              minHeight: '48px',
+              borderRadius: '14px',
               fontSize: '15px',
-              marginBottom: '12px',
-              boxShadow: (code.length !== 6 || loading) ? 'none' : 'var(--shadow-md)',
+              marginBottom: '16px',
+              boxShadow: (code.length !== 6 || loading) ? 'none' : '0 4px 20px rgba(37,99,235,0.3)',
+              border: 'none',
+              cursor: (code.length !== 6 || loading) ? 'not-allowed' : 'pointer',
             }}
           >
             {loading ? 'Verifying...' : 'Verify Code'}
@@ -370,7 +404,7 @@ export default function ForgotPasswordPage() {
               onClick={onResendCode}
               disabled={loading}
               className="font-semibold hover:underline"
-              style={{ color: 'var(--color-primary)', fontSize: '13px' }}
+              style={{ color: colors.primary, fontSize: '13px' }}
             >
               Resend
             </button>
@@ -384,9 +418,8 @@ export default function ForgotPasswordPage() {
   if (currentStep === 'password') {
     return (
       <div
-        className="min-h-screen flex items-center justify-center overflow-y-auto"
+        className="min-h-screen flex items-center justify-center overflow-y-auto glass-page"
         style={{
-          backgroundColor: 'var(--color-background)',
           paddingLeft: 'max(24px, env(safe-area-inset-left))',
           paddingRight: 'max(24px, env(safe-area-inset-right))',
           paddingTop: 'max(32px, env(safe-area-inset-top))',
@@ -394,35 +427,50 @@ export default function ForgotPasswordPage() {
         }}
       >
         <div
-          className="w-full max-w-sm rounded-xl"
+          className="w-full max-w-sm glass"
           style={{
-            padding: '20px',
+            padding: '28px 24px',
             marginTop: '16px',
             marginBottom: '16px',
-            backgroundColor: 'var(--color-surface)',
-            boxShadow: 'var(--shadow-sm)',
-            border: '1px solid var(--color-border)',
+            borderRadius: '24px',
           }}
         >
           {/* Header */}
-          <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+          <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                boxShadow: '0 8px 24px rgba(37,99,235,0.3)',
+              }}
+            >
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
             <h1
               className="text-xl font-bold"
-              style={{ color: 'var(--color-text-primary)', marginBottom: '4px' }}
+              style={{ color: 'var(--color-text-primary)', marginBottom: '6px' }}
             >
               New Password
             </h1>
-            <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+            <p className="text-xs" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
               Create a strong password for your account
             </p>
           </div>
 
           {/* Password Input */}
-          <div style={{ marginBottom: '12px' }}>
-            <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
+          <div style={{ marginBottom: '16px' }}>
+            <div className="flex items-center justify-between" style={{ marginBottom: '8px' }}>
               <label
-                className="block font-semibold"
-                style={{ color: 'var(--color-text-primary)', fontSize: '12px' }}
+                className="block font-semibold uppercase"
+                style={{ color: 'var(--color-text-tertiary)', fontSize: '11px', letterSpacing: '0.5px' }}
               >
                 Password
               </label>
@@ -431,10 +479,7 @@ export default function ForgotPasswordPage() {
                   className="px-2 py-0.5 rounded-lg"
                   style={{ backgroundColor: getPasswordStrengthColor(passwordValidation.strength) }}
                 >
-                  <span
-                    className="text-xs font-semibold"
-                    style={{ color: '#FFFFFF' }}
-                  >
+                  <span className="text-xs font-semibold" style={{ color: '#FFFFFF' }}>
                     {passwordValidation.strength === 'weak' && 'Weak'}
                     {passwordValidation.strength === 'medium' && 'Good'}
                     {passwordValidation.strength === 'strong' && 'Strong'}
@@ -450,31 +495,25 @@ export default function ForgotPasswordPage() {
               onBlur={handlePasswordBlur}
               placeholder="Create a strong password"
               disabled={loading}
-              className="w-full text-base"
+              className="w-full text-base glass-input"
               style={{
-                backgroundColor: 'var(--color-surface)',
                 color: 'var(--color-text-primary)',
-                boxShadow: 'var(--shadow-inner)',
-                border: '1px solid var(--color-border)',
                 borderRadius: '12px',
-                padding: '10px 12px',
-                minHeight: '40px',
+                padding: '12px 14px',
+                minHeight: '44px',
                 fontSize: '15px',
+                outline: 'none',
               }}
             />
 
             {/* Password Requirements */}
             {(showPasswordRequirements || (password.length > 0 && !passwordValidation.isValid)) && (
               <div
-                className="mt-2 p-2 rounded-lg"
-                style={{
-                  backgroundColor: 'var(--color-surface)',
-                  boxShadow: 'var(--shadow-sm)',
-                  border: '1px solid var(--color-border)',
-                }}
+                className="mt-2 p-3 glass-subtle"
+                style={{ borderRadius: '12px' }}
               >
                 <p
-                  className="text-xs font-semibold mb-1"
+                  className="text-xs font-semibold mb-2"
                   style={{ color: 'var(--color-text-primary)' }}
                 >
                   Password must contain:
@@ -511,13 +550,17 @@ export default function ForgotPasswordPage() {
             disabled={!passwordValidation.isValid || loading}
             className="w-full font-semibold transition-all"
             style={{
-              backgroundColor: (!passwordValidation.isValid || loading) ? 'var(--color-neutral-200)' : 'var(--color-primary)',
+              background: (!passwordValidation.isValid || loading)
+                ? 'var(--color-neutral-200)'
+                : `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
               color: (!passwordValidation.isValid || loading) ? 'var(--color-text-tertiary)' : '#FFFFFF',
               opacity: (!passwordValidation.isValid || loading) ? 0.5 : 1,
-              minHeight: '44px',
-              borderRadius: '12px',
+              minHeight: '48px',
+              borderRadius: '14px',
               fontSize: '15px',
-              boxShadow: (!passwordValidation.isValid || loading) ? 'none' : 'var(--shadow-md)',
+              boxShadow: (!passwordValidation.isValid || loading) ? 'none' : '0 4px 20px rgba(37,99,235,0.3)',
+              border: 'none',
+              cursor: (!passwordValidation.isValid || loading) ? 'not-allowed' : 'pointer',
             }}
           >
             {loading ? 'Resetting...' : 'Reset Password'}
@@ -530,40 +573,46 @@ export default function ForgotPasswordPage() {
   // Success Step
   return (
     <div
-      className="min-h-screen flex items-center justify-center"
+      className="min-h-screen flex items-center justify-center glass-page"
       style={{
-        backgroundColor: 'var(--color-background)',
         paddingLeft: 'max(24px, env(safe-area-inset-left))',
         paddingRight: 'max(24px, env(safe-area-inset-right))',
       }}
     >
       <div
-        className="w-full max-w-sm rounded-xl"
+        className="w-full max-w-sm glass"
         style={{
-          padding: '24px',
-          backgroundColor: 'var(--color-surface)',
-          boxShadow: 'var(--shadow-sm)',
-          border: '1px solid var(--color-border)',
+          padding: '32px 24px',
+          borderRadius: '24px',
         }}
       >
         <div style={{ textAlign: 'center' }}>
           <div
-            className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3"
-            style={{ backgroundColor: 'var(--color-success)', color: '#FFFFFF' }}
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #059669, #10B981)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px',
+              boxShadow: '0 8px 24px rgba(5,150,105,0.3)',
+            }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <path d="M20 6L9 17l-5-5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
           <h1
             className="text-xl font-bold"
-            style={{ color: 'var(--color-text-primary)', marginBottom: '8px' }}
+            style={{ color: 'var(--color-text-primary)', marginBottom: '10px' }}
           >
             Password Reset!
           </h1>
           <p
             className="text-xs"
-            style={{ color: 'var(--color-text-secondary)', marginBottom: '20px' }}
+            style={{ color: 'var(--color-text-secondary)', marginBottom: '24px', lineHeight: 1.6 }}
           >
             Your password has been successfully reset. You can now sign in with your new password.
           </p>
@@ -572,12 +621,14 @@ export default function ForgotPasswordPage() {
             onClick={onBackToSignIn}
             className="w-full font-semibold transition-all"
             style={{
-              backgroundColor: 'var(--color-primary)',
+              background: `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
               color: '#FFFFFF',
-              minHeight: '44px',
-              borderRadius: '12px',
+              minHeight: '48px',
+              borderRadius: '14px',
               fontSize: '15px',
-              boxShadow: 'var(--shadow-md)',
+              boxShadow: '0 4px 20px rgba(37,99,235,0.3)',
+              border: 'none',
+              cursor: 'pointer',
             }}
           >
             Back to Sign In

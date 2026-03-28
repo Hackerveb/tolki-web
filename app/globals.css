@@ -145,6 +145,27 @@
   --safe-area-inset-right: env(safe-area-inset-right);
   --safe-area-inset-bottom: env(safe-area-inset-bottom);
   --safe-area-inset-left: env(safe-area-inset-left);
+
+  /* ============================================
+     Glassmorphism Design System (iOS-grade)
+     ============================================ */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-bg-strong: rgba(255, 255, 255, 0.88);
+  --glass-bg-subtle: rgba(255, 255, 255, 0.48);
+  --glass-border: rgba(255, 255, 255, 0.60);
+  --glass-border-strong: rgba(255, 255, 255, 0.80);
+  --glass-border-subtle: rgba(255, 255, 255, 0.35);
+  --glass-blur: blur(20px);
+  --glass-blur-sm: blur(12px);
+  --glass-blur-lg: blur(32px);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.80);
+  --glass-shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.80);
+  --glass-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.70);
+  --glass-page-bg: linear-gradient(135deg, #EEF2FF 0%, #F0F9FF 35%, #ECFDF5 70%, #FDF4FF 100%);
+  --glass-input-bg: rgba(255, 255, 255, 0.60);
+  --glass-input-border: rgba(203, 213, 225, 0.80);
+  --glass-glow-primary: 0 4px 24px rgba(37, 99, 235, 0.28), 0 1px 4px rgba(37, 99, 235, 0.12);
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -226,6 +247,22 @@
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.2);
   --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.3), 0 8px 10px rgba(0, 0, 0, 0.15);
   --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+
+  /* Dark mode glassmorphism */
+  --glass-bg: rgba(30, 41, 59, 0.72);
+  --glass-bg-strong: rgba(30, 41, 59, 0.90);
+  --glass-bg-subtle: rgba(30, 41, 59, 0.48);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-border-strong: rgba(255, 255, 255, 0.18);
+  --glass-border-subtle: rgba(255, 255, 255, 0.06);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.30), 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --glass-shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.40), 0 8px 24px rgba(0, 0, 0, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --glass-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-page-bg: linear-gradient(135deg, #0F172A 0%, #0C1424 50%, #0F172A 100%);
+  --glass-input-bg: rgba(15, 23, 42, 0.60);
+  --glass-input-border: rgba(51, 65, 85, 0.80);
+  --glass-glow-primary: 0 4px 24px rgba(37, 99, 235, 0.45), 0 1px 4px rgba(37, 99, 235, 0.20);
+
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -297,6 +334,9 @@
     --color-thinking-pulse: rgba(217, 119, 6, 0.35);
     --color-translating-pulse: rgba(37, 99, 235, 0.35);
     --color-connecting-pulse: rgba(37, 99, 235, 0.35);
+
+    /* Glow */
+    --glass-glow-primary: 0 4px 24px rgba(37, 99, 235, 0.45), 0 1px 4px rgba(37, 99, 235, 0.20);
 
     /* Shadows */
     --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
@@ -451,6 +491,66 @@ body {
 }
 
 /* ============================================
+   iOS / PWA Safari Fixes
+   ============================================ */
+
+/* Prevent double-tap zoom on interactive elements */
+a,
+button,
+[role="button"],
+input,
+select,
+textarea,
+label {
+  touch-action: manipulation;
+}
+
+/* Ensure inputs/textareas never trigger iOS auto-zoom (font < 16px) */
+input,
+textarea,
+select {
+  font-size: max(16px, 1em);
+}
+
+/* Fix iOS Safari 100vh — use 100dvh where supported */
+.h-screen-safe {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.min-h-screen-safe {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Smooth momentum scrolling on iOS */
+.scroll-smooth-ios {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* Safe-area padding utilities for notched devices */
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.px-safe {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.inset-safe {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* ============================================
    Accessibility: Focus Visible (WCAG 2.4.7)
    ============================================ */
 :focus-visible {
@@ -521,4 +621,78 @@ a,
   html {
     @apply font-sans;
   }
+}
+
+/* ============================================
+   Glassmorphism Utility Classes
+   ============================================ */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-strong);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-subtle {
+  background: var(--glass-bg-subtle);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--glass-border-subtle);
+  box-shadow: var(--glass-shadow-sm);
+}
+
+.glass-lg {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur-lg);
+  -webkit-backdrop-filter: var(--glass-blur-lg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-lg);
+}
+
+.glass-input {
+  background: var(--glass-input-bg);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--glass-input-border);
+  transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.glass-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+.glass-page {
+  background: var(--glass-page-bg);
+  min-height: 100%;
+}
+
+/* Glass aura pulse animations */
+@keyframes glass-aura-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.08); opacity: 0.8; }
+}
+
+@keyframes glass-aura-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes glass-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.glass-animate-in {
+  animation: glass-fade-in 0.3s ease-out forwards;
 }

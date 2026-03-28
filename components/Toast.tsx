@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { motion, PanInfo } from 'framer-motion';
+import { motion, PanInfo } from 'motion/react';
 import { colors } from '@/styles/colors';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';

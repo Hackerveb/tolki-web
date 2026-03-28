@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { useQuery, useMutation } from 'convex/react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { api } from '@/convex/_generated/api';
 import { languages, defaultSourceLanguage, defaultTargetLanguage } from '@/lib/languages';
 import { languageStorage } from '@/utils/languageStorage';
@@ -41,8 +41,9 @@ function StepDots({ current, total }: { current: number; total: number }) {
         <motion.div
           key={i}
           animate={{
-            width: i === current ? 24 : 8,
+            width: i === current ? 28 : 8,
             backgroundColor: i === current ? colors.primary : 'var(--color-neutral-300)',
+            boxShadow: i === current ? `0 0 8px ${colors.primary}60` : 'none',
           }}
           transition={{ duration: 0.25 }}
           style={{ height: 8, borderRadius: 4 }}
@@ -69,14 +70,17 @@ function PrimaryButton({
       disabled={disabled || loading}
       className="w-full font-semibold transition-all"
       style={{
-        backgroundColor: disabled || loading ? 'var(--color-neutral-300)' : colors.primary,
-        color: disabled || loading ? 'var(--color-text-tertiary)' : 'var(--color-on-primary)',
+        background: disabled || loading
+          ? 'var(--color-neutral-300)'
+          : `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
+        color: disabled || loading ? 'var(--color-text-tertiary)' : '#FFFFFF',
         opacity: disabled || loading ? 0.6 : 1,
         minHeight: 52,
         borderRadius: 14,
         fontSize: 16,
-        boxShadow: !disabled && !loading ? 'var(--shadow-md)' : 'none',
+        boxShadow: !disabled && !loading ? '0 4px 20px rgba(37,99,235,0.3)' : 'none',
         cursor: disabled || loading ? 'not-allowed' : 'pointer',
+        border: 'none',
       }}
       aria-busy={loading}
     >
@@ -115,20 +119,17 @@ function LanguagePicker({
       </p>
       <button
         onClick={() => setOpen(true)}
-        className="w-full flex items-center justify-between transition-all"
+        className="w-full flex items-center justify-between transition-all glass"
         style={{
-          backgroundColor: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 12,
-          padding: '12px 14px',
+          borderRadius: 14,
+          padding: '14px 16px',
           cursor: 'pointer',
-          boxShadow: 'var(--shadow-xs)',
         }}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={`${label}: ${selected.name}`}
       >
-        <span style={{ fontSize: 15, color: 'var(--color-text-primary)' }}>
+        <span style={{ fontSize: 15, color: 'var(--color-text-primary)', fontWeight: 500 }}>
           {selected.flag} {selected.name}
         </span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -153,18 +154,18 @@ function LanguagePicker({
           >
             {/* Backdrop */}
             <div
-              style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)' }}
+              style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
               onClick={() => { setOpen(false); setSearch(''); }}
               aria-hidden="true"
             />
-            {/* Sheet */}
+            {/* Glass Sheet */}
             <div
+              className="glass-strong"
               style={{
                 position: 'relative',
                 width: '100%',
                 maxHeight: '70vh',
-                backgroundColor: 'var(--color-background)',
-                borderRadius: '20px 20px 0 0',
+                borderRadius: '24px 24px 0 0',
                 padding: '16px 0 0',
                 display: 'flex',
                 flexDirection: 'column',
@@ -182,12 +183,10 @@ function LanguagePicker({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search language..."
-                  className="w-full"
+                  className="w-full glass-input"
                   style={{
-                    backgroundColor: 'var(--color-surface)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 10,
-                    padding: '10px 12px',
+                    borderRadius: 12,
+                    padding: '10px 14px',
                     fontSize: 15,
                     color: 'var(--color-text-primary)',
                     outline: 'none',
@@ -246,8 +245,8 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
             width: 88,
             height: 88,
             borderRadius: 24,
-            backgroundColor: colors.primary,
-            boxShadow: `0 12px 32px ${colors.primaryAlpha(0.4)}`,
+            background: `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
+            boxShadow: `0 16px 40px ${colors.primary}50`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -289,14 +288,12 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
         {['🎙️ Voice-first', '⚡ Real-time', '🌍 58 languages', '🔒 Private'].map((pill) => (
           <span
             key={pill}
+            className="glass-subtle"
             style={{
-              backgroundColor: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
               borderRadius: 99,
               padding: '6px 14px',
               fontSize: 13,
               color: 'var(--color-text-secondary)',
-              boxShadow: 'var(--shadow-xs)',
             }}
           >
             {pill}
@@ -356,16 +353,14 @@ function StepLanguages({
         {/* Swap indicator */}
         <div className="flex items-center justify-center">
           <div
+            className="glass"
             style={{
-              width: 32,
-              height: 32,
+              width: 36,
+              height: 36,
               borderRadius: '50%',
-              backgroundColor: 'var(--color-surface)',
-              border: '1px solid var(--color-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: 'var(--shadow-xs)',
             }}
             aria-hidden="true"
           >
@@ -392,16 +387,13 @@ function StepLanguages({
       <div className="flex gap-3">
         <button
           onClick={onBack}
-          className="flex-shrink-0 font-medium transition-all"
+          className="flex-shrink-0 font-medium transition-all glass"
           style={{
             minHeight: 52,
             width: 52,
             borderRadius: 14,
-            backgroundColor: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-text-secondary)',
             fontSize: 20,
-            boxShadow: 'var(--shadow-xs)',
+            cursor: 'pointer',
           }}
           aria-label="Go back"
         >
@@ -493,7 +485,6 @@ function StepMicTest({ onNext, onBack }: { onNext: () => void; onBack: () => voi
     }
   };
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       cancelAnimationFrame(animFrameRef.current);
@@ -513,15 +504,14 @@ function StepMicTest({ onNext, onBack }: { onNext: () => void; onBack: () => voi
         </p>
       </div>
 
-      {/* Visualizer area */}
+      {/* Glass Waveform Container */}
       <div
+        className="glass"
         style={{
-          backgroundColor: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 16,
-          padding: 20,
+          borderRadius: 20,
+          padding: 24,
           marginBottom: 20,
-          minHeight: 120,
+          minHeight: 130,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -559,10 +549,11 @@ function StepMicTest({ onNext, onBack }: { onNext: () => void; onBack: () => voi
                   height: 10,
                   borderRadius: '50%',
                   backgroundColor: audioLevel > 0.05 ? colors.success : 'var(--color-neutral-300)',
+                  boxShadow: audioLevel > 0.05 ? `0 0 8px ${colors.success}60` : 'none',
                 }}
                 aria-hidden="true"
               />
-              <span className="text-xs" style={{ color: audioLevel > 0.05 ? colors.success : 'var(--color-text-tertiary)' }}>
+              <span className="text-xs" style={{ color: audioLevel > 0.05 ? colors.success : 'var(--color-text-tertiary)', fontWeight: 500 }}>
                 {audioLevel > 0.05 ? '🎙️ Mic is working!' : 'Speak to test...'}
               </span>
             </div>
@@ -583,15 +574,13 @@ function StepMicTest({ onNext, onBack }: { onNext: () => void; onBack: () => voi
       {permissionState === 'idle' && (
         <button
           onClick={requestMic}
-          className="w-full font-medium transition-all mb-4"
+          className="w-full font-medium transition-all mb-4 glass"
           style={{
             minHeight: 48,
             borderRadius: 12,
-            backgroundColor: 'var(--color-surface)',
-            border: `2px solid ${colors.primary}`,
-            color: colors.primary,
             fontSize: 15,
-            boxShadow: 'var(--shadow-xs)',
+            cursor: 'pointer',
+            color: colors.primary,
           }}
         >
           Allow Microphone Access
@@ -601,16 +590,13 @@ function StepMicTest({ onNext, onBack }: { onNext: () => void; onBack: () => voi
       <div className="flex gap-3">
         <button
           onClick={onBack}
-          className="flex-shrink-0 font-medium transition-all"
+          className="flex-shrink-0 font-medium transition-all glass"
           style={{
             minHeight: 52,
             width: 52,
             borderRadius: 14,
-            backgroundColor: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-text-secondary)',
             fontSize: 20,
-            boxShadow: 'var(--shadow-xs)',
+            cursor: 'pointer',
           }}
           aria-label="Go back"
         >
@@ -670,16 +656,23 @@ function StepHowItWorks({ onNext, onBack }: { onNext: () => void; onBack: () => 
             onClick={() => setActivePanel(i)}
             style={{
               flex: 1,
-              padding: '8px 4px',
-              borderRadius: 10,
+              padding: '10px 4px',
+              borderRadius: 12,
               border: 'none',
-              backgroundColor: activePanel === i ? panel.color : 'var(--color-surface)',
+              background: activePanel === i
+                ? `linear-gradient(135deg, ${panel.color}, ${panel.color}CC)`
+                : 'var(--glass-bg)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderColor: activePanel === i ? 'transparent' : 'var(--glass-border)',
               color: activePanel === i ? 'white' : 'var(--color-text-secondary)',
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: activePanel === i ? 600 : 400,
               cursor: 'pointer',
               transition: 'all 0.2s',
-              boxShadow: activePanel === i ? `0 4px 12px ${panel.color}40` : 'var(--shadow-xs)',
+              boxShadow: activePanel === i ? `0 4px 16px ${panel.color}40` : 'var(--glass-shadow-sm)',
             }}
             aria-selected={activePanel === i}
             aria-label={panel.title}
@@ -691,10 +684,9 @@ function StepHowItWorks({ onNext, onBack }: { onNext: () => void; onBack: () => 
 
       {/* Panel content */}
       <div
+        className="glass"
         style={{
-          backgroundColor: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 16,
+          borderRadius: 20,
           padding: 24,
           minHeight: 120,
           marginBottom: 24,
@@ -740,16 +732,13 @@ function StepHowItWorks({ onNext, onBack }: { onNext: () => void; onBack: () => 
       <div className="flex gap-3">
         <button
           onClick={onBack}
-          className="flex-shrink-0 font-medium transition-all"
+          className="flex-shrink-0 font-medium transition-all glass"
           style={{
             minHeight: 52,
             width: 52,
             borderRadius: 14,
-            backgroundColor: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-text-secondary)',
             fontSize: 20,
-            boxShadow: 'var(--shadow-xs)',
+            cursor: 'pointer',
           }}
           aria-label="Go back"
         >
@@ -795,7 +784,7 @@ function StepFreeCredits({
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: `0 16px 40px ${colors.primaryAlpha(0.4)}`,
+              boxShadow: `0 16px 40px ${colors.primary}50`,
               margin: '0 auto',
             }}
           >
@@ -818,15 +807,14 @@ function StepFreeCredits({
         </motion.div>
       </div>
 
-      {/* Credit info card */}
+      {/* Credit info glass card */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.45 }}
+        className="glass"
         style={{
-          backgroundColor: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 16,
+          borderRadius: 20,
           padding: '16px 20px',
           marginBottom: 28,
         }}
@@ -847,16 +835,13 @@ function StepFreeCredits({
         <button
           onClick={onBack}
           disabled={loading}
-          className="flex-shrink-0 font-medium transition-all"
+          className="flex-shrink-0 font-medium transition-all glass"
           style={{
             minHeight: 52,
             width: 52,
             borderRadius: 14,
-            backgroundColor: 'var(--color-surface)',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-text-secondary)',
             fontSize: 20,
-            boxShadow: 'var(--shadow-xs)',
+            cursor: 'pointer',
             opacity: loading ? 0.5 : 1,
           }}
           aria-label="Go back"
@@ -891,14 +876,12 @@ export default function OnboardingNewPage() {
     clerkUser?.id ? { clerkId: clerkUser.id } : 'skip'
   );
 
-  // Redirect authenticated users who already completed onboarding
   useEffect(() => {
     if (isLoaded && isSignedIn && onboardingDone === true) {
       router.replace('/');
     }
   }, [isLoaded, isSignedIn, onboardingDone, router]);
 
-  // Redirect unauthenticated users to sign-in
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.replace('/onboarding');
@@ -943,19 +926,23 @@ export default function OnboardingNewPage() {
     router.push('/');
   };
 
-  // Loading state
   if (!isLoaded || onboardingDone === undefined) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: 'var(--color-background)' }}
+        className="min-h-screen flex items-center justify-center glass-page"
         aria-busy="true"
         aria-label="Loading"
       >
         <motion.div
           animate={{ opacity: [0.3, 1, 0.3] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: colors.primary }}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: '50%',
+            background: `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
+            boxShadow: '0 4px 20px rgba(37,99,235,0.3)',
+          }}
         />
       </div>
     );
@@ -979,8 +966,7 @@ export default function OnboardingNewPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
-      style={{ backgroundColor: 'var(--color-background)' }}
+      className="min-h-screen flex flex-col glass-page"
     >
       {/* Header bar */}
       <div

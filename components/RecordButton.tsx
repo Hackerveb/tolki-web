@@ -1,7 +1,7 @@
 'use client';
 
 import React, { memo, useCallback, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Mic, MicOff } from 'lucide-react';
 import { RecordingState } from '@/types';
 import { colors } from '@/styles/colors';

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'motion/react';
 import { Toast, ToastProps } from './Toast';
 
 interface ToastContainerProps {

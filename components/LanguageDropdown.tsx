@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '@/types';
 import { languages, getLanguageByCode } from '@/lib/languages';
 import { languageStorage } from '@/utils/languageStorage';
@@ -27,9 +27,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
 
-  // Load recent languages on mount and when dropdown opens
   useEffect(() => {
     const recentCodes = languageStorage.getRecentLanguages();
     const langs = recentCodes
@@ -38,14 +36,12 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
     setRecentLanguages(langs);
   }, [isOpen]);
 
-  // Auto-focus search input when dropdown opens
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   }, [isOpen]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -54,37 +50,24 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
         setFocusedIndex(-1);
       }
     };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
   const handleLanguageSelect = (language: Language) => {
-    // Save to recent languages
     languageStorage.saveRecentLanguage(language.code);
     onLanguageSelect(language);
     setIsOpen(false);
     setSearchQuery('');
   };
 
-  // Filter languages based on search query
   const filteredLanguages = searchQuery.trim().length > 0
-    ? languages.filter(lang =>
-        lang.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+    ? languages.filter(lang => lang.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : languages;
 
-  // Get recent languages to display (limit to 3)
   const displayRecentLanguages = recentLanguages.slice(0, 3);
-
   const showRecentSection = displayRecentLanguages.length > 0 && searchQuery.trim().length === 0;
 
-  // Flat list for keyboard navigation (recent first, then all filtered)
   const allItems: Array<{ language: Language; key: string }> = [
     ...(showRecentSection
       ? displayRecentLanguages.map((l) => ({ language: l, key: `recent-${l.code}` }))
@@ -100,7 +83,6 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
       }
       return;
     }
-
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -126,14 +108,10 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, focusedIndex, allItems]);
 
-  // HD badge for Deepgram support - professional alternative to emoji
   const DeepgramBadge = () => (
     <span
-      className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
-      style={{
-        backgroundColor: 'var(--color-primary-alpha)',
-        color: 'var(--color-primary)',
-      }}
+      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+      style={{ background: 'var(--color-primary-alpha)', color: 'var(--color-primary)' }}
     >
       HD
     </span>
@@ -141,7 +119,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
 
   return (
     <div ref={dropdownRef} className={`relative ${className}`} style={{ zIndex: 9999 }} onKeyDown={handleKeyDown}>
-      {/* Dropdown Button */}
+      {/* ── Trigger button ────────────────────────────────────────── */}
       <motion.button
         onClick={() => { setIsOpen(!isOpen); setFocusedIndex(-1); }}
         aria-expanded={isOpen}
@@ -149,23 +127,21 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
         aria-controls={isOpen ? 'language-listbox' : undefined}
         aria-activedescendant={focusedIndex >= 0 ? `lang-item-${allItems[focusedIndex]?.key}` : undefined}
         whileTap={{ scale: 0.98 }}
-        className="w-full px-4 rounded-xl flex items-center justify-between"
+        className="w-full px-4 rounded-2xl flex items-center justify-between"
         style={{
-          backgroundColor: 'var(--color-surface)',
-          boxShadow: isOpen ? 'var(--shadow-inner)' : 'var(--shadow-sm)',
-          border: '1px solid var(--color-border)',
+          background: isOpen ? 'var(--glass-bg-strong)' : 'var(--glass-bg)',
+          backdropFilter: 'var(--glass-blur)',
+          WebkitBackdropFilter: 'var(--glass-blur)',
+          border: `1px solid ${isOpen ? 'var(--glass-border-strong)' : 'var(--glass-border)'}`,
+          boxShadow: isOpen ? 'var(--glass-shadow)' : 'var(--glass-shadow-sm)',
           paddingTop: '12px',
           paddingBottom: '12px',
+          transition: 'all 0.15s ease-out',
         }}
       >
-        <span
-          className="text-sm font-medium"
-          style={{ color: 'var(--color-text-primary)', paddingLeft: '4px' }}
-        >
+        <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', paddingLeft: '2px' }}>
           {selectedLanguage.name}
         </span>
-
-        {/* Arrow Icon */}
         <motion.svg
           width="12"
           height="12"
@@ -173,42 +149,43 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
           fill="none"
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.2 }}
+          style={{ flexShrink: 0, marginLeft: '6px' }}
         >
-          <polyline
-            points="6 9 12 15 18 9"
-            stroke="var(--color-text-secondary)"
-            strokeWidth={2}
-          />
+          <polyline points="6 9 12 15 18 9" stroke="var(--color-text-secondary)" strokeWidth={2} />
         </motion.svg>
       </motion.button>
 
-      {/* Dropdown Menu */}
+      {/* ── Dropdown menu ─────────────────────────────────────────── */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             id="language-listbox"
             role="listbox"
             aria-label="Select language"
-            initial={{ opacity: 0, y: dropDirection === 'down' ? -5 : 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: dropDirection === 'down' ? -5 : 5 }}
+            initial={{ opacity: 0, y: dropDirection === 'down' ? -6 : 6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: dropDirection === 'down' ? -6 : 6, scale: 0.98 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute left-0 right-0 rounded-xl overflow-hidden"
+            className="absolute left-0 right-0 rounded-2xl overflow-hidden"
             style={{
-              backgroundColor: 'var(--color-surface)',
-              boxShadow: 'var(--shadow-lg)',
-              border: '1px solid var(--color-border)',
-              [dropDirection === 'down' ? 'top' : 'bottom']: '50px',
+              background: 'var(--glass-bg-strong)',
+              backdropFilter: 'var(--glass-blur-lg)',
+              WebkitBackdropFilter: 'var(--glass-blur-lg)',
+              border: '1px solid var(--glass-border)',
+              boxShadow: 'var(--glass-shadow-lg)',
+              [dropDirection === 'down' ? 'top' : 'bottom']: '52px',
               maxHeight: 'min(450px, 60vh)',
               zIndex: 9999,
             }}
           >
-            {/* Search Input */}
+            {/* Search */}
             <div
-              className="sticky top-0 px-4 py-3"
+              className="sticky top-0 px-3 py-3"
               style={{
-                backgroundColor: 'var(--color-surface)',
-                borderBottom: '1px solid var(--color-border)',
+                background: 'var(--glass-bg-strong)',
+                backdropFilter: 'var(--glass-blur)',
+                WebkitBackdropFilter: 'var(--glass-blur)',
+                borderBottom: '1px solid var(--glass-border-subtle)',
                 zIndex: 10,
               }}
             >
@@ -220,75 +197,47 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                   onChange={(e) => { setSearchQuery(e.target.value); setFocusedIndex(-1); }}
                   placeholder="Search languages"
                   aria-label="Search languages"
-                  className="w-full text-sm"
+                  className="w-full text-sm glass-input"
                   style={{
-                    backgroundColor: 'var(--color-background)',
                     color: 'var(--color-text-primary)',
-                    boxShadow: 'var(--shadow-inner)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '8px',
-                    padding: '8px 12px 8px 36px',
+                    borderRadius: '12px',
+                    padding: '9px 12px 9px 36px',
                     minHeight: '40px',
                     fontSize: '14px',
-                    outline: 'none',
                   }}
                 />
-                {/* Search Icon */}
-                <div
-                  className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                  style={{ width: '16px', height: '16px' }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                     <circle cx="11" cy="11" r="7" stroke="var(--color-text-tertiary)" strokeWidth="2" />
                     <path d="M21 21l-4.35-4.35" stroke="var(--color-text-tertiary)" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </div>
-                {/* Clear button */}
                 {searchQuery.length > 0 && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
-                    style={{
-                      backgroundColor: 'var(--color-neutral-200)',
-                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center"
+                    style={{ background: 'var(--color-neutral-200)', border: 'none', cursor: 'pointer' }}
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M18 6L6 18M6 6l12 12"
-                        stroke="var(--color-text-tertiary)"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                      <path d="M18 6L6 18M6 6l12 12" stroke="var(--color-text-tertiary)" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </button>
                 )}
               </div>
-              {/* Match count */}
               {searchQuery.trim().length > 0 && (
-                <p
-                  className="text-xs mt-2"
-                  style={{ color: 'var(--color-text-tertiary)' }}
-                >
+                <p className="text-xs mt-2" style={{ color: 'var(--color-text-tertiary)' }}>
                   {filteredLanguages.length} {filteredLanguages.length === 1 ? 'language' : 'languages'} found
                 </p>
               )}
             </div>
 
-            {/* Scrollable Content */}
+            {/* List */}
             <div className="overflow-y-auto" style={{ maxHeight: '350px' }}>
-              {/* Recently Used Section */}
+              {/* Recent section */}
               {showRecentSection && (
                 <>
-                  <div
-                    className="px-4 py-2"
-                    style={{
-                      backgroundColor: 'var(--color-neutral-200)',
-                    }}
-                  >
-                    <span
-                      className="text-xs font-medium uppercase tracking-wider"
-                      style={{ color: 'var(--color-text-tertiary)', paddingLeft: '4px' }}
-                    >
+                  <div className="px-4 pt-2 pb-1">
+                    <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-tertiary)' }}>
                       Recent
                     </span>
                   </div>
@@ -297,56 +246,41 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                     const itemIndex = allItems.findIndex((i) => i.key === itemKey);
                     const isFocused = itemIndex === focusedIndex;
                     return (
-                    <button
-                      key={itemKey}
-                      id={`lang-item-${itemKey}`}
-                      role="option"
-                      aria-selected={selectedLanguage.code === language.code}
-                      onClick={() => handleLanguageSelect(language)}
-                      onMouseEnter={() => { setHoveredItem(itemKey); setFocusedIndex(itemIndex); }}
-                      onMouseLeave={() => setHoveredItem(null)}
-                      className="w-full px-4 flex items-center gap-3 transition-colors duration-150"
-                      style={{
-                        backgroundColor: isFocused || hoveredItem === itemKey
-                          ? 'var(--color-primary-alpha)'
-                          : 'transparent',
-                        paddingTop: '12px',
-                        paddingBottom: '12px',
-                        borderBottom: index < displayRecentLanguages.length - 1
-                          ? '1px solid var(--color-border)'
-                          : 'none',
-                        outline: isFocused ? '2px solid var(--color-primary)' : 'none',
-                        outlineOffset: '-2px',
-                      }}
-                    >
-                      <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', paddingLeft: '4px' }}>
-                        {language.name}
-                        {language.deepgramSupport && <DeepgramBadge />}
-                      </span>
-                    </button>
+                      <button
+                        key={itemKey}
+                        id={`lang-item-${itemKey}`}
+                        role="option"
+                        aria-selected={selectedLanguage.code === language.code}
+                        onClick={() => handleLanguageSelect(language)}
+                        onMouseEnter={() => { setHoveredItem(itemKey); setFocusedIndex(itemIndex); }}
+                        onMouseLeave={() => setHoveredItem(null)}
+                        className="w-full px-4 flex items-center gap-3 transition-colors duration-100"
+                        style={{
+                          background: isFocused || hoveredItem === itemKey ? 'var(--color-primary-alpha)' : 'transparent',
+                          paddingTop: '11px', paddingBottom: '11px',
+                          borderBottom: index < displayRecentLanguages.length - 1 ? '1px solid var(--glass-border-subtle)' : 'none',
+                          outline: isFocused ? '2px solid var(--color-primary)' : 'none',
+                          outlineOffset: '-2px',
+                          border: 'none',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)' }}>
+                          {language.name}
+                          {language.deepgramSupport && <DeepgramBadge />}
+                        </span>
+                      </button>
                     );
                   })}
-                  {/* Subtle separator line */}
-                  <div
-                    style={{
-                      height: '1px',
-                      backgroundColor: 'var(--color-neutral-300)',
-                      marginTop: '8px',
-                      marginBottom: '8px',
-                      marginLeft: '16px',
-                      marginRight: '16px',
-                      opacity: 0.5,
-                    }}
-                  />
+                  <div style={{ height: '1px', background: 'var(--glass-border)', margin: '4px 16px 8px' }} />
                 </>
               )}
 
-              {/* All Languages List */}
+              {/* All languages */}
               {filteredLanguages.length === 0 ? (
                 <div className="px-4 py-8 text-center">
-                  <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
-                    No languages found
-                  </p>
+                  <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>No languages found</p>
                 </div>
               ) : (
                 filteredLanguages.map((language, index) => {
@@ -354,33 +288,31 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                   const itemIndex = allItems.findIndex((i) => i.key === itemKey);
                   const isFocused = itemIndex === focusedIndex;
                   return (
-                  <button
-                    key={language.code}
-                    id={`lang-item-${itemKey}`}
-                    role="option"
-                    aria-selected={selectedLanguage.code === language.code}
-                    onClick={() => handleLanguageSelect(language)}
-                    onMouseEnter={() => { setHoveredItem(language.code); setFocusedIndex(itemIndex); }}
-                    onMouseLeave={() => setHoveredItem(null)}
-                    className="w-full px-4 flex items-center gap-3 transition-colors duration-150"
-                    style={{
-                      backgroundColor: isFocused || hoveredItem === language.code
-                        ? 'var(--color-primary-alpha)'
-                        : 'transparent',
-                      paddingTop: '12px',
-                      paddingBottom: '12px',
-                      borderBottom: index < filteredLanguages.length - 1
-                        ? '1px solid var(--color-border)'
-                        : 'none',
-                      outline: isFocused ? '2px solid var(--color-primary)' : 'none',
-                      outlineOffset: '-2px',
-                    }}
-                  >
-                    <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', paddingLeft: '4px' }}>
-                      {language.name}
-                      {language.deepgramSupport && <DeepgramBadge />}
-                    </span>
-                  </button>
+                    <button
+                      key={language.code}
+                      id={`lang-item-${itemKey}`}
+                      role="option"
+                      aria-selected={selectedLanguage.code === language.code}
+                      onClick={() => handleLanguageSelect(language)}
+                      onMouseEnter={() => { setHoveredItem(language.code); setFocusedIndex(itemIndex); }}
+                      onMouseLeave={() => setHoveredItem(null)}
+                      className="w-full px-4 flex items-center gap-3 transition-colors duration-100"
+                      style={{
+                        background: isFocused || hoveredItem === language.code ? 'var(--color-primary-alpha)' : 'transparent',
+                        paddingTop: '11px', paddingBottom: '11px',
+                        borderBottom: index < filteredLanguages.length - 1 ? '1px solid var(--glass-border-subtle)' : 'none',
+                        outline: isFocused ? '2px solid var(--color-primary)' : 'none',
+                        outlineOffset: '-2px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)' }}>
+                        {language.name}
+                        {language.deepgramSupport && <DeepgramBadge />}
+                      </span>
+                    </button>
                   );
                 })
               )}
@@ -393,5 +325,4 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
 };
 
 LanguageDropdownComponent.displayName = 'LanguageDropdown';
-
 export const LanguageDropdown = memo(LanguageDropdownComponent);
