@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, internalMutation } from "./_generated/server";
+import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { FREE_SIGNUP_CREDITS } from "../constants/billing";
 
@@ -54,6 +54,8 @@ export const createOrUpdateUser = mutation({
 export const getUserByClerkId = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
@@ -66,6 +68,8 @@ export const getUserByClerkId = query({
 export const getCreditsBalance = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
@@ -167,6 +171,8 @@ export const addCredits = internalMutation({
 export const getUserDetails = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
@@ -292,6 +298,8 @@ export const completeOnboarding = mutation({
 export const hasCompletedOnboarding = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
@@ -301,8 +309,8 @@ export const hasCompletedOnboarding = query({
   },
 });
 
-// List all users (for dashboard)
-export const list = query({
+// List all users (INTERNAL ONLY — admin/dashboard, not callable from client)
+export const list = internalQuery({
   args: {},
   handler: async (ctx) => {
     const users = await ctx.db.query("users").collect();

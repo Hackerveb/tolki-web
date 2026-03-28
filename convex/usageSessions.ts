@@ -3,6 +3,14 @@ import { mutation, query } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { MIN_SESSION_CREDITS, MIN_SESSION_DURATION_SEC } from "../constants/billing";
 
+// Helper: verify the caller is authenticated and matches the clerkId argument
+async function verifyIdentity(ctx: { auth: { getUserIdentity: () => Promise<any> } }, clerkId: string) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) throw new Error("Unauthorized");
+  if (identity.subject !== clerkId) throw new Error("Forbidden");
+  return identity;
+}
+
 // Start a new translation session
 export const startSession = mutation({
   args: {
@@ -11,6 +19,8 @@ export const startSession = mutation({
     languageTo: v.string(),
   },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     // Get user
     const user = await ctx.db
       .query("users")
@@ -73,9 +83,19 @@ export const endSession = mutation({
     sessionId: v.id("usageSessions"),
   },
   handler: async (ctx, args) => {
+    // Verify caller is authenticated
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthorized");
+
     const session = await ctx.db.get(args.sessionId);
     if (!session) {
       throw new Error("Session not found");
+    }
+
+    // Verify the caller owns this session
+    const sessionOwner = await ctx.db.get(session.userId);
+    if (!sessionOwner || sessionOwner.clerkId !== identity.subject) {
+      throw new Error("Forbidden");
     }
 
     if (!session.isActive) {
@@ -119,6 +139,8 @@ export const updateFractionalCredits = mutation({
     secondsToAdd: v.number(), // Usually 3 seconds
   },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     // Get user
     const user = await ctx.db
       .query("users")
@@ -199,6 +221,8 @@ export const incrementSessionCredits = mutation({
     clerkId: v.string(),
   },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     // Get user
     const user = await ctx.db
       .query("users")
@@ -260,6 +284,8 @@ export const incrementSessionCredits = mutation({
 export const getActiveSession = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
@@ -287,6 +313,8 @@ export const getSessionHistory = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
@@ -316,6 +344,8 @@ export const getSessionHistory = query({
 export const getCreditsUsedToday = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))

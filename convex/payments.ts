@@ -1,7 +1,15 @@
 import { v } from "convex/values";
-import { mutation, query, action } from "./_generated/server";
-import { api } from "./_generated/api";
+import { mutation, query, action, internalMutation, internalQuery } from "./_generated/server";
+import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
+
+// Auth helper
+async function verifyIdentity(ctx: { auth: { getUserIdentity: () => Promise<any> } }, clerkId: string) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) throw new Error("Unauthorized");
+  if (identity.subject !== clerkId) throw new Error("Forbidden");
+  return identity;
+}
 
 // DEPRECATED: Credit packages moved to lib/credit-packages.ts
 // The actual checkout flow uses Stripe Checkout API with packages from lib/credit-packages.ts
@@ -36,7 +44,7 @@ export const createPaymentIntent = action({
     }
 
     // Create purchase record
-    const purchaseId = await ctx.runMutation(api.payments.createPurchaseRecord, {
+    const purchaseId = await ctx.runMutation(internal.payments.createPurchaseRecord, {
       userId: user._id,
       amount: creditPackage.price,
       credits: creditPackage.credits,
@@ -53,8 +61,8 @@ export const createPaymentIntent = action({
   },
 });
 
-// Create a purchase record (internal mutation)
-export const createPurchaseRecord = mutation({
+// Create a purchase record (internal only — not callable from client)
+export const createPurchaseRecord = internalMutation({
   args: {
     userId: v.id("users"),
     amount: v.number(),
@@ -73,8 +81,8 @@ export const createPurchaseRecord = mutation({
   },
 });
 
-// Confirm payment and add credits to user
-export const confirmPayment = mutation({
+// Confirm payment and add credits to user (internal only — not callable from client)
+export const confirmPayment = internalMutation({
   args: {
     purchaseId: v.id("creditPurchases"),
     stripeSessionId: v.optional(v.string()),
@@ -113,8 +121,8 @@ export const confirmPayment = mutation({
   },
 });
 
-// Mark payment as failed
-export const markPaymentFailed = mutation({
+// Mark payment as failed (internal only — not callable from client)
+export const markPaymentFailed = internalMutation({
   args: {
     purchaseId: v.id("creditPurchases"),
     stripeSessionId: v.optional(v.string()),
@@ -127,8 +135,9 @@ export const markPaymentFailed = mutation({
   },
 });
 
-// Record a purchase from Stripe webhook and add credits
-export const recordPurchase = mutation({
+// Record a purchase from Stripe webhook and add credits (internal only)
+// Called from webhook route via fetchMutation from convex/nextjs (server-side, supports internal mutations)
+export const recordPurchase = internalMutation({
   args: {
     clerkId: v.string(),
     credits: v.number(),
@@ -210,6 +219,8 @@ export const recordPurchase = mutation({
 export const getPurchaseHistory = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
@@ -236,6 +247,8 @@ export const getRecentPurchases = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
@@ -269,44 +282,8 @@ export const getRecentPurchases = query({
   },
 });
 
-// Simulate a purchase completion (for testing without Stripe)
-export const simulatePurchase = action({
-  args: {
-    clerkId: v.string(),
-    packageIndex: v.number(),
-  },
-  handler: async (ctx, args): Promise<{ newBalance: number; creditsAdded: number }> => {
-    const user = await ctx.runQuery(api.users.getUserByClerkId, {
-      clerkId: args.clerkId,
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const creditPackage = creditPackages[args.packageIndex];
-    if (!creditPackage) {
-      throw new Error("Invalid package selected");
-    }
-
-    // Create and immediately complete purchase
-    const purchaseId = await ctx.runMutation(api.payments.createPurchaseRecord, {
-      userId: user._id,
-      amount: creditPackage.price,
-      credits: creditPackage.credits,
-    });
-
-    const result = await ctx.runMutation(api.payments.confirmPayment, {
-      purchaseId,
-      stripeSessionId: `simulated_${Date.now()}`,
-    });
-
-    return result;
-  },
-});
-
-// Get all purchases (for dashboard)
-export const getAllPurchases = query({
+// Get all purchases (INTERNAL ONLY — admin/dashboard, not callable from client)
+export const getAllPurchases = internalQuery({
   args: {},
   handler: async (ctx) => {
     const purchases = await ctx.db.query("creditPurchases").collect();

@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe';
 import Stripe from 'stripe';
 import { fetchMutation } from 'convex/nextjs';
-import { api } from '@/convex/_generated/api';
+import { internal } from '@/convex/_generated/api';
 
 export async function POST(request: NextRequest) {
   console.log('=== STRIPE WEBHOOK RECEIVED ===');
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
         try {
           console.log(`🔄 Calling Convex mutation to add ${credits} credits to user ${clerkId}`);
 
-          const result = await fetchMutation(api.payments.recordPurchase, {
+          const result = await fetchMutation(internal.payments.recordPurchase, {
             clerkId,
             credits,
             amount,
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
         // Optionally record failed purchase
         const clerkId = session.metadata?.clerkId || session.client_reference_id;
         if (clerkId) {
-          await fetchMutation(api.payments.recordPurchase, {
+          await fetchMutation(internal.payments.recordPurchase, {
             clerkId,
             credits: 0,
             amount: 0,
