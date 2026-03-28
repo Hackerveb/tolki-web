@@ -219,8 +219,8 @@
   --color-text-primary: #FFFFFF;
   /* Secondary: #EBEBF5 @ 60% — ~7:1 on black, WCAG AA ✓ */
   --color-text-secondary: rgba(235, 235, 245, 0.60);
-  /* Tertiary: #EBEBF5 @ 30% — use only for decorative/disabled text */
-  --color-text-tertiary: rgba(235, 235, 245, 0.30);
+  /* Tertiary: #EBEBF5 @ 40% — improved from 30% for readability */
+  --color-text-tertiary: rgba(235, 235, 245, 0.40);
 
   /* Legacy aliases */
   --color-onyx: #FFFFFF;
@@ -230,7 +230,7 @@
   /* System Colors — iOS dark mode adaptive variants */
   --color-primary: #0A84FF;            /* systemBlue (dark) */
   --color-primary-hover: #409CFF;
-  --color-primary-light: rgba(10, 132, 255, 0.15);
+  --color-primary-light: rgba(10, 132, 255, 0.18);
   --color-success: #30D158;            /* systemGreen (dark) */
   --color-warning: #FF9F0A;            /* systemOrange (dark) */
   --color-error: #FF453A;             /* systemRed (dark) */
@@ -274,19 +274,19 @@
   --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.25);
 
   /* Glassmorphism — iOS frosted glass on dark material */
-  --glass-bg: rgba(28, 28, 30, 0.72);
-  --glass-bg-strong: rgba(44, 44, 46, 0.90);
-  --glass-bg-subtle: rgba(28, 28, 30, 0.48);
-  --glass-border: rgba(84, 84, 88, 0.65);
-  --glass-border-strong: rgba(84, 84, 88, 0.85);
-  --glass-border-subtle: rgba(84, 84, 88, 0.40);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50), 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --glass-shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.60), 0 8px 24px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --glass-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  --glass-page-bg: #000000;            /* OLED true black */
-  --glass-input-bg: rgba(28, 28, 30, 0.80);
-  --glass-input-border: rgba(84, 84, 88, 0.65);
-  --glass-glow-primary: 0 4px 24px rgba(10, 132, 255, 0.50), 0 1px 4px rgba(10, 132, 255, 0.25);
+  --glass-bg: rgba(30, 30, 32, 0.80);
+  --glass-bg-strong: rgba(46, 46, 48, 0.92);
+  --glass-bg-subtle: rgba(30, 30, 32, 0.56);
+  --glass-border: rgba(90, 90, 94, 0.55);
+  --glass-border-strong: rgba(90, 90, 94, 0.75);
+  --glass-border-subtle: rgba(90, 90, 94, 0.35);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.50), 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --glass-shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.60), 0 8px 24px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --glass-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --glass-page-bg: linear-gradient(160deg, #0A0A0F 0%, #05050A 50%, #0A0A12 100%);
+  --glass-input-bg: rgba(36, 36, 40, 0.85);
+  --glass-input-border: rgba(90, 90, 94, 0.55);
+  --glass-glow-primary: 0 4px 24px rgba(10, 132, 255, 0.45), 0 1px 4px rgba(10, 132, 255, 0.20);
 
   /* shadcn/ui vars — mapped to Apple HIG dark palette */
   --background: oklch(0 0 0);                   /* #000000 */
@@ -338,7 +338,7 @@
     /* Text Colors — Apple HIG label hierarchy */
     --color-text-primary: #FFFFFF;
     --color-text-secondary: rgba(235, 235, 245, 0.60);
-    --color-text-tertiary: rgba(235, 235, 245, 0.30);
+    --color-text-tertiary: rgba(235, 235, 245, 0.40);
 
     /* Legacy aliases */
     --color-onyx: #FFFFFF;
@@ -355,7 +355,7 @@
     /* System Colors — iOS dark mode adaptive variants */
     --color-primary: #0A84FF;
     --color-primary-hover: #409CFF;
-    --color-primary-light: rgba(10, 132, 255, 0.15);
+    --color-primary-light: rgba(10, 132, 255, 0.18);
     --color-success: #30D158;
     --color-warning: #FF9F0A;
     --color-error: #FF453A;
@@ -379,16 +379,16 @@
     --color-connecting-pulse: rgba(10, 132, 255, 0.35);
 
     /* Glassmorphism */
-    --glass-bg: rgba(28, 28, 30, 0.72);
-    --glass-bg-strong: rgba(44, 44, 46, 0.90);
-    --glass-bg-subtle: rgba(28, 28, 30, 0.48);
-    --glass-border: rgba(84, 84, 88, 0.65);
-    --glass-border-strong: rgba(84, 84, 88, 0.85);
-    --glass-border-subtle: rgba(84, 84, 88, 0.40);
-    --glass-page-bg: #000000;
-    --glass-input-bg: rgba(28, 28, 30, 0.80);
-    --glass-input-border: rgba(84, 84, 88, 0.65);
-    --glass-glow-primary: 0 4px 24px rgba(10, 132, 255, 0.50), 0 1px 4px rgba(10, 132, 255, 0.25);
+    --glass-bg: rgba(30, 30, 32, 0.80);
+    --glass-bg-strong: rgba(46, 46, 48, 0.92);
+    --glass-bg-subtle: rgba(30, 30, 32, 0.56);
+    --glass-border: rgba(90, 90, 94, 0.55);
+    --glass-border-strong: rgba(90, 90, 94, 0.75);
+    --glass-border-subtle: rgba(90, 90, 94, 0.35);
+    --glass-page-bg: linear-gradient(160deg, #0A0A0F 0%, #05050A 50%, #0A0A12 100%);
+    --glass-input-bg: rgba(36, 36, 40, 0.85);
+    --glass-input-border: rgba(90, 90, 94, 0.55);
+    --glass-glow-primary: 0 4px 24px rgba(10, 132, 255, 0.45), 0 1px 4px rgba(10, 132, 255, 0.20);
 
     /* Shadows */
     --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.40);

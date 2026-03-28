@@ -182,9 +182,9 @@ function MainScreenContent() {
   const isLowOnCredits = balance > 0 && balance < 5;
   const isInsufficientCredits = balance < 0.05;
 
-  // Map visualizer state: idle shows subtle 'listening' animation, connected uses real agent state
+  // Map visualizer state: idle shows disconnected (flat line), connected uses real agent state
   const visualizerState = connectionStatus === 'idle'
-    ? 'listening'
+    ? 'disconnected'
     : connectionStatus === 'connecting'
       ? 'connecting'
       : agentState;
@@ -249,7 +249,7 @@ function MainScreenContent() {
             className="flex-1"
           />
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-            <path d="M5 12h14M12 5l7 7-7 7" stroke="var(--color-text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M5 12h14M19 12l-4-4M19 12l-4 4M5 12l4-4M5 12l4 4" stroke="var(--color-text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           <LanguageDropdown
             selectedLanguage={targetLanguage}

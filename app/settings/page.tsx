@@ -235,15 +235,7 @@ function SettingsScreenInner() {
             marginBottom: '16px',
           }}
         >
-          <div className="flex items-center" style={{ gap: '10px', marginBottom: '20px' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
-                stroke="var(--color-primary)"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
+          <div style={{ marginBottom: '20px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
               Manage
             </h3>
@@ -291,18 +283,7 @@ function SettingsScreenInner() {
             marginBottom: '16px',
           }}
         >
-          <div className="flex items-center" style={{ gap: '10px', marginBottom: '20px' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="5" stroke="var(--color-primary)" strokeWidth="2" />
-              <line x1="12" y1="1" x2="12" y2="3" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" />
-              <line x1="12" y1="21" x2="12" y2="23" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" />
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" />
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" />
-              <line x1="1" y1="12" x2="3" y2="12" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" />
-              <line x1="21" y1="12" x2="23" y2="12" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" />
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" />
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+          <div style={{ marginBottom: '20px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
               Appearance
             </h3>
@@ -362,11 +343,7 @@ function SettingsScreenInner() {
             marginBottom: '20px',
           }}
         >
-          <div className="flex items-center" style={{ gap: '10px', marginBottom: '20px' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="var(--color-primary)" strokeWidth="2" />
-              <circle cx="12" cy="7" r="4" stroke="var(--color-primary)" strokeWidth="2" />
-            </svg>
+          <div style={{ marginBottom: '20px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
               Profile
             </h3>
