@@ -6,6 +6,9 @@ import Link from 'next/link';
 import { useClerk } from '@clerk/nextjs';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useTheme } from '@/hooks/useTheme';
+import { useToast } from '@/hooks/useToast';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const ArrowIcon = memo(() => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -72,12 +75,15 @@ const ActionButton: React.FC<ActionButtonProps> = memo(({
 ));
 ActionButton.displayName = 'ActionButton';
 
-export default function SettingsScreen() {
+function SettingsScreenInner() {
   const router = useRouter();
   const { signOut } = useClerk();
   const { displayName, email, initials, credits, clerkUser } = useCurrentUser();
   const { isDark, setTheme } = useTheme();
+  const { toast } = useToast();
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const balance = credits || 0;
   const isLowOnCredits = balance > 0 && balance < 5;
@@ -91,38 +97,56 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleSignOut = async () => {
-    if (confirm('Are you sure you want to sign out?')) {
-      await signOut();
-      router.push('/sign-in');
-    }
+  const handleSignOut = () => {
+    setShowSignOutConfirm(true);
   };
 
-  const handleDeleteAccount = async () => {
+  const confirmSignOut = async () => {
+    setShowSignOutConfirm(false);
+    await signOut();
+    router.push('/sign-in');
+  };
+
+  const handleDeleteAccount = () => {
     if (!clerkUser) return;
+    setShowDeleteConfirm(true);
+  };
 
-    const firstConfirm = confirm(
-      `Are you sure you want to delete your account?\n\nWARNING:\n\n• This action is PERMANENT and cannot be undone\n• All your data will be deleted\n• Your remaining ${balance.toFixed(2)} credits will be forfeited\n• Any active sessions will be ended immediately`
-    );
-
-    if (!firstConfirm) return;
-
-    const secondConfirm = confirm('This is your last chance. Delete your account permanently?');
-
-    if (secondConfirm) {
-      setIsDeletingAccount(true);
-      try {
-        await clerkUser.delete();
-        router.push('/onboarding');
-      } catch (error) {
-        console.error('Account deletion error:', error);
-        alert('Failed to delete your account. Please try again or contact support.');
-        setIsDeletingAccount(false);
-      }
+  const confirmDeleteAccount = async () => {
+    if (!clerkUser) return;
+    setShowDeleteConfirm(false);
+    setIsDeletingAccount(true);
+    try {
+      await clerkUser.delete();
+      router.push('/onboarding');
+    } catch (error) {
+      console.error('Account deletion error:', error);
+      toast.error('Failed to delete your account. Please try again or contact support.');
+      setIsDeletingAccount(false);
     }
   };
 
   return (
+    <>
+    <ConfirmDialog
+      isOpen={showSignOutConfirm}
+      title="Sign Out"
+      message="Are you sure you want to sign out?"
+      confirmLabel="Sign Out"
+      cancelLabel="Cancel"
+      onConfirm={confirmSignOut}
+      onCancel={() => setShowSignOutConfirm(false)}
+    />
+    <ConfirmDialog
+      isOpen={showDeleteConfirm}
+      title="Delete Account"
+      message={`This action is PERMANENT and cannot be undone. All your data will be deleted and your remaining ${balance.toFixed(2)} credits will be forfeited.`}
+      confirmLabel="Delete Account"
+      cancelLabel="Cancel"
+      isDangerous
+      onConfirm={confirmDeleteAccount}
+      onCancel={() => setShowDeleteConfirm(false)}
+    />
     <div
       className="h-screen flex flex-col overflow-hidden"
       style={{ backgroundColor: 'var(--color-background)' }}
@@ -504,5 +528,14 @@ export default function SettingsScreen() {
         </div>
       </div>
     </div>
+    </>
+  );
+}
+
+export default function SettingsScreen() {
+  return (
+    <ErrorBoundary>
+      <SettingsScreenInner />
+    </ErrorBoundary>
   );
 }

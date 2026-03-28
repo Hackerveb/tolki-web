@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, memo } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from '@/types';
 import { languages, getLanguageByCode } from '@/lib/languages';
@@ -22,10 +22,12 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [recentLanguages, setRecentLanguages] = useState<Language[]>([]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Load recent languages on mount and when dropdown opens
   useEffect(() => {
@@ -49,6 +51,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setSearchQuery('');
+        setFocusedIndex(-1);
       }
     };
 
@@ -81,6 +84,48 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
 
   const showRecentSection = displayRecentLanguages.length > 0 && searchQuery.trim().length === 0;
 
+  // Flat list for keyboard navigation (recent first, then all filtered)
+  const allItems: Array<{ language: Language; key: string }> = [
+    ...(showRecentSection
+      ? displayRecentLanguages.map((l) => ({ language: l, key: `recent-${l.code}` }))
+      : []),
+    ...filteredLanguages.map((l) => ({ language: l, key: l.code })),
+  ];
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (!isOpen) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        setIsOpen(true);
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setFocusedIndex((prev) => Math.min(prev + 1, allItems.length - 1));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setFocusedIndex((prev) => Math.max(prev - 1, 0));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (focusedIndex >= 0 && focusedIndex < allItems.length) {
+          handleLanguageSelect(allItems[focusedIndex].language);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setIsOpen(false);
+        setSearchQuery('');
+        setFocusedIndex(-1);
+        break;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, focusedIndex, allItems]);
+
   // HD badge for Deepgram support - professional alternative to emoji
   const DeepgramBadge = () => (
     <span
@@ -95,12 +140,14 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
   );
 
   return (
-    <div ref={dropdownRef} className={`relative ${className}`} style={{ zIndex: 9999 }}>
+    <div ref={dropdownRef} className={`relative ${className}`} style={{ zIndex: 9999 }} onKeyDown={handleKeyDown}>
       {/* Dropdown Button */}
       <motion.button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => { setIsOpen(!isOpen); setFocusedIndex(-1); }}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
+        aria-controls={isOpen ? 'language-listbox' : undefined}
+        aria-activedescendant={focusedIndex >= 0 ? `lang-item-${allItems[focusedIndex]?.key}` : undefined}
         whileTap={{ scale: 0.98 }}
         className="w-full px-4 rounded-xl flex items-center justify-between"
         style={{
@@ -139,6 +186,9 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            id="language-listbox"
+            role="listbox"
+            aria-label="Select language"
             initial={{ opacity: 0, y: dropDirection === 'down' ? -5 : 5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: dropDirection === 'down' ? -5 : 5 }}
@@ -167,7 +217,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                   ref={searchInputRef}
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => { setSearchQuery(e.target.value); setFocusedIndex(-1); }}
                   placeholder="Search languages"
                   aria-label="Search languages"
                   className="w-full text-sm"
@@ -242,15 +292,22 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                       Recent
                     </span>
                   </div>
-                  {displayRecentLanguages.map((language, index) => (
+                  {displayRecentLanguages.map((language, index) => {
+                    const itemKey = `recent-${language.code}`;
+                    const itemIndex = allItems.findIndex((i) => i.key === itemKey);
+                    const isFocused = itemIndex === focusedIndex;
+                    return (
                     <button
-                      key={`recent-${language.code}`}
+                      key={itemKey}
+                      id={`lang-item-${itemKey}`}
+                      role="option"
+                      aria-selected={selectedLanguage.code === language.code}
                       onClick={() => handleLanguageSelect(language)}
-                      onMouseEnter={() => setHoveredItem(`recent-${language.code}`)}
+                      onMouseEnter={() => { setHoveredItem(itemKey); setFocusedIndex(itemIndex); }}
                       onMouseLeave={() => setHoveredItem(null)}
                       className="w-full px-4 flex items-center gap-3 transition-colors duration-150"
                       style={{
-                        backgroundColor: hoveredItem === `recent-${language.code}`
+                        backgroundColor: isFocused || hoveredItem === itemKey
                           ? 'var(--color-primary-alpha)'
                           : 'transparent',
                         paddingTop: '12px',
@@ -258,6 +315,8 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                         borderBottom: index < displayRecentLanguages.length - 1
                           ? '1px solid var(--color-border)'
                           : 'none',
+                        outline: isFocused ? '2px solid var(--color-primary)' : 'none',
+                        outlineOffset: '-2px',
                       }}
                     >
                       <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', paddingLeft: '4px' }}>
@@ -265,7 +324,8 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                         {language.deepgramSupport && <DeepgramBadge />}
                       </span>
                     </button>
-                  ))}
+                    );
+                  })}
                   {/* Subtle separator line */}
                   <div
                     style={{
@@ -289,15 +349,22 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                   </p>
                 </div>
               ) : (
-                filteredLanguages.map((language, index) => (
+                filteredLanguages.map((language, index) => {
+                  const itemKey = language.code;
+                  const itemIndex = allItems.findIndex((i) => i.key === itemKey);
+                  const isFocused = itemIndex === focusedIndex;
+                  return (
                   <button
                     key={language.code}
+                    id={`lang-item-${itemKey}`}
+                    role="option"
+                    aria-selected={selectedLanguage.code === language.code}
                     onClick={() => handleLanguageSelect(language)}
-                    onMouseEnter={() => setHoveredItem(language.code)}
+                    onMouseEnter={() => { setHoveredItem(language.code); setFocusedIndex(itemIndex); }}
                     onMouseLeave={() => setHoveredItem(null)}
                     className="w-full px-4 flex items-center gap-3 transition-colors duration-150"
                     style={{
-                      backgroundColor: hoveredItem === language.code
+                      backgroundColor: isFocused || hoveredItem === language.code
                         ? 'var(--color-primary-alpha)'
                         : 'transparent',
                       paddingTop: '12px',
@@ -305,6 +372,8 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                       borderBottom: index < filteredLanguages.length - 1
                         ? '1px solid var(--color-border)'
                         : 'none',
+                      outline: isFocused ? '2px solid var(--color-primary)' : 'none',
+                      outlineOffset: '-2px',
                     }}
                   >
                     <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', paddingLeft: '4px' }}>
@@ -312,7 +381,8 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                       {language.deepgramSupport && <DeepgramBadge />}
                     </span>
                   </button>
-                ))
+                  );
+                })
               )}
             </div>
           </motion.div>

@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/useToast';
 import { useAgentMode } from '@/hooks/useAgentMode';
 import { languageStorage } from '@/utils/languageStorage';
 import { colors } from '@/styles/colors';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Settings icon component
 const SettingsIcon = () => (
@@ -28,7 +29,7 @@ const SettingsIcon = () => (
 
 type ConnectionStatus = 'idle' | 'connecting' | 'connected';
 
-export default function MainScreen() {
+function MainScreenInner() {
   const router = useRouter();
   const { credits, isLoaded, isSignedIn } = useCurrentUser();
   const [sourceLanguage, setSourceLanguage] = useState<Language>(defaultSourceLanguage);
@@ -70,36 +71,28 @@ export default function MainScreen() {
 
   // Smart language selection handlers - memoized to prevent child re-renders
   const handleSourceLanguageSelect = useCallback((language: Language) => {
-    setSourceLanguage(language);
-    // If selected language is same as target, swap them
-    setTargetLanguage((currentTarget) => {
-      if (language.code === currentTarget.code) {
-        setSourceLanguage((currentSource) => {
-          languageStorage.saveLanguagePair(language, currentSource);
-          return language;
-        });
-        return sourceLanguage;
-      }
-      languageStorage.saveLanguagePair(language, currentTarget);
-      return currentTarget;
+    setSourceLanguage((prevSource) => {
+      setTargetLanguage((prevTarget) => {
+        // If selected source is same as current target, swap them
+        const newTarget = language.code === prevTarget.code ? prevSource : prevTarget;
+        languageStorage.saveLanguagePair(language, newTarget);
+        return newTarget;
+      });
+      return language;
     });
-  }, [sourceLanguage]);
+  }, []);
 
   const handleTargetLanguageSelect = useCallback((language: Language) => {
-    setTargetLanguage(language);
-    // If selected language is same as source, swap them
-    setSourceLanguage((currentSource) => {
-      if (language.code === currentSource.code) {
-        setTargetLanguage((currentTarget) => {
-          languageStorage.saveLanguagePair(currentTarget, language);
-          return language;
-        });
-        return targetLanguage;
-      }
-      languageStorage.saveLanguagePair(currentSource, language);
-      return currentSource;
+    setTargetLanguage((prevTarget) => {
+      setSourceLanguage((prevSource) => {
+        // If selected target is same as current source, swap them
+        const newSource = language.code === prevSource.code ? prevTarget : prevSource;
+        languageStorage.saveLanguagePair(newSource, language);
+        return newSource;
+      });
+      return language;
     });
-  }, [targetLanguage]);
+  }, []);
 
   const handleRecordingStateChange = useCallback(async (newState: RecordingState) => {
     // Map UI state changes back to connection logic
@@ -363,5 +356,13 @@ export default function MainScreen() {
         </main>
       </div>
     </RoomContext.Provider>
+  );
+}
+
+export default function MainScreen() {
+  return (
+    <ErrorBoundary>
+      <MainScreenInner />
+    </ErrorBoundary>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { memo } from 'react';
 import { motion } from 'framer-motion';
+import { Mic, MicOff } from 'lucide-react';
 import { RecordingState } from '@/types';
 import { colors } from '@/styles/colors';
 
@@ -103,7 +104,7 @@ const RecordButtonComponent: React.FC<RecordButtonProps> = ({ state, onStateChan
             >
                 {/* Icon - 36x36 size, dynamic border radius */}
                 <motion.div
-                    className="w-9 h-9 relative overflow-hidden"
+                    className="w-9 h-9 relative overflow-hidden flex items-center justify-center"
                     style={{
                         backgroundColor: getButtonColor(),
                     }}
@@ -112,7 +113,13 @@ const RecordButtonComponent: React.FC<RecordButtonProps> = ({ state, onStateChan
                         borderRadius: getIconBorderRadius(),
                     }}
                     transition={{ duration: 0.2 }}
-                />
+                >
+                    {(state === 'thinking' || state === 'translating') ? (
+                        <MicOff size={18} color="white" strokeWidth={2} />
+                    ) : (
+                        <Mic size={18} color="white" strokeWidth={2} />
+                    )}
+                </motion.div>
             </motion.button>
         </div>
     );

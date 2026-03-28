@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSignIn } from '@clerk/nextjs';
 import { colors } from '@/styles/colors';
+import { useToast } from '@/hooks/useToast';
 import {
   validateEmail,
   validatePassword,
@@ -16,6 +17,7 @@ type ResetStep = 'email' | 'code' | 'password' | 'success';
 export default function ForgotPasswordPage() {
   const router = useRouter();
   const { isLoaded, signIn } = useSignIn();
+  const { toast } = useToast();
 
   const [currentStep, setCurrentStep] = useState<ResetStep>('email');
   const [emailAddress, setEmailAddress] = useState('');
@@ -56,12 +58,12 @@ export default function ForgotPasswordPage() {
     if (!isLoaded) return;
 
     if (!emailAddress) {
-      alert('Please enter your email address');
+      toast.error('Please enter your email address');
       return;
     }
 
     if (!emailValidation.isValid) {
-      alert(emailValidation.message || 'Please enter a valid email address');
+      toast.error(emailValidation.message || 'Please enter a valid email address');
       return;
     }
 
@@ -77,7 +79,7 @@ export default function ForgotPasswordPage() {
     } catch (err: unknown) {
       const error = err as { errors?: Array<{ longMessage?: string; message?: string }> };
       const errorMessage = error.errors?.[0]?.longMessage || error.errors?.[0]?.message || 'Unable to send reset code. Please try again.';
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -93,10 +95,10 @@ export default function ForgotPasswordPage() {
         identifier: emailAddress,
       });
 
-      alert('A new verification code has been sent to your email.');
+      toast.success('A new verification code has been sent to your email.');
       setCode('');
     } catch {
-      alert('Failed to resend code. Please try again.');
+      toast.error('Failed to resend code. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -106,12 +108,12 @@ export default function ForgotPasswordPage() {
     if (!isLoaded) return;
 
     if (!code) {
-      alert('Please enter the verification code');
+      toast.error('Please enter the verification code');
       return;
     }
 
     if (code.length !== 6) {
-      alert('Verification code must be 6 digits');
+      toast.error('Verification code must be 6 digits');
       return;
     }
 
@@ -127,7 +129,7 @@ export default function ForgotPasswordPage() {
     } catch (err: unknown) {
       const error = err as { errors?: Array<{ longMessage?: string; message?: string }> };
       const errorMessage = error.errors?.[0]?.longMessage || error.errors?.[0]?.message || 'Invalid verification code. Please try again.';
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -137,12 +139,12 @@ export default function ForgotPasswordPage() {
     if (!isLoaded) return;
 
     if (!password) {
-      alert('Please enter a new password');
+      toast.error('Please enter a new password');
       return;
     }
 
     if (!passwordValidation.isValid) {
-      alert('Please ensure your password meets all requirements');
+      toast.error('Please ensure your password meets all requirements');
       return;
     }
 
@@ -157,7 +159,7 @@ export default function ForgotPasswordPage() {
     } catch (err: unknown) {
       const error = err as { errors?: Array<{ longMessage?: string; message?: string }> };
       const errorMessage = error.errors?.[0]?.longMessage || error.errors?.[0]?.message || 'Unable to reset password. Please try again.';
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
