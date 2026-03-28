@@ -224,23 +224,6 @@ function SettingsScreenInner() {
             )}
           </div>
 
-          {/* Sign Out Button */}
-          <button
-            onClick={handleSignOut}
-            className="transition-all hover:scale-105 active:scale-95 glass"
-            style={{
-              paddingTop: '10px',
-              paddingBottom: '10px',
-              paddingLeft: '28px',
-              paddingRight: '28px',
-              borderRadius: '12px',
-              cursor: 'pointer',
-            }}
-          >
-            <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--color-error)' }}>
-              Sign Out
-            </span>
-          </button>
         </div>
 
         {/* Management Section */}
@@ -406,13 +389,29 @@ function SettingsScreenInner() {
             </button>
           </Link>
 
-          {/* Delete Account */}
+          {/* Sign Out & Delete Account */}
           <div
             style={{
               paddingTop: '20px',
               borderTop: '1px solid var(--glass-border)',
             }}
           >
+            <button
+              onClick={handleSignOut}
+              className="flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] glass"
+              style={{
+                width: '100%',
+                paddingTop: '14px',
+                paddingBottom: '14px',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                marginBottom: '12px',
+              }}
+            >
+              <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--color-error)' }}>
+                Sign Out
+              </span>
+            </button>
             <button
               onClick={handleDeleteAccount}
               disabled={isDeletingAccount}

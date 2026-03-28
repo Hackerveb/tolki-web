@@ -21,7 +21,7 @@ const glassPanelStyle: React.CSSProperties = {
   border: '1px solid var(--glass-border)',
   boxShadow: 'var(--glass-shadow-lg)',
   borderRadius: '28px',
-  padding: '32px 28px',
+  padding: '40px 28px',
 };
 
 const glassInputStyle: React.CSSProperties = {
@@ -351,7 +351,7 @@ export default function SignUpPage() {
       <AuthDivider />
 
       {/* Name Fields */}
-      <div className="flex gap-3 mt-5 mb-4">
+      <div className="flex gap-3 mt-6 mb-5">
         <div className="flex-1">
           <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             First
@@ -381,7 +381,7 @@ export default function SignUpPage() {
       </div>
 
       {/* Email */}
-      <div className="mb-4">
+      <div className="mb-5">
         <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Email
         </label>
@@ -404,7 +404,7 @@ export default function SignUpPage() {
       </div>
 
       {/* Password */}
-      <div className="mb-5">
+      <div className="mb-6">
         <div className="flex items-center justify-between mb-1.5">
           <label className="text-xs font-semibold" style={{ color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Password

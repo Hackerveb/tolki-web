@@ -114,7 +114,7 @@ function MainScreenContent() {
     resetUsage();
   }, [disconnect, resetUsage]);
 
-  // Tap vs hold: hold (>300ms) = mute, short tap = start/stop session
+  // Tap vs hold: hold (>500ms) = mute only (keep session), short tap = start/stop
   const handleVisualizerPointerDown = useCallback(() => {
     if (connectionStatus === 'connecting') return;
     isHoldingRef.current = false;
@@ -130,7 +130,7 @@ function MainScreenContent() {
           if (muteHintTimerRef.current) clearTimeout(muteHintTimerRef.current);
           localStorage.setItem(HOLD_TO_MUTE_KEY, '1');
         }
-      }, 300);
+      }, 500);
     }
   }, [connectionStatus, room, showMuteHint]);
 
@@ -138,27 +138,30 @@ function MainScreenContent() {
     if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
 
     if (isHoldingRef.current) {
-      // Was holding — release mute
-      isHoldingRef.current = false;
-      if (!room) return;
-      setIsMuted(false);
-      room.localParticipant.setMicrophoneEnabled(true).catch(console.error);
+      // Was holding — unmute mic, keep session alive
+      if (room) {
+        setIsMuted(false);
+        room.localParticipant.setMicrophoneEnabled(true).catch(console.error);
+      }
+      // Delay reset so click handler still sees the flag
+      setTimeout(() => { isHoldingRef.current = false; }, 50);
     }
   }, [room]);
 
   const handleVisualizerPointerLeave = useCallback(() => {
     if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
     if (isHoldingRef.current) {
-      isHoldingRef.current = false;
-      if (!room) return;
-      setIsMuted(false);
-      room.localParticipant.setMicrophoneEnabled(true).catch(console.error);
+      if (room) {
+        setIsMuted(false);
+        room.localParticipant.setMicrophoneEnabled(true).catch(console.error);
+      }
+      setTimeout(() => { isHoldingRef.current = false; }, 50);
     }
   }, [room]);
 
   const handleVisualizerClick = useCallback(() => {
     if (connectionStatus === 'connecting') return;
-    if (isHoldingRef.current) return; // Was a hold, not a tap
+    if (isHoldingRef.current) return; // Was a hold, don't stop session
     if (connectionStatus === 'connected') handleRecordingStop();
     else if (!isInsufficientCredits) handleStartSession();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -179,6 +182,13 @@ function MainScreenContent() {
   const isLowOnCredits = balance > 0 && balance < 5;
   const isInsufficientCredits = balance < 0.05;
 
+  // Map visualizer state: idle shows subtle 'listening' animation, connected uses real agent state
+  const visualizerState = connectionStatus === 'idle'
+    ? 'listening'
+    : connectionStatus === 'connecting'
+      ? 'connecting'
+      : agentState;
+
   // The primary CTA text — doubles as a tappable action label
   const ctaText = (() => {
     if (connectionStatus === 'connected') return 'Tap to stop session. Hold to pause microphone';
@@ -194,7 +204,7 @@ function MainScreenContent() {
 
   const getStatusColor = () => {
     if (connectionStatus === 'idle') return 'var(--color-text-tertiary)';
-    switch (agentState) {
+    switch (visualizerState) {
       case 'listening':    return 'var(--color-listening)';
       case 'thinking':     return 'var(--color-thinking)';
       case 'speaking':     return 'var(--color-translating)';
@@ -289,9 +299,12 @@ function MainScreenContent() {
           paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
         }}
       >
-        {/* Credits / remaining time — between header and visualizer */}
+        {/* Top spacer — pushes credits to ~25% from top */}
+        <div style={{ flex: '1 1 0' }} />
+
+        {/* Credits / remaining time — positioned ~3/4 from bottom */}
         <motion.div
-          className="flex flex-col items-center mt-14 mb-6 flex-shrink-0"
+          className="flex flex-col items-center mb-6 flex-shrink-0"
           animate={{ opacity: isInsufficientCredits ? 0.5 : 1 }}
         >
           {/* Always show remaining balance */}
@@ -340,8 +353,11 @@ function MainScreenContent() {
           </AnimatePresence>
         </motion.div>
 
+        {/* Middle spacer */}
+        <div style={{ flex: '1 1 0' }} />
+
         {/* Visualizer + CTA section */}
-        <div className="flex-1 flex flex-col items-center justify-center w-full">
+        <div className="flex flex-col items-center w-full flex-shrink-0">
 
           {/* AgentAudioVisualizerWave — centerpiece, tap to start/stop, hold to mute */}
           <motion.div
@@ -353,7 +369,7 @@ function MainScreenContent() {
             style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
           >
             <AgentAudioVisualizerWave
-              state={agentState}
+              state={visualizerState}
               audioTrack={audioTrack}
               size="lg"
               color="#1FD5F9"
@@ -432,6 +448,9 @@ function MainScreenContent() {
             </div>
           )}
         </div>
+
+        {/* Bottom spacer */}
+        <div style={{ flex: '2 1 0' }} />
 
         {/* Live transcript */}
         <AnimatePresence>

@@ -16,7 +16,7 @@ const glassPanelStyle: React.CSSProperties = {
   border: '1px solid var(--glass-border)',
   boxShadow: 'var(--glass-shadow-lg)',
   borderRadius: '28px',
-  padding: '32px 28px',
+  padding: '40px 28px',
 };
 
 const glassInputStyle: React.CSSProperties = {
