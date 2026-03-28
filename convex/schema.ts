@@ -9,6 +9,9 @@ export default defineSchema({
     credits: v.number(),
     totalCreditsEverPurchased: v.number(),
     defaultLanguage: v.optional(v.string()),
+    defaultSourceLanguage: v.optional(v.string()),
+    defaultTargetLanguage: v.optional(v.string()),
+    onboardingCompleted: v.optional(v.boolean()),
     createdAt: v.number(),
     lastActive: v.number(),
   })

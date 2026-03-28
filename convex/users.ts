@@ -1,7 +1,15 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { FREE_SIGNUP_CREDITS } from "../constants/billing";
+
+// Helper: verify the caller is authenticated and matches the clerkId argument
+async function verifyIdentity(ctx: { auth: { getUserIdentity: () => Promise<any> } }, clerkId: string) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) throw new Error("Unauthorized");
+  if (identity.subject !== clerkId) throw new Error("Forbidden");
+  return identity;
+}
 
 // Create or update user when they sign in via Clerk
 export const createOrUpdateUser = mutation({
@@ -11,6 +19,8 @@ export const createOrUpdateUser = mutation({
     name: v.string(),
   },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     const existingUser = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
@@ -76,6 +86,8 @@ export const updateDefaultLanguage = mutation({
     language: v.string(),
   },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
@@ -98,6 +110,8 @@ export const deductCredits = mutation({
     credits: v.number(),
   },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
@@ -123,8 +137,8 @@ export const deductCredits = mutation({
   },
 });
 
-// Add credits after successful purchase
-export const addCredits = mutation({
+// Add credits after successful purchase (internal only — not callable from client)
+export const addCredits = internalMutation({
   args: {
     clerkId: v.string(),
     credits: v.number(),
@@ -191,6 +205,8 @@ export const deleteUserAccount = mutation({
     clerkId: v.string(),
   },
   handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
     // Find the user
     const user = await ctx.db
       .query("users")
@@ -240,6 +256,48 @@ export const deleteUserAccount = mutation({
     await ctx.db.delete(user._id);
 
     return { success: true, message: "Account deleted successfully" };
+  },
+});
+
+// Mark onboarding as completed and save language preferences
+export const completeOnboarding = mutation({
+  args: {
+    clerkId: v.string(),
+    sourceLanguage: v.string(),
+    targetLanguage: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await verifyIdentity(ctx, args.clerkId);
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await ctx.db.patch(user._id, {
+      onboardingCompleted: true,
+      defaultSourceLanguage: args.sourceLanguage,
+      defaultTargetLanguage: args.targetLanguage,
+      defaultLanguage: args.sourceLanguage,
+      lastActive: Date.now(),
+    });
+  },
+});
+
+// Check if user has completed onboarding
+export const hasCompletedOnboarding = query({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    return user?.onboardingCompleted ?? false;
   },
 });
 
