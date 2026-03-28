@@ -65,7 +65,6 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      // @ts-expect-error — Clerk SDK types omit reset_password_email_code from strategy union
       await signIn.create({
         strategy: 'reset_password_email_code',
         identifier: emailAddress,
@@ -86,7 +85,6 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
-      // @ts-expect-error — Clerk SDK types omit reset_password_email_code from strategy union
       await signIn.create({
         strategy: 'reset_password_email_code',
         identifier: emailAddress,

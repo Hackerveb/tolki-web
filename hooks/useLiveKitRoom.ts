@@ -50,7 +50,7 @@ export const useLiveKitRoom = (): UseLiveKitRoomReturn => {
   // Handle disconnection on unmount
   useEffect(() => {
     return () => {
-      if (room.state === ConnectionState.Connected) {
+      if (room.state === ConnectionState.Connected || room.state === ConnectionState.Connecting) {
         room.disconnect();
       }
     };
