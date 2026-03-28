@@ -158,7 +158,12 @@ function MainScreenContent() {
   }, [room]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
-  const formatCreditsDisplay = (c: number) => (c < 60 ? `${c.toFixed(0)} min` : `${(c / 60).toFixed(1)} hrs`);
+  const formatCreditsDisplay = (c: number) => {
+    if (c < 1) return `${Math.round(c * 60)}s`;
+    if (c < 60) return `${Math.round(c)} min`;
+    const hrs = c / 60;
+    return hrs >= 10 ? `${Math.round(hrs)}h` : `${hrs.toFixed(1)}h`;
+  };
 
   const balance = credits || 0;
   const isLowOnCredits = balance > 0 && balance < 5;
@@ -270,36 +275,42 @@ function MainScreenContent() {
           paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
         }}
       >
-        {/* Credits pill */}
-        <div
-          className="flex items-baseline gap-1.5 mt-5 mb-2 px-4 py-2 rounded-full flex-shrink-0"
-          style={{
-            background: 'var(--glass-bg-strong)',
-            backdropFilter: 'var(--glass-blur-sm)',
-            WebkitBackdropFilter: 'var(--glass-blur-sm)',
-            border: '1px solid var(--glass-border)',
-            boxShadow: 'var(--glass-shadow-sm)',
-          }}
-        >
-          <span className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-            {formatCreditsDisplay(balance)}
-          </span>
-          <span className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>remaining</span>
-          {connectionStatus === 'connected' && (
-            <span className="text-xs ml-1" style={{ color: 'var(--color-text-tertiary)' }}>· ~1 min/credit</span>
+        {/* Credits display */}
+        <div className="flex items-center gap-2 mt-4 mb-1 flex-shrink-0">
+          <div
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl"
+            style={{
+              background: 'var(--glass-bg)',
+              backdropFilter: 'var(--glass-blur-sm)',
+              WebkitBackdropFilter: 'var(--glass-blur-sm)',
+              border: '1px solid var(--glass-border)',
+              boxShadow: 'var(--glass-shadow-sm)',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}>
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+              {formatCreditsDisplay(balance)}
+            </span>
+            <span className="text-xs font-medium" style={{ color: 'var(--color-text-tertiary)' }}>left</span>
+          </div>
+          {isLowOnCredits && connectionStatus === 'idle' && (
+            <Link
+              href="/settings/credits"
+              prefetch
+              className="px-3 py-2 rounded-2xl text-xs font-semibold"
+              style={{
+                background: 'rgba(37,99,235,0.08)',
+                color: 'var(--color-primary)',
+                border: '1px solid rgba(37,99,235,0.12)',
+              }}
+            >
+              Top up
+            </Link>
           )}
         </div>
-
-        {isLowOnCredits && connectionStatus === 'idle' && (
-          <Link
-            href="/settings/credits"
-            prefetch
-            className="mb-3 px-3 py-1.5 rounded-full text-xs font-medium"
-            style={{ background: 'rgba(37,99,235,0.10)', color: 'var(--color-primary)' }}
-          >
-            Buy more credits
-          </Link>
-        )}
 
         {/* Visualizer section */}
         <div className="flex-1 flex flex-col items-center justify-center w-full">
@@ -308,15 +319,15 @@ function MainScreenContent() {
           <motion.div
             className="relative"
             animate={{
-              scale: connectionStatus === 'connected' ? 1 : 0.92,
-              opacity: isInsufficientCredits ? 0.45 : 1,
+              scale: connectionStatus === 'connected' ? 1.02 : 1,
+              opacity: isInsufficientCredits ? 0.4 : 1,
             }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           >
             <AgentAudioVisualizerAura
               agentState={visualizerState}
               frequencyData={frequencyData.length > 0 ? frequencyData : null}
-              size={220}
+              size={240}
             />
             {connectionStatus !== 'connecting' && (
               <button
@@ -329,37 +340,34 @@ function MainScreenContent() {
             )}
           </motion.div>
 
-          {/* Status pill */}
-          <div
-            className="mt-5 px-5 py-2.5 rounded-full"
-            aria-live="polite"
-            style={{
-              background: 'var(--glass-bg)',
-              backdropFilter: 'var(--glass-blur-sm)',
-              WebkitBackdropFilter: 'var(--glass-blur-sm)',
-              border: '1px solid var(--glass-border)',
-              boxShadow: 'var(--glass-shadow-sm)',
-            }}
-          >
-            <p className="text-sm font-medium text-center" style={{ color: getStatusColor() }}>
+          {/* Status text + timer */}
+          <div className="mt-4 flex flex-col items-center gap-1">
+            <p
+              className="text-[13px] font-medium tracking-wide"
+              aria-live="polite"
+              style={{ color: getStatusColor(), letterSpacing: '0.02em' }}
+            >
               {getStatusText()}
             </p>
+            <AnimatePresence>
+              {connectionStatus === 'connected' && (
+                <motion.p
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="text-2xl font-light tracking-tight"
+                  style={{
+                    color: 'var(--color-text-primary)',
+                    fontVariantNumeric: 'tabular-nums',
+                    fontFeatureSettings: '"tnum"',
+                    letterSpacing: '-0.02em',
+                  }}
+                >
+                  {formatTime(secondsUsed)}
+                </motion.p>
+              )}
+            </AnimatePresence>
           </div>
-
-          {/* Timer */}
-          <AnimatePresence>
-            {connectionStatus === 'connected' && (
-              <motion.div
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                className="mt-3 text-xl font-medium"
-                style={{ color: 'var(--color-text-secondary)', fontVariantNumeric: 'tabular-nums', fontFeatureSettings: '"tnum"' }}
-              >
-                {formatTime(secondsUsed)}
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Hold-to-mute button + hint */}
           <AnimatePresence>
@@ -368,7 +376,8 @@ function MainScreenContent() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="mt-6 flex flex-col items-center gap-2.5"
+                transition={{ delay: 0.1, duration: 0.3 }}
+                className="mt-4 flex flex-col items-center gap-2"
               >
                 <motion.button
                   onPointerDown={handleMuteStart}
@@ -419,24 +428,54 @@ function MainScreenContent() {
             {connectionStatus === 'idle' && !isInsufficientCredits && (
               <motion.button
                 key="start-btn"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                 onClick={handleStartSession}
-                className="mt-6 px-8 rounded-2xl font-semibold text-base"
+                className="mt-5 flex items-center gap-2 px-7 rounded-full font-semibold text-[15px]"
                 style={{
-                  background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+                  background: 'linear-gradient(135deg, #4F46E5 0%, #2563EB 100%)',
                   color: '#fff',
                   border: 'none',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 20px rgba(37,99,235,0.30), inset 0 1px 0 rgba(255,255,255,0.15)',
-                  minHeight: '52px',
-                  minWidth: '200px',
+                  boxShadow: '0 6px 24px rgba(79,70,229,0.35), 0 2px 8px rgba(37,99,235,0.2), inset 0 1px 0 rgba(255,255,255,0.18)',
+                  height: '48px',
                   letterSpacing: '-0.01em',
                 }}
-                whileTap={{ scale: 0.97 }}
+                whileTap={{ scale: 0.96 }}
+                whileHover={{ boxShadow: '0 8px 32px rgba(79,70,229,0.45), 0 2px 8px rgba(37,99,235,0.25), inset 0 1px 0 rgba(255,255,255,0.18)' }}
               >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5,3 19,12 5,21" />
+                </svg>
                 Start Translating
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          {/* Stop button when connected */}
+          <AnimatePresence>
+            {connectionStatus === 'connected' && (
+              <motion.button
+                key="stop-btn"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ delay: 0.2 }}
+                onClick={handleRecordingStop}
+                className="mt-3 px-5 py-2 rounded-full text-xs font-medium"
+                style={{
+                  background: 'var(--glass-bg-subtle)',
+                  backdropFilter: 'var(--glass-blur-sm)',
+                  WebkitBackdropFilter: 'var(--glass-blur-sm)',
+                  border: '1px solid var(--glass-border-subtle)',
+                  color: 'var(--color-error)',
+                  cursor: 'pointer',
+                }}
+                whileTap={{ scale: 0.96 }}
+              >
+                End Session
               </motion.button>
             )}
           </AnimatePresence>

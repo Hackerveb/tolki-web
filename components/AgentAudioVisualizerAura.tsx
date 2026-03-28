@@ -13,10 +13,10 @@ interface AgentAudioVisualizerAuraProps {
 }
 
 const STATE_COLORS: Record<AgentState, { primary: string; secondary: string; glow: string }> = {
-  disconnected:          { primary: '#94A3B8', secondary: '#CBD5E1', glow: 'rgba(148,163,184,0.2)' },
+  disconnected:          { primary: '#6366F1', secondary: '#A5B4FC', glow: 'rgba(99,102,241,0.25)' },
   connecting:            { primary: '#2563EB', secondary: '#60A5FA', glow: 'rgba(37,99,235,0.3)' },
   initializing:          { primary: '#2563EB', secondary: '#60A5FA', glow: 'rgba(37,99,235,0.3)' },
-  idle:                  { primary: '#94A3B8', secondary: '#CBD5E1', glow: 'rgba(148,163,184,0.2)' },
+  idle:                  { primary: '#6366F1', secondary: '#A5B4FC', glow: 'rgba(99,102,241,0.25)' },
   listening:             { primary: '#059669', secondary: '#34D399', glow: 'rgba(5,150,105,0.35)' },
   thinking:              { primary: '#D97706', secondary: '#FCD34D', glow: 'rgba(217,119,6,0.35)' },
   speaking:              { primary: '#2563EB', secondary: '#93C5FD', glow: 'rgba(37,99,235,0.35)' },
@@ -79,6 +79,9 @@ export function AgentAudioVisualizerAura({
       rawAmp = 0.3 + 0.25 * Math.sin(phaseRef.current * 2.0);
     } else if (agentState === 'connecting' || agentState === 'initializing') {
       rawAmp = 0.15 + 0.1 * Math.sin(phaseRef.current * 1.5);
+    } else if (agentState === 'disconnected' || agentState === 'idle') {
+      // Gentle breathing pulse for inviting idle state
+      rawAmp = 0.12 + 0.08 * Math.sin(phaseRef.current * 0.8);
     }
 
     // Smooth amplitude
