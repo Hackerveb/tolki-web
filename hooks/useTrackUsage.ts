@@ -73,8 +73,12 @@ export const useTrackUsage = ({
               lastDeductionRef.current = newSeconds;
             })
             .catch((error) => {
-              // Error (e.g., insufficient credits)
+              // Error (e.g., insufficient credits) — stop the interval to prevent spam
               console.warn('Error deducting credits, stopping tracking:', error);
+              if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+              }
               if (onInsufficientCreditsRef.current) {
                 onInsufficientCreditsRef.current();
               }

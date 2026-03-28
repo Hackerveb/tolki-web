@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { useQuery, useMutation } from 'convex/react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { api } from '@/convex/_generated/api';
 import { languages, defaultSourceLanguage, defaultTargetLanguage } from '@/lib/languages';
 import { languageStorage } from '@/utils/languageStorage';
@@ -30,7 +30,7 @@ const slideVariants = {
   }),
 };
 
-const transition = { duration: 0.3, ease: [0.4, 0, 0.2, 1] as number[] };
+const transition = { duration: 0.3, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -424,7 +424,7 @@ function StepMicTest({ onNext, onBack }: { onNext: () => void; onBack: () => voi
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animFrameRef = useRef<number>(0);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
 
   const drawWaveform = useCallback(() => {
     const canvas = canvasRef.current;
@@ -836,7 +836,7 @@ function StepFreeCredits({
           { icon: '🌍', text: 'Works with all 58 supported languages' },
           { icon: '💳', text: 'Top up credits anytime in Settings' },
         ].map(({ icon, text }) => (
-          <div key={text} className="flex items-center gap-3" style={{ marginBottom: 10, lastChild: 0 }}>
+          <div key={text} className="flex items-center gap-3" style={{ marginBottom: 10 }}>
             <span style={{ fontSize: 20, width: 28, textAlign: 'center' }} aria-hidden="true">{icon}</span>
             <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{text}</span>
           </div>
