@@ -60,7 +60,7 @@
   /* Text Colors */
   --color-text-primary: #0F172A;
   --color-text-secondary: #475569;
-  --color-text-tertiary: #94A3B8;
+  --color-text-tertiary: #64748B; /* was #94A3B8 — darkened for WCAG AA 4.5:1 on white */
 
   /* Legacy color aliases */
   --color-onyx: #0F172A;
@@ -217,7 +217,7 @@
   /* Text Colors */
   --color-text-primary: #F8FAFC;
   --color-text-secondary: #94A3B8;
-  --color-text-tertiary: #64748B;
+  --color-text-tertiary: #A3ADBC; /* lightened from #64748B — WCAG AA 4.57:1 on #334155, 6.45:1 on #1E293B */
 
   /* Legacy aliases */
   --color-onyx: #F8FAFC;
@@ -312,7 +312,7 @@
     /* Text Colors */
     --color-text-primary: #F8FAFC;
     --color-text-secondary: #94A3B8;
-    --color-text-tertiary: #64748B;
+    --color-text-tertiary: #A3ADBC; /* lightened from #64748B — WCAG AA 4.57:1 on #334155, 6.45:1 on #1E293B */
 
     /* Legacy aliases */
     --color-onyx: #F8FAFC;
