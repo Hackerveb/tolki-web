@@ -21,6 +21,9 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 const HOLD_TO_MUTE_KEY = 'tolki_hold_mute_educated';
 type ConnectionStatus = 'idle' | 'connecting' | 'connected';
 
+// Agent states that indicate the agent has truly joined and is ready/active
+const AGENT_ACTIVE_STATES = new Set(['listening', 'thinking', 'speaking']);
+
 // Inner component — needs to live inside RoomContext.Provider
 function MainScreenContent() {
   const router = useRouter();
@@ -68,10 +71,10 @@ function MainScreenContent() {
     };
   }, [isConnected, connectionStatus, disconnect, resetUsage, toast]);
 
-  // When agent actually joins (state moves past 'disconnected'), mark as connected
+  // When agent actually joins and is active (listening/thinking/speaking), mark as connected
   useEffect(() => {
-    if (connectionStatus === 'connecting' && isConnected && agentState !== 'disconnected') {
-      // Agent has joined — clear timeout, show connected
+    if (connectionStatus === 'connecting' && isConnected && AGENT_ACTIVE_STATES.has(agentState)) {
+      // Agent has truly joined and is active — clear timeout, show connected
       if (agentTimeoutRef.current) clearTimeout(agentTimeoutRef.current);
       setConnectionStatus('connected');
       const hasSeen = typeof window !== 'undefined' && localStorage.getItem(HOLD_TO_MUTE_KEY);
@@ -84,6 +87,17 @@ function MainScreenContent() {
       }
     }
   }, [agentState, connectionStatus, isConnected]);
+
+  // If agent dispatch fails, disconnect and show error
+  useEffect(() => {
+    if (connectionStatus === 'connecting' && agentState === 'failed') {
+      if (agentTimeoutRef.current) clearTimeout(agentTimeoutRef.current);
+      setConnectionStatus('idle');
+      disconnect();
+      resetUsage();
+      toast.error('The interpreter agent failed to start. Please try again later.', 8000);
+    }
+  }, [agentState, connectionStatus, disconnect, resetUsage, toast]);
 
   useEffect(() => {
     return () => {
@@ -205,12 +219,12 @@ function MainScreenContent() {
   const isLowOnCredits = balance > 0 && balance < 5;
   const isInsufficientCredits = balance < 0.05;
 
-  // Map visualizer state: idle shows disconnected (flat line), connected uses real agent state
-  const visualizerState = connectionStatus === 'idle'
-    ? 'disconnected'
+  // Map visualizer state: only show active states when truly connected
+  const visualizerState = connectionStatus === 'connected'
+    ? agentState
     : connectionStatus === 'connecting'
       ? 'connecting'
-      : agentState;
+      : 'disconnected';
 
   // The primary CTA text — doubles as a tappable action label
   const ctaText = (() => {
