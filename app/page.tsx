@@ -18,27 +18,6 @@ import { useToast } from '@/hooks/useToast';
 import { languageStorage } from '@/utils/languageStorage';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-const MicIcon = ({ muted }: { muted: boolean }) => (
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    {muted ? (
-      <>
-        <line x1="1" y1="1" x2="23" y2="23" />
-        <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-        <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
-        <line x1="12" y1="19" x2="12" y2="23" />
-        <line x1="8" y1="23" x2="16" y2="23" />
-      </>
-    ) : (
-      <>
-        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-        <line x1="12" y1="19" x2="12" y2="23" />
-        <line x1="8" y1="23" x2="16" y2="23" />
-      </>
-    )}
-  </svg>
-);
-
 const HOLD_TO_MUTE_KEY = 'tolki_hold_mute_educated';
 type ConnectionStatus = 'idle' | 'connecting' | 'connected';
 
@@ -53,6 +32,8 @@ function MainScreenContent() {
   const [showMuteHint, setShowMuteHint] = useState(false);
   const [settingsRotation, setSettingsRotation] = useState(0);
   const muteHintTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const isHoldingRef = useRef(false);
   const { toast } = useToast();
   const { room, connect, disconnect, isConnected, error } = useLiveKitRoom();
   const { state: agentState, audioTrack } = useVoiceAssistant();
@@ -84,7 +65,10 @@ function MainScreenContent() {
   }, [isConnected, connectionStatus]);
 
   useEffect(() => {
-    return () => { if (muteHintTimerRef.current) clearTimeout(muteHintTimerRef.current); };
+    return () => {
+      if (muteHintTimerRef.current) clearTimeout(muteHintTimerRef.current);
+      if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -130,29 +114,55 @@ function MainScreenContent() {
     resetUsage();
   }, [disconnect, resetUsage]);
 
+  // Tap vs hold: hold (>300ms) = mute, short tap = start/stop session
+  const handleVisualizerPointerDown = useCallback(() => {
+    if (connectionStatus === 'connecting') return;
+    isHoldingRef.current = false;
+
+    if (connectionStatus === 'connected') {
+      holdTimerRef.current = setTimeout(() => {
+        isHoldingRef.current = true;
+        if (!room) return;
+        setIsMuted(true);
+        room.localParticipant.setMicrophoneEnabled(false).catch(console.error);
+        if (showMuteHint) {
+          setShowMuteHint(false);
+          if (muteHintTimerRef.current) clearTimeout(muteHintTimerRef.current);
+          localStorage.setItem(HOLD_TO_MUTE_KEY, '1');
+        }
+      }, 300);
+    }
+  }, [connectionStatus, room, showMuteHint]);
+
+  const handleVisualizerPointerUp = useCallback(() => {
+    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+
+    if (isHoldingRef.current) {
+      // Was holding — release mute
+      isHoldingRef.current = false;
+      if (!room) return;
+      setIsMuted(false);
+      room.localParticipant.setMicrophoneEnabled(true).catch(console.error);
+    }
+  }, [room]);
+
+  const handleVisualizerPointerLeave = useCallback(() => {
+    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+    if (isHoldingRef.current) {
+      isHoldingRef.current = false;
+      if (!room) return;
+      setIsMuted(false);
+      room.localParticipant.setMicrophoneEnabled(true).catch(console.error);
+    }
+  }, [room]);
+
   const handleVisualizerClick = useCallback(() => {
     if (connectionStatus === 'connecting') return;
+    if (isHoldingRef.current) return; // Was a hold, not a tap
     if (connectionStatus === 'connected') handleRecordingStop();
     else if (!isInsufficientCredits) handleStartSession();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectionStatus, handleRecordingStop, handleStartSession]);
-
-  const handleMuteStart = useCallback(() => {
-    if (!room) return;
-    setIsMuted(true);
-    room.localParticipant.setMicrophoneEnabled(false).catch(console.error);
-    if (showMuteHint) {
-      setShowMuteHint(false);
-      if (muteHintTimerRef.current) clearTimeout(muteHintTimerRef.current);
-      localStorage.setItem(HOLD_TO_MUTE_KEY, '1');
-    }
-  }, [room, showMuteHint]);
-
-  const handleMuteEnd = useCallback(() => {
-    if (!room) return;
-    setIsMuted(false);
-    room.localParticipant.setMicrophoneEnabled(true).catch(console.error);
-  }, [room]);
 
   const handleSettingsClick = useCallback(() => {
     setSettingsRotation((r) => r + 360);
@@ -279,39 +289,75 @@ function MainScreenContent() {
           paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
         }}
       >
-        {/* Credits — plain text, no container */}
-        <div className="flex items-center gap-3 mt-5 mb-1 flex-shrink-0">
-          <span
-            className="text-base font-semibold tracking-tight"
-            style={{
-              color: isLowOnCredits ? 'var(--color-error)' : 'var(--color-text-secondary)',
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          >
-            {formatCreditsDisplay(balance)} left
-          </span>
-          {isLowOnCredits && connectionStatus === 'idle' && (
-            <Link
-              href="/settings/credits"
-              prefetch
-              className="text-xs font-semibold"
-              style={{ color: 'var(--color-primary)' }}
-            >
-              Top up →
-            </Link>
-          )}
-        </div>
+        {/* Credits / remaining time — between header and visualizer, larger, alive */}
+        <motion.div
+          className="flex flex-col items-center mt-6 mb-2 flex-shrink-0"
+          animate={{ opacity: isInsufficientCredits ? 0.5 : 1 }}
+        >
+          <AnimatePresence mode="wait">
+            {connectionStatus === 'connected' ? (
+              <motion.p
+                key="timer"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+                className="text-4xl font-extralight tracking-tight"
+                style={{
+                  color: 'var(--color-text-primary)',
+                  fontVariantNumeric: 'tabular-nums',
+                  fontFeatureSettings: '"tnum"',
+                  letterSpacing: '-0.03em',
+                }}
+              >
+                {`${Math.floor(secondsUsed / 60)}:${(secondsUsed % 60).toString().padStart(2, '0')}`}
+              </motion.p>
+            ) : (
+              <motion.div
+                key="balance"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+                className="flex items-center gap-2"
+              >
+                <motion.span
+                  className="text-2xl font-light tracking-tight"
+                  style={{
+                    color: isLowOnCredits ? 'var(--color-error)' : 'var(--color-text-primary)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                  animate={isLowOnCredits ? { opacity: [1, 0.5, 1] } : {}}
+                  transition={isLowOnCredits ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : {}}
+                >
+                  {formatCreditsDisplay(balance)} left
+                </motion.span>
+                {isLowOnCredits && connectionStatus === 'idle' && (
+                  <Link
+                    href="/settings/credits"
+                    prefetch
+                    className="text-xs font-semibold"
+                    style={{ color: 'var(--color-primary)' }}
+                  >
+                    Top up →
+                  </Link>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
         {/* Visualizer + CTA section */}
         <div className="flex-1 flex flex-col items-center justify-center w-full">
 
-          {/* AgentAudioVisualizerWave — centerpiece, clickable */}
+          {/* AgentAudioVisualizerWave — centerpiece, tap to start/stop, hold to mute */}
           <motion.div
             animate={{
               scale: connectionStatus === 'connected' ? 1.02 : 1,
               opacity: isInsufficientCredits ? 0.4 : 1,
             }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
           >
             <AgentAudioVisualizerWave
               state={agentState}
@@ -319,10 +365,13 @@ function MainScreenContent() {
               size="lg"
               color="#1FD5F9"
               blur={4}
-              lineWidth={3}
-              colorShift={0.4}
+              lineWidth={4}
+              colorShift={0.3}
               onClick={connectionStatus !== 'connecting' ? handleVisualizerClick : undefined}
-              aria-label={connectionStatus === 'connected' ? 'Stop translation session' : 'Start translation session'}
+              onPointerDown={handleVisualizerPointerDown}
+              onPointerUp={handleVisualizerPointerUp}
+              onPointerLeave={handleVisualizerPointerLeave}
+              aria-label={connectionStatus === 'connected' ? 'Tap to stop. Hold to mute.' : 'Start translation session'}
             />
           </motion.div>
 
@@ -354,77 +403,19 @@ function MainScreenContent() {
             </AnimatePresence>
           </div>
 
-          {/* Session timer */}
+          {/* Mute indicator — shown when holding visualizer */}
           <AnimatePresence>
-            {connectionStatus === 'connected' && (
+            {isMuted && connectionStatus === 'connected' && (
               <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-1 text-2xl font-light tracking-tight"
-                style={{
-                  color: 'var(--color-text-primary)',
-                  fontVariantNumeric: 'tabular-nums',
-                  fontFeatureSettings: '"tnum"',
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                {`${Math.floor(secondsUsed / 60)}:${(secondsUsed % 60).toString().padStart(2, '0')}`}
-              </motion.p>
-            )}
-          </AnimatePresence>
-
-          {/* Hold-to-mute button */}
-          <AnimatePresence>
-            {connectionStatus === 'connected' && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ delay: 0.15, duration: 0.3 }}
-                className="mt-5 flex flex-col items-center gap-2"
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2 }}
+                className="mt-2 text-xs font-medium"
+                style={{ color: 'var(--color-error)' }}
               >
-                <motion.button
-                  onPointerDown={handleMuteStart}
-                  onPointerUp={handleMuteEnd}
-                  onPointerLeave={handleMuteEnd}
-                  aria-label={isMuted ? 'Unmute (release to speak)' : 'Hold to mute'}
-                  aria-pressed={isMuted}
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                  style={{
-                    background: isMuted
-                      ? 'linear-gradient(135deg, #DC2626, #B91C1C)'
-                      : 'var(--glass-bg-strong)',
-                    backdropFilter: 'var(--glass-blur)',
-                    WebkitBackdropFilter: 'var(--glass-blur)',
-                    border: `1px solid ${isMuted ? 'rgba(220,38,38,0.4)' : 'var(--glass-border)'}`,
-                    boxShadow: isMuted ? '0 4px 20px rgba(220,38,38,0.35)' : 'var(--glass-shadow-sm)',
-                    color: isMuted ? '#fff' : 'var(--color-text-primary)',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    WebkitUserSelect: 'none',
-                    touchAction: 'none',
-                  }}
-                  whileTap={{ scale: 0.94 }}
-                >
-                  <MicIcon muted={isMuted} />
-                </motion.button>
-
-                <AnimatePresence>
-                  {showMuteHint && (
-                    <motion.p
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="text-xs text-center"
-                      style={{ color: 'var(--color-text-tertiary)', maxWidth: '160px', lineHeight: '1.5' }}
-                    >
-                      Hold the mic button to mute yourself
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              </motion.div>
+                Microphone muted
+              </motion.p>
             )}
           </AnimatePresence>
 

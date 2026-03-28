@@ -21,6 +21,9 @@ export interface AgentAudioVisualizerWaveProps {
   className?: string;
   style?: React.CSSProperties;
   onClick?: React.MouseEventHandler<HTMLDivElement>;
+  onPointerDown?: React.PointerEventHandler<HTMLDivElement>;
+  onPointerUp?: React.PointerEventHandler<HTMLDivElement>;
+  onPointerLeave?: React.PointerEventHandler<HTMLDivElement>;
   'aria-label'?: string;
 }
 
@@ -230,6 +233,9 @@ export function AgentAudioVisualizerWave({
   className,
   style,
   onClick,
+  onPointerDown,
+  onPointerUp,
+  onPointerLeave,
   'aria-label': ariaLabel,
 }: AgentAudioVisualizerWaveProps) {
   const { bars } = useAudioWaveform(audioTrack);
@@ -246,6 +252,9 @@ export function AgentAudioVisualizerWave({
         ...style,
       }}
       onClick={onClick}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerLeave={onPointerLeave}
       role={onClick ? 'button' : undefined}
       aria-label={ariaLabel ?? `Voice agent is ${state}`}
       tabIndex={onClick ? 0 : undefined}
