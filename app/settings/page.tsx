@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useClerk, useOrganization } from '@clerk/nextjs';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useTheme } from '@/hooks/useTheme';
+import { useLocale, Locale } from '@/hooks/useLocale';
+import { useT } from '@/lib/i18n';
 import { useToast } from '@/hooks/useToast';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -42,6 +44,8 @@ function SettingsScreenInner() {
   const { displayName, email, initials, credits, clerkUser } = useCurrentUser();
   const { organization } = useOrganization();
   const { isDark, setTheme } = useTheme();
+  const { locale, setLocale } = useLocale();
+  const tt = useT(locale);
   const { toast } = useToast();
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -91,19 +95,21 @@ function SettingsScreenInner() {
     <>
     <ConfirmDialog
       isOpen={showSignOutConfirm}
-      title="Sign Out"
-      message="Are you sure you want to sign out?"
-      confirmLabel="Sign Out"
-      cancelLabel="Cancel"
+      title={tt('settings.signOut')}
+      message={tt('settings.signOutConfirm')}
+      confirmLabel={tt('settings.signOut')}
+      cancelLabel={tt('settings.cancel')}
       onConfirm={confirmSignOut}
       onCancel={() => setShowSignOutConfirm(false)}
     />
     <ConfirmDialog
       isOpen={showDeleteConfirm}
-      title="Delete Account"
-      message={`This action is PERMANENT and cannot be undone. All your data will be deleted and your remaining ${balance.toFixed(2)} credits will be forfeited.`}
-      confirmLabel="Delete Account"
-      cancelLabel="Cancel"
+      title={tt('settings.deleteAccount')}
+      message={locale === 'nb'
+        ? `Denne handlingen er PERMANENT og kan ikke angres. Alle dine data blir slettet og dine gjenværende ${balance.toFixed(2)} credits går tapt.`
+        : `This action is PERMANENT and cannot be undone. All your data will be deleted and your remaining ${balance.toFixed(2)} credits will be forfeited.`}
+      confirmLabel={tt('settings.deleteAccount')}
+      cancelLabel={tt('settings.cancel')}
       isDangerous
       onConfirm={confirmDeleteAccount}
       onCancel={() => setShowDeleteConfirm(false)}
@@ -130,12 +136,12 @@ function SettingsScreenInner() {
         <button
           onClick={() => router.back()}
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
-          aria-label="Go back"
+          aria-label={tt('settings.goBack')}
         >
           <BackIcon />
         </button>
         <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
-          Settings
+          {tt('settings.title')}
         </h1>
       </header>
 
@@ -203,7 +209,7 @@ function SettingsScreenInner() {
               {formatCreditsDisplay(balance)}
             </span>
             <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--color-text-secondary)' }}>
-              {balance.toFixed(0)} credits remaining
+              {balance.toFixed(0)} {tt('settings.creditsRemaining')}
             </span>
 
             {/* Low Credits Warning */}
@@ -219,7 +225,7 @@ function SettingsScreenInner() {
                 }}
               >
                 <span style={{ fontSize: '11px', color: 'var(--color-on-warning)', fontWeight: '600' }}>
-                  ⚠️ Low credits
+                  ⚠️ {tt('settings.lowCredits')}
                 </span>
               </div>
             )}
@@ -235,7 +241,7 @@ function SettingsScreenInner() {
           >
             <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
-                Organization
+                {tt('settings.organization')}
               </h3>
               <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
                 {organization.name}
@@ -247,7 +253,7 @@ function SettingsScreenInner() {
                 style={{ padding: '14px 16px', borderRadius: '12px', cursor: 'pointer' }}
               >
                 <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
-                  Manage organization
+                  {tt('settings.manageOrg')}
                 </span>
                 <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
               </button>
@@ -266,11 +272,11 @@ function SettingsScreenInner() {
         >
           <div style={{ marginBottom: '20px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
-              Manage
+              {tt('settings.manage')}
             </h3>
           </div>
 
-          <Link href="/settings/credits" prefetch={true} className="w-full">
+          <Link href="/subscribe" prefetch={true} className="w-full">
             <button
               className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
               style={{
@@ -281,7 +287,7 @@ function SettingsScreenInner() {
               }}
             >
               <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
-                Buy Credits
+                {tt('settings.upgrade')}
               </span>
               <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
             </button>
@@ -296,7 +302,7 @@ function SettingsScreenInner() {
               }}
             >
               <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
-                Billing History
+                {tt('settings.billing')}
               </span>
               <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
             </button>
@@ -314,7 +320,7 @@ function SettingsScreenInner() {
         >
           <div style={{ marginBottom: '20px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
-              Appearance
+              {tt('settings.appearance')}
             </h3>
           </div>
 
@@ -327,7 +333,7 @@ function SettingsScreenInner() {
             }}
           >
             <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
-              Dark mode
+              {tt('settings.darkMode')}
             </span>
             <button
               role="switch"
@@ -361,6 +367,38 @@ function SettingsScreenInner() {
               />
             </button>
           </div>
+
+          {/* Language Selector */}
+          <div
+            className="flex items-center justify-between glass-subtle"
+            style={{
+              padding: '14px 16px',
+              borderRadius: '12px',
+              marginTop: '10px',
+            }}
+          >
+            <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+              {tt('settings.language')}
+            </span>
+            <select
+              value={locale}
+              onChange={(e) => setLocale(e.target.value as Locale)}
+              style={{
+                background: 'var(--glass-bg)',
+                color: 'var(--color-text-primary)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                appearance: 'auto',
+              }}
+            >
+              <option value="nb">Norsk</option>
+              <option value="en">English</option>
+            </select>
+          </div>
         </div>
 
         {/* Profile Section */}
@@ -374,7 +412,7 @@ function SettingsScreenInner() {
         >
           <div style={{ marginBottom: '20px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
-              Profile
+              {tt('settings.profile')}
             </h3>
           </div>
 
@@ -389,7 +427,7 @@ function SettingsScreenInner() {
               }}
             >
               <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
-                Edit Profile
+                {tt('settings.editProfile')}
               </span>
               <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
             </button>
@@ -415,7 +453,7 @@ function SettingsScreenInner() {
               }}
             >
               <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--color-error)' }}>
-                Sign Out
+                {tt('settings.signOut')}
               </span>
             </button>
             <button
@@ -451,7 +489,7 @@ function SettingsScreenInner() {
                     />
                   </svg>
                   <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--color-on-error)' }}>
-                    Delete Account
+                    {tt('settings.deleteAccount')}
                   </span>
                 </>
               )}
@@ -465,7 +503,7 @@ function SettingsScreenInner() {
                 paddingRight: '12px',
               }}
             >
-              This action is permanent and cannot be undone
+              {tt('settings.deleteWarning')}
             </p>
           </div>
         </div>

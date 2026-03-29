@@ -4,7 +4,11 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { motion } from 'motion/react';
+import Link from 'next/link';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useToast } from '@/hooks/useToast';
+import { useLocale } from '@/hooks/useLocale';
+import { useT } from '@/lib/i18n';
 import { creditPackages, type CreditPackage } from '@/lib/credit-packages';
 
 const BackIcon = () => (
@@ -19,8 +23,17 @@ const BackIcon = () => (
   </svg>
 );
 
-// Recommended package index
-const RECOMMENDED_INDEX = 1;
+const CheckIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+    <path
+      d="M5 13l4 4L19 7"
+      stroke="var(--color-primary)"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 const formatTime = (minutes: number): string => {
   const hours = Math.floor(minutes / 60);
@@ -31,6 +44,11 @@ const formatTime = (minutes: number): string => {
   return `${mins}m`;
 };
 
+const perMinuteRate = (pkg: CreditPackage): string => {
+  const nok = pkg.priceOre / 100;
+  return (nok / pkg.minutes).toFixed(2).replace('.', ',');
+};
+
 function StripeRedirectHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,28 +57,28 @@ function StripeRedirectHandler() {
     const success = searchParams.get('success');
     const canceled = searchParams.get('canceled');
 
-    if (success) {
-      alert('Betaling vellykket! Minuttene er lagt til kontoen din.');
-      router.replace('/settings/credits');
-    } else if (canceled) {
-      alert('Betaling avbrutt. Ingen belastning.');
-      router.replace('/settings/credits');
+    if (success || canceled) {
+      const timer = setTimeout(() => router.replace('/settings/credits'), 2000);
+      return () => clearTimeout(timer);
     }
   }, [searchParams, router]);
 
   return null;
 }
 
-function BuyCreditsContent() {
+function AddOnContent() {
   const router = useRouter();
   const { user } = useUser();
   const { credits } = useCurrentUser();
-  const [selectedIndex, setSelectedIndex] = useState<number>(RECOMMENDED_INDEX);
+  const { toast } = useToast();
+  const { locale } = useLocale();
+  const tt = useT(locale);
+  const [selectedIndex, setSelectedIndex] = useState<number>(1);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
   const balance = credits || 0;
   const selectedPackage = creditPackages[selectedIndex];
-  const priceInNok = (selectedPackage.priceOre / 100).toFixed(0);
+  const priceInNok = (selectedPackage.priceOre / 100).toLocaleString('nb-NO');
 
   const handleSelectPackage = (index: number) => {
     if (index === selectedIndex || isPurchasing) return;
@@ -70,7 +88,7 @@ function BuyCreditsContent() {
   const handlePurchase = async () => {
     if (isPurchasing || !user?.id) {
       if (!user?.id) {
-        alert('Du må være logget inn for å kjøpe minutter.');
+        toast.error(locale === 'nb' ? 'Du må være logget inn for å kjøpe minutter.' : 'You must be signed in to buy minutes.');
       }
       return;
     }
@@ -96,20 +114,18 @@ function BuyCreditsContent() {
       window.location.href = url;
     } catch (error) {
       console.error('Error creating checkout session:', error);
-      alert('Kunne ikke starte betaling. Prøv igjen.');
+      toast.error(locale === 'nb' ? 'Kunne ikke starte betaling. Prøv igjen.' : 'Could not start payment. Please try again.');
       setIsPurchasing(false);
     }
   };
 
   return (
-    <div
-      className="h-screen flex flex-col overflow-hidden glass-page"
-    >
+    <div className="h-screen flex flex-col overflow-hidden glass-page">
       <Suspense fallback={null}>
         <StripeRedirectHandler />
       </Suspense>
 
-      {/* Glass Header */}
+      {/* Header */}
       <header
         className="flex items-center glass-strong"
         style={{
@@ -128,87 +144,131 @@ function BuyCreditsContent() {
         <button
           onClick={() => router.back()}
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
-          aria-label="Go back"
+          aria-label={tt('settings.goBack')}
         >
           <BackIcon />
         </button>
         <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
-          Kjøp minutter
+          {locale === 'nb' ? 'Legg til minutter' : 'Add minutes'}
         </h1>
-        {/* Balance badge */}
-        <div
-          className="glass-subtle"
-          style={{
-            paddingTop: '5px',
-            paddingBottom: '5px',
-            paddingLeft: '12px',
-            paddingRight: '12px',
-            borderRadius: '99px',
-          }}
-        >
-          <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--color-primary)' }}>
-            {balance.toFixed(0)} min
-          </span>
-        </div>
       </header>
 
       {/* Scrollable Content */}
       <div
         className="flex-1 overflow-y-auto"
         style={{
-          paddingTop: '20px',
+          paddingTop: '24px',
           paddingLeft: 'max(20px, env(safe-area-inset-left))',
           paddingRight: 'max(20px, env(safe-area-inset-right))',
-          paddingBottom: '110px',
+          paddingBottom: '120px',
         }}
       >
+        {/* Current balance */}
+        <div
+          className="glass"
+          style={{
+            padding: '20px',
+            borderRadius: '16px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div>
+            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '2px' }}>
+              {locale === 'nb' ? 'Nåværende saldo' : 'Current balance'}
+            </p>
+            <p style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-primary)' }}>
+              {balance.toFixed(0)} min
+            </p>
+          </div>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, rgba(37,99,235,0.12), rgba(79,70,229,0.08))',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="var(--color-primary)" strokeWidth="2" />
+              <polyline points="12 6 12 12 16 14" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Subscription upsell — subtle banner */}
+        <Link href="/subscribe" className="block">
+          <div
+            className="glass-subtle"
+            style={{
+              padding: '14px 18px',
+              borderRadius: '14px',
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              border: '1px solid var(--glass-border)',
+            }}
+          >
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                {locale === 'nb' ? 'Spar mer med abonnement' : 'Save more with a subscription'}
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
+                {locale === 'nb' ? 'Fra 190 kr/mnd — bedre minutt-pris' : 'From 190 NOK/mo — better per-minute rate'}
+              </p>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+              <polyline points="9 18 15 12 9 6" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        </Link>
+
+        {/* Section label */}
         <p
           style={{
             fontSize: '13px',
             fontWeight: 600,
             color: 'var(--color-text-tertiary)',
-            marginBottom: '16px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.6px',
+            marginBottom: '14px',
+            letterSpacing: '0.3px',
           }}
         >
-          Velg en pakke
+          {locale === 'nb' ? 'Velg pakke' : 'Choose package'}
         </p>
 
-        {/* Package Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {/* Package Cards — premium flat design */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
           {creditPackages.map((pkg, index) => {
             const isSelected = selectedIndex === index;
-            const isRecommended = index === RECOMMENDED_INDEX;
+            const isRecommended = index === 1;
 
             return (
               <motion.button
                 key={pkg.id}
                 onClick={() => handleSelectPackage(index)}
                 whileTap={{ scale: 0.98 }}
-                className="relative"
+                className="relative w-full text-left"
                 style={{
                   borderRadius: '16px',
-                  paddingTop: '18px',
-                  paddingBottom: '18px',
-                  paddingLeft: '20px',
-                  paddingRight: '20px',
+                  padding: '18px 20px',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   background: isSelected
-                    ? 'linear-gradient(135deg, rgba(37,99,235,0.12), rgba(79,70,229,0.08))'
+                    ? 'linear-gradient(135deg, rgba(37,99,235,0.10), rgba(79,70,229,0.06))'
                     : 'var(--glass-bg)',
                   backdropFilter: 'blur(20px)',
                   WebkitBackdropFilter: 'blur(20px)',
                   border: isSelected
                     ? '2px solid var(--color-primary)'
                     : '1px solid var(--glass-border)',
-                  boxShadow: isSelected
-                    ? 'var(--glass-glow-primary)'
-                    : 'var(--glass-shadow)',
+                  boxShadow: isSelected ? 'var(--glass-glow-primary)' : 'var(--glass-shadow-sm)',
                 }}
               >
-                {/* Recommended Badge */}
+                {/* Recommended badge */}
                 {isRecommended && (
                   <div
                     style={{
@@ -216,62 +276,53 @@ function BuyCreditsContent() {
                       top: '-1px',
                       right: '16px',
                       fontSize: '10px',
-                      fontWeight: '700',
+                      fontWeight: 700,
                       background: 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
                       color: '#FFFFFF',
                       padding: '3px 10px',
                       borderRadius: '0 0 8px 8px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.4px',
-                      boxShadow: 'var(--glass-glow-primary)',
+                      letterSpacing: '0.3px',
                     }}
                   >
-                    Beste verdi
+                    {locale === 'nb' ? 'Populær' : 'Popular'}
                   </div>
                 )}
 
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  {/* Left: minutes + time */}
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  {/* Left: minutes + per-minute rate */}
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
                       <span
                         style={{
-                          fontSize: '18px',
-                          fontWeight: '700',
+                          fontSize: '17px',
+                          fontWeight: 700,
                           color: isSelected ? 'var(--color-primary)' : 'var(--color-text-primary)',
                         }}
                       >
-                        {pkg.minutes} minutter
+                        {pkg.minutes} {locale === 'nb' ? 'minutter' : 'minutes'}
+                      </span>
+                      <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', fontWeight: 500 }}>
+                        {formatTime(pkg.minutes)}
                       </span>
                     </div>
-                    <span
-                      style={{
-                        fontSize: '13px',
-                        color: 'var(--color-text-tertiary)',
-                        fontWeight: 500,
-                      }}
-                    >
-                      {formatTime(pkg.minutes)} tolking
+                    <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
+                      {perMinuteRate(pkg)} kr/min
                     </span>
                   </div>
 
-                  {/* Right: price + selected indicator */}
+                  {/* Right: price + selection */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span
-                      style={{
-                        fontSize: '20px',
-                        fontWeight: '800',
-                        color: isSelected ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                      }}
-                    >
-                      {pkg.displayPrice}
-                    </span>
+                    <div style={{ textAlign: 'right' }}>
+                      <span
+                        style={{
+                          fontSize: '18px',
+                          fontWeight: 800,
+                          color: isSelected ? 'var(--color-primary)' : 'var(--color-text-primary)',
+                        }}
+                      >
+                        {pkg.displayPrice}
+                      </span>
+                    </div>
                     {isSelected && (
                       <div
                         style={{
@@ -296,6 +347,41 @@ function BuyCreditsContent() {
             );
           })}
         </div>
+
+        {/* What you get */}
+        <div
+          className="glass-subtle"
+          style={{ padding: '16px 18px', borderRadius: '14px', marginBottom: '16px' }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {[
+              locale === 'nb' ? 'Minutter utløper aldri' : 'Minutes never expire',
+              locale === 'nb' ? 'Bruk umiddelbart etter kjøp' : 'Use immediately after purchase',
+              locale === 'nb' ? 'Alle 100+ språkpar inkludert' : 'All 100+ language pairs included',
+            ].map((feature) => (
+              <div key={feature} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckIcon />
+                <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>{feature}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Disclaimer */}
+        <p
+          style={{
+            fontSize: '11px',
+            color: 'var(--color-text-tertiary)',
+            lineHeight: 1.6,
+            textAlign: 'center',
+            paddingLeft: '8px',
+            paddingRight: '8px',
+          }}
+        >
+          {locale === 'nb'
+            ? 'Engangskjøp. Ingen abonnement. Sikker betaling med Stripe.'
+            : 'One-time purchase. No subscription. Secure payment via Stripe.'}
+        </p>
       </div>
 
       {/* Sticky Bottom CTA */}
@@ -340,15 +426,10 @@ function BuyCreditsContent() {
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
-            <span
-              style={{
-                fontSize: '16px',
-                fontWeight: '700',
-                color: '#FFFFFF',
-                letterSpacing: '0.3px',
-              }}
-            >
-              Kjøp nå — {priceInNok} kr
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#FFFFFF' }}>
+              {locale === 'nb'
+                ? `Kjøp ${selectedPackage.minutes} minutter — ${priceInNok} kr`
+                : `Buy ${selectedPackage.minutes} minutes — ${priceInNok} NOK`}
             </span>
           )}
         </motion.button>
@@ -357,6 +438,6 @@ function BuyCreditsContent() {
   );
 }
 
-export default function BuyCreditsScreen() {
-  return <BuyCreditsContent />;
+export default function AddOnScreen() {
+  return <AddOnContent />;
 }

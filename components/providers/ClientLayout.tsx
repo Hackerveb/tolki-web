@@ -3,9 +3,11 @@
 import React, { useEffect } from 'react';
 import { ToastContainer } from '@/components/ToastContainer';
 import { useToast } from '@/hooks/useToast';
+import { useThemeProvider } from '@/hooks/useTheme';
 
 export const ClientLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { toasts, removeToast } = useToast();
+  useThemeProvider();
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {

@@ -96,11 +96,17 @@ export default function RootLayout({
                 (function() {
                   try {
                     var stored = localStorage.getItem('tolki-theme');
-                    var theme = stored ? JSON.parse(stored).state.theme : 'system';
+                    var theme = stored ? JSON.parse(stored).state.theme : 'light';
                     var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                    document.documentElement.classList.add(isDark ? 'dark' : 'light');
+                    var d = document.documentElement;
+                    d.classList.remove('dark', 'light');
+                    d.classList.add(isDark ? 'dark' : 'light');
+                    d.style.colorScheme = isDark ? 'dark' : 'light';
                   } catch (e) {
-                    document.documentElement.classList.add('light');
+                    var d = document.documentElement;
+                    d.classList.remove('dark');
+                    d.classList.add('light');
+                    d.style.colorScheme = 'light';
                   }
                 })();
               `,

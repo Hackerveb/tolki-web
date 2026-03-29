@@ -323,13 +323,13 @@ export default function MembersPage() {
   const [showInviteModal, setShowInviteModal] = useState(false);
 
   // Convex data
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const convexOrg = useQuery(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (api as any).organizations.getOrganizationByClerkId,
     organization?.id ? { clerkOrgId: organization.id } : 'skip'
   );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const members = useQuery(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (api as any).memberships.getOrgMembers,
     convexOrg?._id ? { orgId: convexOrg._id } : 'skip'
   ) as MemberData[] | null | undefined;

@@ -15,6 +15,8 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useLiveKitRoom } from '@/hooks/useLiveKitRoom';
 import { useTrackUsage } from '@/hooks/useTrackUsage';
 import { useToast } from '@/hooks/useToast';
+import { useLocale } from '@/hooks/useLocale';
+import { useT } from '@/lib/i18n';
 import { languageStorage } from '@/utils/languageStorage';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -39,6 +41,8 @@ function MainScreenContent() {
   const agentTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
   const isHoldingRef = useRef(false);
   const { toast } = useToast();
+  const { locale } = useLocale();
+  const tt = useT(locale);
   const { room, connect, disconnect, isConnected, error } = useLiveKitRoom();
   const { state: agentState, audioTrack } = useVoiceAssistant();
 
@@ -46,7 +50,7 @@ function MainScreenContent() {
     isActive: connectionStatus === 'connected',
     onInsufficientCredits: () => {
       handleRecordingStop();
-      toast.error('You have run out of credits. Please purchase more to continue.');
+      toast.error(tt('main.outOfCredits'));
     },
   });
 
@@ -63,7 +67,7 @@ function MainScreenContent() {
         setConnectionStatus('idle');
         disconnect();
         resetUsage();
-        toast.error('No interpreter agent available. The backend may be offline — please try again later.', 8000);
+        toast.error(tt('main.noAgent'), 8000);
       }, 12000);
     }
     return () => {
@@ -95,7 +99,7 @@ function MainScreenContent() {
       setConnectionStatus('idle');
       disconnect();
       resetUsage();
-      toast.error('The interpreter agent failed to start. Please try again later.', 8000);
+      toast.error(tt('main.agentFailed'), 8000);
     }
   }, [agentState, connectionStatus, disconnect, resetUsage, toast]);
 
@@ -140,7 +144,7 @@ function MainScreenContent() {
     } catch (err) {
       setConnectionStatus('idle');
       const msg = err instanceof Error ? err.message : 'Unknown error';
-      toast.error(`Failed to connect: ${msg}. Check microphone permissions.`, 6000);
+      toast.error(tt('main.connectFailed', { msg }), 6000);
     }
   }, [connect, sourceLanguage.name, targetLanguage.name, toast]);
 
@@ -228,11 +232,11 @@ function MainScreenContent() {
 
   // The primary CTA text — doubles as a tappable action label
   const ctaText = (() => {
-    if (connectionStatus === 'connected') return 'Tap to stop session. Hold to pause microphone';
-    if (connectionStatus === 'connecting') return 'Connecting…';
-    if (error) return 'Connection failed — try again';
-    if (isInsufficientCredits) return 'Insufficient credits';
-    return 'Tap to start translating';
+    if (connectionStatus === 'connected') return tt('main.tapToStop');
+    if (connectionStatus === 'connecting') return tt('main.connecting');
+    if (error) return tt('main.connectionFailed');
+    if (isInsufficientCredits) return tt('main.insufficientCredits');
+    return tt('main.tapToStart');
   })();
 
   const ctaClickable =
@@ -355,16 +359,16 @@ function MainScreenContent() {
               animate={isLowOnCredits ? { opacity: [1, 0.5, 1] } : {}}
               transition={isLowOnCredits ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : {}}
             >
-              {formatCreditsDisplay(balance)} left
+              {formatCreditsDisplay(balance)} {tt('main.left')}
             </motion.span>
             {isLowOnCredits && connectionStatus === 'idle' && (
               <Link
-                href="/settings/credits"
+                href="/subscribe"
                 prefetch
                 className="text-xs font-semibold"
                 style={{ color: 'var(--color-primary)' }}
               >
-                Top up →
+                {tt('main.upgradeNow')}
               </Link>
             )}
           </motion.div>
@@ -460,29 +464,39 @@ function MainScreenContent() {
                 className="mt-2 text-xs font-medium"
                 style={{ color: 'var(--color-error)' }}
               >
-                Microphone muted
+                {tt('main.micMuted')}
               </motion.p>
             )}
           </AnimatePresence>
 
           {/* Insufficient credits notice */}
           {isInsufficientCredits && (
-            <div className="glass mt-6 px-6 py-5 rounded-2xl text-center" style={{ maxWidth: '280px' }}>
-              <p className="text-sm font-semibold mb-1" style={{ color: 'var(--color-text-primary)' }}>
-                Insufficient Credits
-              </p>
-              <p className="text-xs mb-4" style={{ color: 'var(--color-text-tertiary)', lineHeight: '1.5' }}>
-                You need at least 0.05 credits to start a session.
-              </p>
-              <Link
-                href="/settings/credits"
-                prefetch
-                className="inline-block px-5 py-2.5 rounded-xl text-sm font-semibold"
-                style={{ background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)', color: '#fff', boxShadow: '0 4px 16px rgba(37,99,235,0.25)' }}
+            <Link href="/subscribe" prefetch className="block mt-6" style={{ maxWidth: '300px' }}>
+              <div
+                className="glass px-6 py-5 rounded-2xl text-center transition-all hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  border: '1px solid var(--color-primary)',
+                  background: 'linear-gradient(135deg, rgba(37,99,235,0.06), rgba(79,70,229,0.04))',
+                }}
               >
-                Buy Credits
-              </Link>
-            </div>
+                <p className="text-sm font-semibold mb-1" style={{ color: 'var(--color-text-primary)' }}>
+                  {tt('main.outOfCredits')}
+                </p>
+                <p className="text-xs mb-4" style={{ color: 'var(--color-text-tertiary)', lineHeight: '1.5' }}>
+                  {tt('main.needCredits')}
+                </p>
+                <span
+                  className="inline-block px-6 py-3 rounded-xl text-sm font-semibold"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
+                    color: '#fff',
+                    boxShadow: 'var(--glass-glow-primary)',
+                  }}
+                >
+                  {tt('main.upgradeNow')}
+                </span>
+              </div>
+            </Link>
           )}
         </div>
 

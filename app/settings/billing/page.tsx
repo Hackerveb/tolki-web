@@ -215,6 +215,7 @@ export default function BillingPage() {
   const isLoading = isOrgMode ? subscription === undefined : purchases === undefined;
 
   const transactions: CreditPurchase[] =
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     purchases?.map((p: any) => ({
       id: p.id,
       date: p.date,
@@ -232,6 +233,7 @@ export default function BillingPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         // stripeCustomerId comes from the org record; use a placeholder if not set yet
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         stripeCustomerId: (subscription as any).org?.stripeCustomerId ?? '',
       }),
     });

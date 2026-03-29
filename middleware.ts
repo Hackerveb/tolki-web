@@ -9,6 +9,7 @@ const isPublicRoute = createRouteMatcher([
   '/sso-callback(.*)',
   '/api/stripe/webhook(.*)', // Stripe webhooks must be public (they use signature verification instead)
   '/api/webhooks/clerk(.*)', // Clerk webhooks must be public (svix signature verification)
+  '/manifest.json',          // PWA manifest must be accessible without auth
 ]);
 
 export default clerkMiddleware(async (auth, request) => {

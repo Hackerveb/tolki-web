@@ -6,6 +6,8 @@ import { useSignIn } from '@clerk/nextjs';
 import { motion } from 'motion/react';
 import { AuthDivider } from '@/components/auth/AuthDivider';
 import { useToast } from '@/hooks/useToast';
+import { useLocale, Locale } from '@/hooks/useLocale';
+import { useT } from '@/lib/i18n';
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
@@ -56,6 +58,8 @@ const OnboardingPage = () => {
   const router = useRouter();
   const { signIn, isLoaded, setActive } = useSignIn();
   const { toast } = useToast();
+  const { locale, setLocale } = useLocale();
+  const tt = useT(locale);
 
   const [emailAddress, setEmailAddress] = useState('');
   const [password, setPassword] = useState('');
@@ -144,6 +148,27 @@ const OnboardingPage = () => {
     >
       <div className="w-full max-w-sm" style={{ marginTop: '8px', marginBottom: '8px' }}>
 
+        {/* Language selector */}
+        <div className="flex justify-end mb-4">
+          <select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as Locale)}
+            style={{
+              background: 'var(--glass-bg)',
+              color: 'var(--color-text-secondary)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '8px',
+              padding: '4px 10px',
+              fontSize: '13px',
+              cursor: 'pointer',
+              appearance: 'auto',
+            }}
+          >
+            <option value="nb">Norsk</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+
         {/* App brand */}
         <div className="text-center mb-8">
           <h1
@@ -153,7 +178,7 @@ const OnboardingPage = () => {
             TolKI
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--color-text-tertiary)' }}>
-            Real-time voice interpretation
+            {locale === 'nb' ? 'Sanntids tale-til-tale tolking' : 'Real-time voice interpretation'}
           </p>
         </div>
 
@@ -167,10 +192,10 @@ const OnboardingPage = () => {
           {/* Card header */}
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)', marginBottom: '4px' }}>
-              Welcome back
+              {locale === 'nb' ? 'Velkommen tilbake' : 'Welcome back'}
             </h2>
             <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-              Sign in to continue translating
+              {locale === 'nb' ? 'Logg inn for å fortsette' : 'Sign in to continue translating'}
             </p>
           </div>
 
@@ -325,13 +350,13 @@ const OnboardingPage = () => {
               marginBottom: '20px',
             }}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? (locale === 'nb' ? 'Logger inn...' : 'Signing in...') : (locale === 'nb' ? 'Logg inn' : 'Sign In')}
           </motion.button>
 
           {/* Sign up link */}
           <div className="flex items-center justify-center gap-1">
             <span style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-              New here?
+              {locale === 'nb' ? 'Ny her?' : 'New here?'}
             </span>
             <button
               onClick={() => router.push('/sign-up')}
@@ -339,7 +364,7 @@ const OnboardingPage = () => {
               className="font-semibold hover:underline"
               style={{ color: 'var(--color-primary)', fontSize: '14px' }}
             >
-              Create an account
+              {locale === 'nb' ? 'Opprett konto' : 'Create an account'}
             </button>
           </div>
         </motion.div>

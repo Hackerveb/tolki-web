@@ -195,13 +195,13 @@ export default function OrganizationSettingsPage() {
   const { organization, membership } = useOrganization();
 
   // Convex queries — cast to any since types regenerate on next `convex dev`
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const convexOrg = useQuery(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (api as any).organizations.getOrganizationByClerkId,
     organization?.id ? { clerkOrgId: organization.id } : 'skip'
   );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const subscription = useQuery(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (api as any).subscriptions.getSubscriptionByClerkOrgId,
     organization?.id ? { clerkOrgId: organization.id } : 'skip'
   );

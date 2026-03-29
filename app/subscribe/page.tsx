@@ -6,6 +6,8 @@ import { useOrganization } from '@clerk/nextjs';
 import { motion } from 'motion/react';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { useLocale } from '@/hooks/useLocale';
+import { useT } from '@/lib/i18n';
 
 // ─── Pricing data ────────────────────────────────────────────────────────────
 
@@ -18,13 +20,22 @@ const PLANS = [
     annualMonthlyNok: 158,
     minutes: 60,
     overageNok: 4.0,
-    features: [
-      '60 inkluderte minutter per måned',
-      'Ubrukte minutter overføres',
-      '100+ språkpar',
-      'GDPR-compliant',
-      'E-post support',
-    ],
+    features: {
+      nb: [
+        '60 inkluderte minutter per måned',
+        'Ubrukte minutter overføres',
+        '100+ språkpar',
+        'GDPR-compliant',
+        'E-post support',
+      ],
+      en: [
+        '60 included minutes per month',
+        'Unused minutes roll over',
+        '100+ language pairs',
+        'GDPR compliant',
+        'Email support',
+      ],
+    },
     recommended: false,
   },
   {
@@ -34,15 +45,26 @@ const PLANS = [
     annualMonthlyNok: 825,
     minutes: 300,
     overageNok: 3.5,
-    features: [
-      '300 inkluderte minutter per måned',
-      'Ubrukte minutter overføres',
-      '100+ språkpar',
-      'GDPR-compliant',
-      'Prioritert support',
-      'Teamadministrasjon',
-      'Bruksstatistikk',
-    ],
+    features: {
+      nb: [
+        '300 inkluderte minutter per måned',
+        'Ubrukte minutter overføres',
+        '100+ språkpar',
+        'GDPR-compliant',
+        'Prioritert support',
+        'Teamadministrasjon',
+        'Bruksstatistikk',
+      ],
+      en: [
+        '300 included minutes per month',
+        'Unused minutes roll over',
+        '100+ language pairs',
+        'GDPR compliant',
+        'Priority support',
+        'Team management',
+        'Usage statistics',
+      ],
+    },
     recommended: true,
   },
   {
@@ -52,16 +74,28 @@ const PLANS = [
     annualMonthlyNok: 4158,
     minutes: 2000,
     overageNok: 3.0,
-    features: [
-      '2 000 inkluderte minutter per måned',
-      'Ubrukte minutter overføres',
-      '100+ språkpar',
-      'GDPR-compliant',
-      'Dedikert support',
-      'Teamadministrasjon',
-      'Avansert bruksstatistikk',
-      'Tilpasset fakturering',
-    ],
+    features: {
+      nb: [
+        '2 000 inkluderte minutter per måned',
+        'Ubrukte minutter overføres',
+        '100+ språkpar',
+        'GDPR-compliant',
+        'Dedikert support',
+        'Teamadministrasjon',
+        'Avansert bruksstatistikk',
+        'Tilpasset fakturering',
+      ],
+      en: [
+        '2,000 included minutes per month',
+        'Unused minutes roll over',
+        '100+ language pairs',
+        'GDPR compliant',
+        'Dedicated support',
+        'Team management',
+        'Advanced usage statistics',
+        'Custom invoicing',
+      ],
+    },
     recommended: false,
   },
 ] as const;
@@ -101,13 +135,16 @@ interface PlanCardProps {
   isSelected: boolean;
   isCurrentPlan: boolean;
   onSelect: () => void;
+  locale: 'nb' | 'en';
+  tt: ReturnType<typeof useT>;
 }
 
-function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect }: PlanCardProps) {
+function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect, locale, tt }: PlanCardProps) {
   const price = interval === 'monthly' ? plan.monthlyNok : plan.annualMonthlyNok;
   const annualSavings = Math.round(
     ((plan.monthlyNok - plan.annualMonthlyNok) / plan.monthlyNok) * 100
   );
+  const features = plan.features[locale];
 
   return (
     <motion.button
@@ -149,7 +186,7 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect }: PlanC
             boxShadow: 'var(--glass-glow-primary)',
           }}
         >
-          Anbefalt
+          {tt('subscribe.recommended')}
         </div>
       )}
 
@@ -170,7 +207,7 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect }: PlanC
             letterSpacing: '0.4px',
           }}
         >
-          Gjeldende plan
+          {tt('subscribe.currentPlan')}
         </div>
       )}
 
@@ -188,7 +225,7 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect }: PlanC
             {plan.name}
           </h3>
           <p style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>
-            {plan.minutes} min/mnd · {plan.overageNok} kr/min ekstra
+            {plan.minutes} min/{locale === 'nb' ? 'mnd' : 'mo'} · {plan.overageNok} kr/min {locale === 'nb' ? 'ekstra' : 'overage'}
           </p>
         </div>
 
@@ -205,7 +242,7 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect }: PlanC
               {price.toLocaleString('nb-NO')}
             </span>
             <span style={{ fontSize: '13px', color: 'var(--color-text-tertiary)', fontWeight: 500 }}>
-              kr/mnd
+              {tt('subscribe.perMonth')}
             </span>
           </div>
           {interval === 'annual' && (
@@ -216,7 +253,7 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect }: PlanC
                 fontWeight: 600,
               }}
             >
-              -{annualSavings}% vs. månedlig
+              -{annualSavings}% {tt('subscribe.vsMonthly')}
             </span>
           )}
         </div>
@@ -224,7 +261,7 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect }: PlanC
 
       {/* Features list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        {plan.features.map((feature) => (
+        {features.map((feature) => (
           <div key={feature} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <CheckIcon />
             <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>{feature}</span>
@@ -259,8 +296,8 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect }: PlanC
 
 // ─── Plan Comparison Table ────────────────────────────────────────────────────
 
-function PlanComparisonTable({ interval }: { interval: BillingInterval }) {
-  const rows: { label: string; values: (string | boolean)[] }[] = [
+function PlanComparisonTable({ interval, locale, tt }: { interval: BillingInterval; locale: 'nb' | 'en'; tt: ReturnType<typeof useT> }) {
+  const rows: { label: string; values: (string | boolean)[] }[] = locale === 'nb' ? [
     { label: 'Minutter per måned', values: ['60', '300', '2 000'] },
     { label: 'Månedspris', values: ['190 kr', '990 kr', '4 990 kr'] },
     { label: 'Årspris per måned', values: ['158 kr', '825 kr', '4 158 kr'] },
@@ -269,6 +306,15 @@ function PlanComparisonTable({ interval }: { interval: BillingInterval }) {
     { label: 'Teamadministrasjon', values: [false, true, true] },
     { label: 'Prioritert support', values: [false, true, true] },
     { label: 'Avansert statistikk', values: [false, false, true] },
+  ] : [
+    { label: 'Minutes per month', values: ['60', '300', '2,000'] },
+    { label: 'Monthly price', values: ['190 NOK', '990 NOK', '4,990 NOK'] },
+    { label: 'Annual price/mo', values: ['158 NOK', '825 NOK', '4,158 NOK'] },
+    { label: 'Overage rate', values: ['4.00 NOK/min', '3.50 NOK/min', '3.00 NOK/min'] },
+    { label: 'Unused minutes roll over', values: [true, true, true] },
+    { label: 'Team management', values: [false, true, true] },
+    { label: 'Priority support', values: [false, true, true] },
+    { label: 'Advanced analytics', values: [false, false, true] },
   ];
 
   return (
@@ -282,7 +328,7 @@ function PlanComparisonTable({ interval }: { interval: BillingInterval }) {
     >
       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--glass-border)' }}>
         <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-          Plansammenligning
+          {tt('subscribe.comparison')}
         </h3>
       </div>
 
@@ -366,6 +412,8 @@ function CancelHandler() {
 function SubscribePage() {
   const router = useRouter();
   const { organization } = useOrganization();
+  const { locale } = useLocale();
+  const tt = useT(locale);
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('medium');
   const [interval, setInterval] = useState<BillingInterval>('monthly');
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -380,7 +428,7 @@ function SubscribePage() {
   const handleSubscribe = async () => {
     if (isCheckingOut) return;
     if (!organization?.id) {
-      alert('Du må ha en aktiv organisasjon for å abonnere på en plan.');
+      alert(tt('subscribe.needOrg'));
       return;
     }
 
@@ -397,14 +445,14 @@ function SubscribePage() {
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || 'Checkout feilet');
+        throw new Error(err.error || 'Checkout failed');
       }
 
       const { url } = await res.json();
       window.location.href = url;
     } catch (error) {
       console.error('Subscribe error:', error);
-      alert('Kunne ikke starte betaling. Prøv igjen.');
+      alert(tt('subscribe.checkoutFailed'));
       setIsCheckingOut(false);
     }
   };
@@ -442,12 +490,12 @@ function SubscribePage() {
         <button
           onClick={() => router.back()}
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
-          aria-label="Gå tilbake"
+          aria-label={tt('settings.goBack')}
         >
           <BackIcon />
         </button>
         <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
-          Velg abonnementsplan
+          {tt('subscribe.title')}
         </h1>
       </header>
 
@@ -470,7 +518,7 @@ function SubscribePage() {
             lineHeight: 1.5,
           }}
         >
-          Profesjonell tolkning — alltid tilgjengelig. Én faktura per måned. Ingen bestilling.
+          {tt('subscribe.tagline')}
         </p>
 
         {/* Monthly / Annual toggle */}
@@ -504,7 +552,7 @@ function SubscribePage() {
                 boxShadow: interval === opt ? 'var(--glass-glow-primary)' : 'none',
               }}
             >
-              {opt === 'monthly' ? 'Månedlig' : 'Årlig (-17%)'}
+              {opt === 'monthly' ? tt('subscribe.monthly') : tt('subscribe.annual')}
             </button>
           ))}
         </div>
@@ -519,6 +567,8 @@ function SubscribePage() {
               isSelected={selectedPlan === plan.id}
               isCurrentPlan={currentTier === plan.id}
               onSelect={() => setSelectedPlan(plan.id)}
+              locale={locale}
+              tt={tt}
             />
           ))}
         </div>
@@ -534,13 +584,13 @@ function SubscribePage() {
             }}
           >
             <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
-              Faktureres som ett årlig beløp. Kan avsluttes når som helst — gjeldende periode løper ut.
+              {tt('subscribe.annualNote')}
             </p>
           </div>
         )}
 
         {/* Comparison table */}
-        <PlanComparisonTable interval={interval} />
+        <PlanComparisonTable interval={interval} locale={locale} tt={tt} />
 
         {/* Disclaimer */}
         <p
@@ -554,7 +604,7 @@ function SubscribePage() {
             paddingRight: '8px',
           }}
         >
-          TolKI er ikke egnet for sertifisert rettstolking eller medisinsk tolking der nøyaktighet er juridisk krevd.
+          {tt('subscribe.disclaimer')}
         </p>
       </div>
 
@@ -605,11 +655,11 @@ function SubscribePage() {
             </div>
           ) : isCurrentPlan ? (
             <span style={{ fontSize: '16px', fontWeight: 700, color: '#FFFFFF' }}>
-              Du er allerede på denne planen
+              {tt('subscribe.alreadyOnPlan')}
             </span>
           ) : (
             <span style={{ fontSize: '16px', fontWeight: 700, color: '#FFFFFF' }}>
-              Abonner på {selectedPlanData?.name} — {selectedPrice?.toLocaleString('nb-NO')} kr/mnd
+              {tt('subscribe.subscribeTo')} {selectedPlanData?.name} — {selectedPrice?.toLocaleString('nb-NO')} {locale === 'nb' ? 'kr/mnd' : 'NOK/mo'}
             </span>
           )}
         </motion.button>
