@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalMutation } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { MIN_SESSION_CREDITS, MIN_SESSION_DURATION_SEC } from "../constants/billing";
 
@@ -11,7 +11,9 @@ async function verifyIdentity(ctx: { auth: { getUserIdentity: () => Promise<any>
   return identity;
 }
 
-// Start a new translation session
+// Start a new translation session.
+// If the user belongs to an org with an active subscription, minutes are billed
+// against the org pool. Otherwise falls back to personal credits (backward compat).
 export const startSession = mutation({
   args: {
     clerkId: v.string(),
@@ -31,9 +33,41 @@ export const startSession = mutation({
       throw new Error("User not found");
     }
 
-    // Check if user has credits
-    if (user.credits <= 0) {
-      throw new Error("Insufficient credits");
+    // Check if user belongs to an org with available minutes
+    const membership = await ctx.db
+      .query("memberships")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+
+    let orgId: Id<"organizations"> | undefined;
+
+    if (membership) {
+      const org = await ctx.db.get(membership.orgId);
+
+      if (org) {
+        // Verify org has available minutes
+        const MIN_MINUTES = MIN_SESSION_DURATION_SEC / 60;
+        if (org.totalMinutesAvailable < MIN_MINUTES) {
+          throw new Error("Organization has insufficient minutes. Please renew your subscription.");
+        }
+
+        // For individual mode, also check member allocation
+        if (org.creditPoolMode === "individual" && membership.minuteAllocation !== undefined) {
+          const remainingAllocation = membership.minuteAllocation - membership.minutesUsedThisCycle;
+          if (remainingAllocation < MIN_MINUTES) {
+            throw new Error("Your individual minute allocation is exhausted for this billing cycle.");
+          }
+        }
+
+        orgId = org._id;
+      }
+    }
+
+    if (!orgId) {
+      // Fallback: personal credits
+      if (user.credits < MIN_SESSION_CREDITS) {
+        throw new Error("Insufficient credits. Minimum credits required to start a session");
+      }
     }
 
     // End any existing active sessions
@@ -51,20 +85,35 @@ export const startSession = mutation({
       });
     }
 
-    // Deduct minimum session charge upfront
-    if (user.credits < MIN_SESSION_CREDITS) {
-      throw new Error("Insufficient credits. Minimum credits required to start a session");
-    }
+    if (orgId) {
+      // Deduct minimum charge from org pool
+      const minMinutes = MIN_SESSION_DURATION_SEC / 60;
+      const org = await ctx.db.get(orgId);
+      if (org) {
+        await ctx.db.patch(orgId, {
+          totalMinutesAvailable: Math.max(0, Math.round((org.totalMinutesAvailable - minMinutes) * 1000) / 1000),
+          minutesUsedThisCycle: Math.round((org.minutesUsedThisCycle + minMinutes) * 1000) / 1000,
+        });
 
-    // Deduct minimum charge immediately
-    await ctx.db.patch(user._id, {
-      credits: Math.round((user.credits - MIN_SESSION_CREDITS) * 100) / 100,
-      lastActive: Date.now(),
-    });
+        // For individual mode, also track member usage
+        if (org.creditPoolMode === "individual" && membership) {
+          await ctx.db.patch(membership._id, {
+            minutesUsedThisCycle: Math.round((membership.minutesUsedThisCycle + minMinutes) * 1000) / 1000,
+          });
+        }
+      }
+    } else {
+      // Deduct minimum charge from personal credits
+      await ctx.db.patch(user._id, {
+        credits: Math.round((user.credits - MIN_SESSION_CREDITS) * 100) / 100,
+        lastActive: Date.now(),
+      });
+    }
 
     // Create new session with minimum charge already applied
     const sessionId = await ctx.db.insert("usageSessions", {
       userId: user._id,
+      orgId,
       creditsUsed: MIN_SESSION_CREDITS,
       secondsUsed: MIN_SESSION_DURATION_SEC,
       languageFrom: args.languageFrom,
@@ -132,7 +181,9 @@ export const endSession = mutation({
   },
 });
 
-// Update fractional credits (called every 3 seconds)
+// Update fractional credits/minutes (called every 3 seconds during an active session).
+// If the session is tied to an org, deducts from the org's minute pool.
+// Otherwise falls back to deducting personal credits.
 export const updateFractionalCredits = mutation({
   args: {
     clerkId: v.string(),
@@ -163,55 +214,120 @@ export const updateFractionalCredits = mutation({
       throw new Error("No active session found");
     }
 
-    // Calculate credits to deduct (0.05 per 3 seconds = 1 credit per 60 seconds)
-    const creditsToDeduct = (args.secondsToAdd / 60) * 1;
+    // Minutes to deduct this interval (1 credit == 1 minute)
+    const minutesToDeduct = args.secondsToAdd / 60;
+    const creditsToDeduct = minutesToDeduct; // kept for backward compat naming
 
-    // Check if user has enough credits
-    if (user.credits < creditsToDeduct) {
-      // End session if insufficient credits
-      const currentSeconds = activeSession.secondsUsed || 0;
-      const finalSecondsUsed = currentSeconds + args.secondsToAdd;
-      const finalCreditsUsed = Math.round((finalSecondsUsed / 60) * 1 * 100) / 100;
-
-      await ctx.db.patch(activeSession._id, {
-        isActive: false,
-        endedAt: Date.now(),
-        secondsUsed: finalSecondsUsed,
-        creditsUsed: finalCreditsUsed,
-      });
-
-      // Deduct remaining credits
-      await ctx.db.patch(user._id, {
-        credits: 0,
-        lastActive: Date.now(),
-      });
-
-      throw new Error("Insufficient credits - session ended");
-    }
-
-    // Update seconds used (handle optional field for migration)
     const currentSecondsUsed = activeSession.secondsUsed || 0;
     const newSecondsUsed = currentSecondsUsed + args.secondsToAdd;
     const newCreditsUsed = Math.round((newSecondsUsed / 60) * 1 * 100) / 100;
 
-    // Deduct fractional credits from user
-    const newBalance = Math.round((user.credits - creditsToDeduct) * 100) / 100;
-    await ctx.db.patch(user._id, {
-      credits: newBalance,
-      lastActive: Date.now(),
-    });
+    if (activeSession.orgId) {
+      // ── Org-billed session ──────────────────────────────────────────────
+      const org = await ctx.db.get(activeSession.orgId);
 
-    // Update session
-    await ctx.db.patch(activeSession._id, {
-      secondsUsed: newSecondsUsed,
-      creditsUsed: newCreditsUsed,
-    });
+      if (!org || org.totalMinutesAvailable < minutesToDeduct) {
+        // End session — org is out of minutes
+        await ctx.db.patch(activeSession._id, {
+          isActive: false,
+          endedAt: Date.now(),
+          secondsUsed: newSecondsUsed,
+          creditsUsed: newCreditsUsed,
+        });
 
-    return {
-      creditsRemaining: newBalance,
-      sessionCreditsUsed: newCreditsUsed,
-      secondsUsed: newSecondsUsed,
-    };
+        if (org) {
+          await ctx.db.patch(org._id, {
+            totalMinutesAvailable: 0,
+            minutesUsedThisCycle: org.minutesUsedThisCycle + org.totalMinutesAvailable,
+          });
+        }
+
+        throw new Error("Organization has run out of minutes - session ended");
+      }
+
+      // For individual mode, check member allocation too
+      if (org.creditPoolMode === "individual") {
+        const membership = await ctx.db
+          .query("memberships")
+          .withIndex("by_org_and_user", (q) =>
+            q.eq("orgId", activeSession.orgId!).eq("userId", user._id)
+          )
+          .first();
+
+        if (membership && membership.minuteAllocation !== undefined) {
+          const remainingAllocation = membership.minuteAllocation - membership.minutesUsedThisCycle;
+          if (remainingAllocation < minutesToDeduct) {
+            await ctx.db.patch(activeSession._id, {
+              isActive: false,
+              endedAt: Date.now(),
+              secondsUsed: newSecondsUsed,
+              creditsUsed: newCreditsUsed,
+            });
+            throw new Error("Individual minute allocation exhausted - session ended");
+          }
+
+          await ctx.db.patch(membership._id, {
+            minutesUsedThisCycle: Math.round((membership.minutesUsedThisCycle + minutesToDeduct) * 1000) / 1000,
+          });
+        }
+      }
+
+      // Deduct from org pool
+      await ctx.db.patch(org._id, {
+        totalMinutesAvailable: Math.round((org.totalMinutesAvailable - minutesToDeduct) * 1000) / 1000,
+        minutesUsedThisCycle: Math.round((org.minutesUsedThisCycle + minutesToDeduct) * 1000) / 1000,
+      });
+
+      await ctx.db.patch(activeSession._id, {
+        secondsUsed: newSecondsUsed,
+        creditsUsed: newCreditsUsed,
+      });
+
+      return {
+        creditsRemaining: org.totalMinutesAvailable - minutesToDeduct,
+        sessionCreditsUsed: newCreditsUsed,
+        secondsUsed: newSecondsUsed,
+        billedToOrg: true,
+      };
+    } else {
+      // ── Personal credits (legacy / no-org path) ──────────────────────────
+      if (user.credits < creditsToDeduct) {
+        // End session if insufficient credits
+        const finalCreditsUsed = Math.round((newSecondsUsed / 60) * 1 * 100) / 100;
+
+        await ctx.db.patch(activeSession._id, {
+          isActive: false,
+          endedAt: Date.now(),
+          secondsUsed: newSecondsUsed,
+          creditsUsed: finalCreditsUsed,
+        });
+
+        await ctx.db.patch(user._id, {
+          credits: 0,
+          lastActive: Date.now(),
+        });
+
+        throw new Error("Insufficient credits - session ended");
+      }
+
+      const newBalance = Math.round((user.credits - creditsToDeduct) * 100) / 100;
+      await ctx.db.patch(user._id, {
+        credits: newBalance,
+        lastActive: Date.now(),
+      });
+
+      await ctx.db.patch(activeSession._id, {
+        secondsUsed: newSecondsUsed,
+        creditsUsed: newCreditsUsed,
+      });
+
+      return {
+        creditsRemaining: newBalance,
+        sessionCreditsUsed: newCreditsUsed,
+        secondsUsed: newSecondsUsed,
+        billedToOrg: false,
+      };
+    }
   },
 });
 

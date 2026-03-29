@@ -30,6 +30,7 @@ export default defineSchema({
 
   usageSessions: defineTable({
     userId: v.id("users"),
+    orgId: v.optional(v.id("organizations")), // Set when session is billed against org subscription
     creditsUsed: v.number(),
     secondsUsed: v.optional(v.number()), // Track exact seconds of usage (optional for migration)
     languageFrom: v.string(),
@@ -40,4 +41,61 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_active", ["userId", "isActive"]),
+
+  // Multi-tenant organizations (synced from Clerk Organizations)
+  organizations: defineTable({
+    clerkOrgId: v.string(),
+    name: v.string(),
+    slug: v.string(),
+    stripeCustomerId: v.optional(v.string()),
+    creditPoolMode: v.union(v.literal("shared"), v.literal("individual")),
+    totalMinutesAvailable: v.number(), // included minutes + rollover
+    minutesUsedThisCycle: v.number(),
+    rolloverMinutes: v.number(),
+    currentBillingCycleStart: v.optional(v.number()),
+    currentBillingCycleEnd: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_clerk_org_id", ["clerkOrgId"]),
+
+  // User memberships within organizations
+  memberships: defineTable({
+    orgId: v.id("organizations"),
+    userId: v.id("users"),
+    clerkMembershipId: v.optional(v.string()),
+    role: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
+    minuteAllocation: v.optional(v.number()), // Only for individual creditPoolMode
+    minutesUsedThisCycle: v.number(),
+    joinedAt: v.number(),
+  })
+    .index("by_org", ["orgId"])
+    .index("by_user", ["userId"])
+    .index("by_org_and_user", ["orgId", "userId"]),
+
+  // Stripe subscription records for organizations
+  subscriptions: defineTable({
+    orgId: v.id("organizations"),
+    stripeSubscriptionId: v.string(),
+    stripePriceId: v.string(),
+    tier: v.union(
+      v.literal("starter"),
+      v.literal("professional"),
+      v.literal("business"),
+      v.literal("enterprise")
+    ),
+    status: v.union(
+      v.literal("active"),
+      v.literal("past_due"),
+      v.literal("canceled"),
+      v.literal("trialing")
+    ),
+    includedMinutes: v.number(), // 60 / 200 / 600 depending on tier
+    overageRateNok: v.number(), // 12 / 10 / 8 NOK per minute
+    billingInterval: v.union(v.literal("monthly"), v.literal("annual")),
+    currentPeriodStart: v.number(),
+    currentPeriodEnd: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_org", ["orgId"])
+    .index("by_stripe_subscription_id", ["stripeSubscriptionId"]),
 });
