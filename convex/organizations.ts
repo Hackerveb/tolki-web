@@ -249,14 +249,36 @@ export const getOrganizationByClerkId = query({
   },
 });
 
-// Get the org that the authenticated user belongs to
+// Get the org that the authenticated user belongs to.
+// When the user is in multiple orgs, pass clerkOrgId to select a specific one.
+// Without clerkOrgId, returns the first membership (for single-org users).
 export const getOrganizationForUser = query({
-  args: {},
-  handler: async (ctx) => {
+  args: { clerkOrgId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
     const identity = await requireAuth(ctx);
     const user = await getUserByClerkId(ctx, identity.subject);
     if (!user) return null;
 
+    if (args.clerkOrgId) {
+      // Resolve via org lookup to guarantee deterministic result
+      const clerkOrgId = args.clerkOrgId;
+      const org = await ctx.db
+        .query("organizations")
+        .withIndex("by_clerk_org_id", (q) => q.eq("clerkOrgId", clerkOrgId))
+        .first();
+      if (!org) return null;
+
+      // Verify the user is actually a member
+      const membership = await ctx.db
+        .query("memberships")
+        .withIndex("by_org_and_user", (q) => q.eq("orgId", org._id).eq("userId", user._id))
+        .first();
+      if (!membership) return null;
+
+      return org;
+    }
+
+    // Fallback: return first membership's org (single-org users)
     const membership = await ctx.db
       .query("memberships")
       .withIndex("by_user", (q) => q.eq("userId", user._id))

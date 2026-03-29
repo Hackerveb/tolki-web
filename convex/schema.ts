@@ -80,9 +80,10 @@ export default defineSchema({
     stripeSubscriptionId: v.string(),
     stripePriceId: v.string(),
     tier: v.union(
-      v.literal("starter"),
-      v.literal("professional"),
-      v.literal("business"),
+      v.literal("free"),
+      v.literal("small"),
+      v.literal("medium"),
+      v.literal("large"),
       v.literal("enterprise")
     ),
     status: v.union(

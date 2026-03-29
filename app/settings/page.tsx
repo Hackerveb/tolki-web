@@ -3,7 +3,7 @@
 import React, { useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useClerk } from '@clerk/nextjs';
+import { useClerk, useOrganization } from '@clerk/nextjs';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useTheme } from '@/hooks/useTheme';
 import { useToast } from '@/hooks/useToast';
@@ -40,6 +40,7 @@ function SettingsScreenInner() {
   const router = useRouter();
   const { signOut } = useClerk();
   const { displayName, email, initials, credits, clerkUser } = useCurrentUser();
+  const { organization } = useOrganization();
   const { isDark, setTheme } = useTheme();
   const { toast } = useToast();
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
@@ -225,6 +226,34 @@ function SettingsScreenInner() {
           </div>
 
         </div>
+
+        {/* Organization Section */}
+        {organization && (
+          <div
+            className="glass"
+            style={{ padding: '20px', borderRadius: '20px', marginBottom: '16px' }}
+          >
+            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
+                Organization
+              </h3>
+              <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+                {organization.name}
+              </span>
+            </div>
+            <Link href="/settings/organization" prefetch={true} className="w-full">
+              <button
+                className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
+                style={{ padding: '14px 16px', borderRadius: '12px', cursor: 'pointer' }}
+              >
+                <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                  Manage organization
+                </span>
+                <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
+              </button>
+            </Link>
+          </div>
+        )}
 
         {/* Management Section */}
         <div

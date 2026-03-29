@@ -7,17 +7,17 @@ import { internal } from '@/convex/_generated/api';
 // Stripe Price IDs per tier and billing interval.
 // Set via env vars so they can be configured per environment without code changes.
 const PRICE_IDS: Record<string, Record<string, string>> = {
-  starter: {
-    monthly: process.env.STRIPE_PRICE_STARTER_MONTHLY ?? '',
-    annual: process.env.STRIPE_PRICE_STARTER_ANNUAL ?? '',
+  small: {
+    monthly: process.env.STRIPE_PRICE_SMALL_MONTHLY ?? '',
+    annual: process.env.STRIPE_PRICE_SMALL_ANNUAL ?? '',
   },
-  professional: {
-    monthly: process.env.STRIPE_PRICE_PROFESSIONAL_MONTHLY ?? '',
-    annual: process.env.STRIPE_PRICE_PROFESSIONAL_ANNUAL ?? '',
+  medium: {
+    monthly: process.env.STRIPE_PRICE_MEDIUM_MONTHLY ?? '',
+    annual: process.env.STRIPE_PRICE_MEDIUM_ANNUAL ?? '',
   },
-  business: {
-    monthly: process.env.STRIPE_PRICE_BUSINESS_MONTHLY ?? '',
-    annual: process.env.STRIPE_PRICE_BUSINESS_ANNUAL ?? '',
+  large: {
+    monthly: process.env.STRIPE_PRICE_LARGE_MONTHLY ?? '',
+    annual: process.env.STRIPE_PRICE_LARGE_ANNUAL ?? '',
   },
 };
 

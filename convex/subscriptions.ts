@@ -17,9 +17,10 @@ export const createSubscription = internalMutation({
     stripeSubscriptionId: v.string(),
     stripePriceId: v.string(),
     tier: v.union(
-      v.literal("starter"),
-      v.literal("professional"),
-      v.literal("business"),
+      v.literal("free"),
+      v.literal("small"),
+      v.literal("medium"),
+      v.literal("large"),
       v.literal("enterprise")
     ),
     status: v.union(
@@ -100,6 +101,19 @@ export const updateSubscription = internalMutation({
       .first();
 
     if (!sub) throw new Error(`Subscription not found: ${stripeSubscriptionId}`);
+
+    // Idempotency guard: skip if period boundaries haven't changed and status matches.
+    // Stripe may replay the same customer.subscription.updated event.
+    if (
+      fields.currentPeriodStart !== undefined &&
+      fields.currentPeriodEnd !== undefined &&
+      sub.currentPeriodStart === fields.currentPeriodStart &&
+      sub.currentPeriodEnd === fields.currentPeriodEnd &&
+      (fields.status === undefined || sub.status === fields.status) &&
+      (fields.tier === undefined || sub.tier === fields.tier)
+    ) {
+      return sub._id; // Already up to date — no-op
+    }
 
     // Strip undefined values before patching
     const patch: Record<string, any> = {};

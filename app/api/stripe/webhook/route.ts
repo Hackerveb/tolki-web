@@ -184,6 +184,22 @@ async function handleSubscriptionCheckoutCompleted(session: Stripe.Checkout.Sess
   }
 }
 
+// Helper: extract billing period from Stripe subscription.
+// In Stripe SDK v19+ (API 2025-10-29), current_period_start/end were removed from
+// the Subscription type but still exist at runtime. Fall back to items if needed.
+function getSubscriptionPeriod(sub: Stripe.Subscription): { start: number; end: number } {
+  const raw = sub as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  if (raw.current_period_start && raw.current_period_end) {
+    return { start: raw.current_period_start, end: raw.current_period_end };
+  }
+  const item = sub.items?.data?.[0] as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  if (item?.current_period_start && item?.current_period_end) {
+    return { start: item.current_period_start, end: item.current_period_end };
+  }
+  // Last resort: use created timestamp and estimate 30 days
+  return { start: sub.created, end: sub.created + 30 * 24 * 60 * 60 };
+}
+
 // ─── Handler: customer.subscription.created ───────────────────────────────────
 async function handleSubscriptionCreated(sub: Stripe.Subscription) {
   const clerkOrgId = sub.metadata?.clerkOrgId;
@@ -206,6 +222,7 @@ async function handleSubscriptionCreated(sub: Stripe.Subscription) {
   }
 
   const status = mapStripeSubStatus(sub.status);
+  const period = getSubscriptionPeriod(sub);
   await fetchMutation(internalSubs.createSubscription, {
     orgId: org._id,
     stripeSubscriptionId: sub.id,
@@ -215,8 +232,8 @@ async function handleSubscriptionCreated(sub: Stripe.Subscription) {
     includedMinutes: tierMeta.includedMinutes,
     overageRateNok: tierMeta.overageRateNok,
     billingInterval: tierMeta.billingInterval,
-    currentPeriodStart: sub.current_period_start * 1000,
-    currentPeriodEnd: sub.current_period_end * 1000,
+    currentPeriodStart: period.start * 1000,
+    currentPeriodEnd: period.end * 1000,
   });
 
   console.log(
@@ -244,11 +261,12 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
     }
   }
 
+  const period = getSubscriptionPeriod(sub);
   const patch: Record<string, unknown> = {
     stripeSubscriptionId: sub.id,
     status,
-    currentPeriodStart: sub.current_period_start * 1000,
-    currentPeriodEnd: sub.current_period_end * 1000,
+    currentPeriodStart: period.start * 1000,
+    currentPeriodEnd: period.end * 1000,
   };
 
   if (tierMeta) {
@@ -263,6 +281,14 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
   console.log(`✅ Subscription updated in Convex: ${sub.id} status=${status}`);
 }
 
+// Helper: extract subscription ID from invoice (Stripe v19 type compat)
+function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | undefined {
+  const raw = invoice as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  if (typeof raw.subscription === 'string') return raw.subscription;
+  if (raw.subscription?.id) return raw.subscription.id;
+  return undefined;
+}
+
 // ─── Handler: invoice.payment_succeeded ──────────────────────────────────────
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   // Only process renewal cycles; new subscriptions are handled via subscription.created
@@ -275,8 +301,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     return;
   }
 
-  const stripeSubId =
-    typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
+  const stripeSubId = getInvoiceSubscriptionId(invoice);
   if (!stripeSubId) {
     console.error('❌ invoice.payment_succeeded missing subscription ID');
     return;
@@ -299,8 +324,9 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     return;
   }
 
-  const newPeriodStart = stripeSub.current_period_start * 1000;
-  const newPeriodEnd = stripeSub.current_period_end * 1000;
+  const renewalPeriod = getSubscriptionPeriod(stripeSub);
+  const newPeriodStart = renewalPeriod.start * 1000;
+  const newPeriodEnd = renewalPeriod.end * 1000;
 
   // ── Report overage from closing cycle to Stripe ──────────────────────────
   // Fetch current org state to check for outstanding overage minutes.
@@ -377,8 +403,7 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
 
 // ─── Handler: invoice.payment_failed ─────────────────────────────────────────
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
-  const stripeSubId =
-    typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
+  const stripeSubId = getInvoiceSubscriptionId(invoice);
   if (!stripeSubId) {
     console.error('❌ invoice.payment_failed missing subscription ID');
     return;
