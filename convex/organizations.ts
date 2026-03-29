@@ -65,6 +65,52 @@ export const createOrganization = internalMutation({
   },
 });
 
+// Upsert org from Clerk webhook (organization.created / organization.updated)
+export const syncOrganization = internalMutation({
+  args: {
+    clerkOrgId: v.string(),
+    name: v.string(),
+    slug: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("organizations")
+      .withIndex("by_clerk_org_id", (q) => q.eq("clerkOrgId", args.clerkOrgId))
+      .first();
+
+    if (!existing) {
+      return ctx.db.insert("organizations", {
+        clerkOrgId: args.clerkOrgId,
+        name: args.name,
+        slug: args.slug,
+        creditPoolMode: "shared",
+        totalMinutesAvailable: 0,
+        minutesUsedThisCycle: 0,
+        rolloverMinutes: 0,
+        createdAt: Date.now(),
+      });
+    }
+
+    await ctx.db.patch(existing._id, { name: args.name, slug: args.slug });
+    return existing._id;
+  },
+});
+
+// Soft-delete an org when Clerk fires organization.deleted
+export const archiveOrganization = internalMutation({
+  args: { clerkOrgId: v.string() },
+  handler: async (ctx, args) => {
+    const org = await ctx.db
+      .query("organizations")
+      .withIndex("by_clerk_org_id", (q) => q.eq("clerkOrgId", args.clerkOrgId))
+      .first();
+
+    if (!org) return; // already gone or never synced
+
+    await ctx.db.patch(org._id, { deletedAt: Date.now() });
+  },
+});
+
 // Called from Stripe webhook on invoice.payment_succeeded (cycle renewal)
 export const updateOrgMinuteBalance = internalMutation({
   args: {

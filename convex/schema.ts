@@ -54,6 +54,7 @@ export default defineSchema({
     rolloverMinutes: v.number(),
     currentBillingCycleStart: v.optional(v.number()),
     currentBillingCycleEnd: v.optional(v.number()),
+    deletedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_clerk_org_id", ["clerkOrgId"]),

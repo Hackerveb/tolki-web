@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
   '/forgot-password(.*)',
   '/sso-callback(.*)',
   '/api/stripe/webhook(.*)', // Stripe webhooks must be public (they use signature verification instead)
+  '/api/webhooks/clerk(.*)', // Clerk webhooks must be public (svix signature verification)
 ]);
 
 export default clerkMiddleware(async (auth, request) => {

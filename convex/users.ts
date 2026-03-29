@@ -309,6 +309,16 @@ export const hasCompletedOnboarding = query({
   },
 });
 
+// Look up a user by Clerk ID (INTERNAL ONLY — webhook handlers, not callable from client)
+export const getByClerkId = internalQuery({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) =>
+    ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first(),
+});
+
 // List all users (INTERNAL ONLY — admin/dashboard, not callable from client)
 export const list = internalQuery({
   args: {},

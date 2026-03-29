@@ -73,6 +73,41 @@ export const addMember = internalMutation({
   },
 });
 
+// Upsert membership from Clerk webhook — alias kept for webhook handler clarity
+export const syncMembership = internalMutation({
+  args: {
+    orgId: v.id("organizations"),
+    userId: v.id("users"),
+    clerkMembershipId: v.optional(v.string()),
+    role: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("memberships")
+      .withIndex("by_org_and_user", (q) => q.eq("orgId", args.orgId).eq("userId", args.userId))
+      .first();
+
+    if (existing) {
+      if (existing.role !== args.role || (args.clerkMembershipId && existing.clerkMembershipId !== args.clerkMembershipId)) {
+        await ctx.db.patch(existing._id, {
+          role: args.role,
+          ...(args.clerkMembershipId && { clerkMembershipId: args.clerkMembershipId }),
+        });
+      }
+      return existing._id;
+    }
+
+    return ctx.db.insert("memberships", {
+      orgId: args.orgId,
+      userId: args.userId,
+      clerkMembershipId: args.clerkMembershipId,
+      role: args.role,
+      minutesUsedThisCycle: 0,
+      joinedAt: Date.now(),
+    });
+  },
+});
+
 // Remove a member when Clerk fires organizationMembership.deleted
 export const removeMember = internalMutation({
   args: {
