@@ -52,6 +52,7 @@ export default defineSchema({
     totalMinutesAvailable: v.number(), // included minutes + rollover
     minutesUsedThisCycle: v.number(),
     rolloverMinutes: v.number(),
+    overageMinutesThisCycle: v.optional(v.number()), // Minutes used beyond the included pool; reported to Stripe at cycle end
     currentBillingCycleStart: v.optional(v.number()),
     currentBillingCycleEnd: v.optional(v.number()),
     deletedAt: v.optional(v.number()),

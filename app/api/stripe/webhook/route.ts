@@ -99,10 +99,7 @@ export async function POST(request: NextRequest) {
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
         console.log('🗑️ customer.subscription.deleted:', sub.id);
-        await fetchMutation(internalSubs.cancelSubscription, {
-          stripeSubscriptionId: sub.id,
-        });
-        console.log('✅ Subscription marked canceled in Convex');
+        await handleSubscriptionDeleted(sub);
         break;
       }
 
@@ -233,6 +230,20 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
   const tierMeta = getTierForPriceId(priceId);
   const status = mapStripeSubStatus(sub.status);
 
+  // Detect plan downgrade: fetch current subscription record to compare includedMinutes.
+  // Per pricing rules, rollover resets on downgrade to prevent gaming.
+  if (tierMeta) {
+    const convexSub = await fetchQuery(internalSubs.getByStripeSubscriptionId, {
+      stripeSubscriptionId: sub.id,
+    });
+    if (convexSub && tierMeta.includedMinutes < convexSub.includedMinutes) {
+      console.log(
+        `⬇️ Plan downgrade detected for ${sub.id}: ${convexSub.includedMinutes} → ${tierMeta.includedMinutes} min — resetting rollover`
+      );
+      await fetchMutation(internalOrgs.resetRolloverOnDowngrade, { orgId: convexSub.orgId });
+    }
+  }
+
   const patch: Record<string, unknown> = {
     stripeSubscriptionId: sub.id,
     status,
@@ -291,13 +302,47 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   const newPeriodStart = stripeSub.current_period_start * 1000;
   const newPeriodEnd = stripeSub.current_period_end * 1000;
 
-  // Roll over unused minutes (capped at one cycle's worth) and reset usage counter
+  // ── Report overage from closing cycle to Stripe ──────────────────────────
+  // Fetch current org state to check for outstanding overage minutes.
+  const org = await fetchQuery(internalOrgs.getById, { orgId: convexSub.orgId });
+  const overageMinutes = org?.overageMinutesThisCycle ?? 0;
+
+  if (overageMinutes > 0 && org?.stripeCustomerId) {
+    const overageRateNok = convexSub.overageRateNok; // e.g. 12 NOK/min
+    const overageAmountOre = Math.ceil(overageMinutes * overageRateNok * 100); // øre (Stripe smallest unit)
+    const overageDescription =
+      `Overage: ${Math.ceil(overageMinutes)} min × ${overageRateNok} NOK/min (${tierMeta.tier} plan)`;
+
+    try {
+      await stripe.invoiceItems.create({
+        customer: org.stripeCustomerId,
+        amount: overageAmountOre,
+        currency: 'nok',
+        description: overageDescription,
+      });
+      console.log(
+        `📊 Overage invoice item created: ${Math.ceil(overageMinutes)} min × ${overageRateNok} NOK = ${overageAmountOre / 100} NOK for ${org.stripeCustomerId}`
+      );
+    } catch (err) {
+      // Non-fatal: log and continue so rollover still happens
+      console.error('❌ Failed to create overage invoice item — proceeding with rollover anyway:', err);
+    }
+  } else if (overageMinutes > 0) {
+    console.warn(`⚠️ Org ${convexSub.orgId} has ${overageMinutes} overage minutes but no stripeCustomerId — skipping Stripe report`);
+  }
+
+  // ── Roll over unused minutes and reset cycle counters ────────────────────
   await fetchMutation(internalOrgs.processRollover, {
     orgId: convexSub.orgId,
     newIncludedMinutes: tierMeta.includedMinutes,
     newBillingCycleStart: newPeriodStart,
     newBillingCycleEnd: newPeriodEnd,
   });
+
+  // Reset per-member usage counters for the new cycle
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const internalMemberships = (internal as any).memberships;
+  await fetchMutation(internalMemberships.resetMemberMinutes, { orgId: convexSub.orgId });
 
   // Sync subscription period boundaries
   await fetchMutation(internalSubs.updateSubscription, {
@@ -308,8 +353,26 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   });
 
   console.log(
-    `✅ Renewal processed for ${stripeSubId}: ${tierMeta.includedMinutes} minutes provisioned`
+    `✅ Renewal processed for ${stripeSubId}: ${tierMeta.includedMinutes} min provisioned (overage reported: ${overageMinutes > 0 ? Math.ceil(overageMinutes) + ' min' : 'none'})`
   );
+}
+
+// ─── Handler: customer.subscription.deleted ──────────────────────────────────
+// Marks subscription canceled and resets rollover balance to 0 per pricing rules.
+async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
+  await fetchMutation(internalSubs.cancelSubscription, {
+    stripeSubscriptionId: sub.id,
+  });
+  console.log('✅ Subscription marked canceled in Convex:', sub.id);
+
+  // Look up the Convex subscription to find orgId for rollover reset
+  const convexSub = await fetchQuery(internalSubs.getByStripeSubscriptionId, {
+    stripeSubscriptionId: sub.id,
+  });
+  if (convexSub) {
+    await fetchMutation(internalOrgs.resetRolloverOnCancellation, { orgId: convexSub.orgId });
+    console.log('✅ Rollover balance reset for org:', convexSub.orgId);
+  }
 }
 
 // ─── Handler: invoice.payment_failed ─────────────────────────────────────────
@@ -327,7 +390,6 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   });
 
   console.log(`⚠️ Subscription marked past_due: ${stripeSubId}`);
-  // TODO (TOL-124): notify org admin via email when invoice payment fails
 }
 
 // ─── Utility ─────────────────────────────────────────────────────────────────

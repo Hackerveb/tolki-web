@@ -63,7 +63,7 @@ function buildPriceMap(): Map<string, TierMeta> {
     if (annual) {
       map.set(annual, {
         tier: def.tier,
-        includedMinutes: def.includedMinutes,
+        includedMinutes: def.includedMinutes * 12, // Annual plan: full 12-month pool, no monthly reset
         overageRateNok: def.overageRateNok,
         billingInterval: 'annual',
       });

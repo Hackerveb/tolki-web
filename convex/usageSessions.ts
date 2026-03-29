@@ -45,13 +45,19 @@ export const startSession = mutation({
       const org = await ctx.db.get(membership.orgId);
 
       if (org) {
-        // Verify org has available minutes
         const MIN_MINUTES = MIN_SESSION_DURATION_SEC / 60;
-        if (org.totalMinutesAvailable < MIN_MINUTES) {
+
+        // Org is in overage mode when totalMinutesAvailable = 0 but billing cycle is active.
+        // Allow session start in overage mode so interpreters are never cut off mid-job.
+        const hasActiveBillingCycle =
+          org.currentBillingCycleEnd !== undefined &&
+          Date.now() <= org.currentBillingCycleEnd;
+
+        if (!hasActiveBillingCycle && org.totalMinutesAvailable < MIN_MINUTES) {
           throw new Error("Organization has insufficient minutes. Please renew your subscription.");
         }
 
-        // For individual mode, also check member allocation
+        // For individual mode, also check member allocation (blocks even in overage)
         if (org.creditPoolMode === "individual" && membership.minuteAllocation !== undefined) {
           const remainingAllocation = membership.minuteAllocation - membership.minutesUsedThisCycle;
           if (remainingAllocation < MIN_MINUTES) {
@@ -86,14 +92,22 @@ export const startSession = mutation({
     }
 
     if (orgId) {
-      // Deduct minimum charge from org pool
+      // Deduct minimum charge from org pool (or track as overage if pool is empty)
       const minMinutes = MIN_SESSION_DURATION_SEC / 60;
       const org = await ctx.db.get(orgId);
       if (org) {
-        await ctx.db.patch(orgId, {
-          totalMinutesAvailable: Math.max(0, Math.round((org.totalMinutesAvailable - minMinutes) * 1000) / 1000),
+        const currentAvailable = org.totalMinutesAvailable;
+        const newAvailable = Math.max(0, currentAvailable - minMinutes);
+        const overageDelta = currentAvailable < minMinutes ? minMinutes - Math.max(0, currentAvailable) : 0;
+        const currentOverage = org.overageMinutesThisCycle ?? 0;
+        const startPatch: Record<string, number> = {
+          totalMinutesAvailable: Math.round(newAvailable * 1000) / 1000,
           minutesUsedThisCycle: Math.round((org.minutesUsedThisCycle + minMinutes) * 1000) / 1000,
-        });
+        };
+        if (overageDelta > 0) {
+          startPatch.overageMinutesThisCycle = Math.round((currentOverage + overageDelta) * 1000) / 1000;
+        }
+        await ctx.db.patch(orgId, startPatch);
 
         // For individual mode, also track member usage
         if (org.creditPoolMode === "individual" && membership) {
@@ -226,26 +240,38 @@ export const updateFractionalCredits = mutation({
       // ── Org-billed session ──────────────────────────────────────────────
       const org = await ctx.db.get(activeSession.orgId);
 
-      if (!org || org.totalMinutesAvailable < minutesToDeduct) {
-        // End session — org is out of minutes
+      if (!org) {
+        // Org disappeared — end session
         await ctx.db.patch(activeSession._id, {
           isActive: false,
           endedAt: Date.now(),
           secondsUsed: newSecondsUsed,
           creditsUsed: newCreditsUsed,
         });
+        throw new Error("Organization not found - session ended");
+      }
 
-        if (org) {
-          await ctx.db.patch(org._id, {
-            totalMinutesAvailable: 0,
-            minutesUsedThisCycle: org.minutesUsedThisCycle + org.totalMinutesAvailable,
-          });
-        }
+      // Check if the billing cycle is still active (allows overage; no cut-off)
+      const hasActiveBillingCycle =
+        org.currentBillingCycleEnd !== undefined &&
+        Date.now() <= org.currentBillingCycleEnd;
 
+      if (!hasActiveBillingCycle && org.totalMinutesAvailable < minutesToDeduct) {
+        // No active cycle and pool is empty — end session
+        await ctx.db.patch(activeSession._id, {
+          isActive: false,
+          endedAt: Date.now(),
+          secondsUsed: newSecondsUsed,
+          creditsUsed: newCreditsUsed,
+        });
+        await ctx.db.patch(org._id, {
+          totalMinutesAvailable: 0,
+          minutesUsedThisCycle: org.minutesUsedThisCycle + org.totalMinutesAvailable,
+        });
         throw new Error("Organization has run out of minutes - session ended");
       }
 
-      // For individual mode, check member allocation too
+      // For individual mode, check member allocation (blocks even in overage)
       if (org.creditPoolMode === "individual") {
         const membership = await ctx.db
           .query("memberships")
@@ -272,11 +298,27 @@ export const updateFractionalCredits = mutation({
         }
       }
 
-      // Deduct from org pool
-      await ctx.db.patch(org._id, {
-        totalMinutesAvailable: Math.round((org.totalMinutesAvailable - minutesToDeduct) * 1000) / 1000,
+      // Deduct from org pool (or track overage if pool is exhausted)
+      const currentAvailable = org.totalMinutesAvailable;
+      let newAvailable: number;
+      let overageDelta = 0;
+
+      if (currentAvailable >= minutesToDeduct) {
+        newAvailable = currentAvailable - minutesToDeduct;
+      } else {
+        overageDelta = minutesToDeduct - Math.max(0, currentAvailable);
+        newAvailable = 0;
+      }
+
+      const currentOverage = org.overageMinutesThisCycle ?? 0;
+      const orgPatch: Record<string, number> = {
+        totalMinutesAvailable: Math.round(newAvailable * 1000) / 1000,
         minutesUsedThisCycle: Math.round((org.minutesUsedThisCycle + minutesToDeduct) * 1000) / 1000,
-      });
+      };
+      if (overageDelta > 0) {
+        orgPatch.overageMinutesThisCycle = Math.round((currentOverage + overageDelta) * 1000) / 1000;
+      }
+      await ctx.db.patch(org._id, orgPatch);
 
       await ctx.db.patch(activeSession._id, {
         secondsUsed: newSecondsUsed,
@@ -284,10 +326,11 @@ export const updateFractionalCredits = mutation({
       });
 
       return {
-        creditsRemaining: org.totalMinutesAvailable - minutesToDeduct,
+        creditsRemaining: newAvailable,
         sessionCreditsUsed: newCreditsUsed,
         secondsUsed: newSecondsUsed,
         billedToOrg: true,
+        inOverage: newAvailable === 0,
       };
     } else {
       // ── Personal credits (legacy / no-org path) ──────────────────────────

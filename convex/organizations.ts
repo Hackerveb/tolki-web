@@ -133,7 +133,9 @@ export const updateOrgMinuteBalance = internalMutation({
   },
 });
 
-// Deduct minutes from org pool (called during active sessions)
+// Deduct minutes from org pool (called during active sessions).
+// When pool reaches 0 the session continues in overage mode; excess is tracked
+// in overageMinutesThisCycle and reported to Stripe at cycle renewal.
 export const deductOrgMinutes = internalMutation({
   args: {
     orgId: v.id("organizations"),
@@ -144,21 +146,41 @@ export const deductOrgMinutes = internalMutation({
     if (!org) throw new Error("Organization not found");
 
     const newUsed = org.minutesUsedThisCycle + args.minutes;
-    const newAvailable = Math.max(0, org.totalMinutesAvailable - args.minutes);
+    const currentAvailable = org.totalMinutesAvailable;
 
-    await ctx.db.patch(args.orgId, {
+    let newAvailable: number;
+    let overageDelta = 0;
+
+    if (currentAvailable >= args.minutes) {
+      // Pool has enough — normal deduction
+      newAvailable = currentAvailable - args.minutes;
+    } else {
+      // Transitioning into (or continuing) overage
+      overageDelta = args.minutes - Math.max(0, currentAvailable);
+      newAvailable = 0;
+    }
+
+    const currentOverage = org.overageMinutesThisCycle ?? 0;
+    const patch: Record<string, number> = {
       minutesUsedThisCycle: Math.round(newUsed * 1000) / 1000,
       totalMinutesAvailable: Math.round(newAvailable * 1000) / 1000,
-    });
+    };
+    if (overageDelta > 0) {
+      patch.overageMinutesThisCycle = Math.round((currentOverage + overageDelta) * 1000) / 1000;
+    }
+
+    await ctx.db.patch(args.orgId, patch);
 
     return {
       minutesUsedThisCycle: newUsed,
       totalMinutesAvailable: newAvailable,
+      inOverage: newAvailable === 0,
     };
   },
 });
 
-// Process minute rollover at the start of a new billing cycle
+// Process minute rollover at the start of a new billing cycle.
+// Overage for the closing cycle must be reported to Stripe BEFORE calling this.
 export const processRollover = internalMutation({
   args: {
     orgId: v.id("organizations"),
@@ -170,19 +192,46 @@ export const processRollover = internalMutation({
     const org = await ctx.db.get(args.orgId);
     if (!org) throw new Error("Organization not found");
 
-    // Unused minutes from previous cycle carry over (capped at one cycle's worth)
-    const unusedMinutes = Math.max(0, org.totalMinutesAvailable - org.minutesUsedThisCycle);
+    // Unused minutes from the previous cycle carry over (capped at one cycle's worth).
+    // If the org was in overage, totalMinutesAvailable is 0, so unusedMinutes = 0.
+    const unusedMinutes = Math.max(0, org.totalMinutesAvailable);
     const rolloverMinutes = Math.min(unusedMinutes, args.newIncludedMinutes);
 
     await ctx.db.patch(args.orgId, {
       rolloverMinutes,
       totalMinutesAvailable: args.newIncludedMinutes + rolloverMinutes,
       minutesUsedThisCycle: 0,
+      overageMinutesThisCycle: 0, // Reset after Stripe reporting
       currentBillingCycleStart: args.newBillingCycleStart,
       currentBillingCycleEnd: args.newBillingCycleEnd,
     });
 
     return { rolloverMinutes, totalMinutesAvailable: args.newIncludedMinutes + rolloverMinutes };
+  },
+});
+
+// Zero out rollover and overage when a subscription is cancelled.
+// Per pricing rules: rollover balance resets to 0 on plan cancellation.
+export const resetRolloverOnCancellation = internalMutation({
+  args: { orgId: v.id("organizations") },
+  handler: async (ctx, args) => {
+    const org = await ctx.db.get(args.orgId);
+    if (!org) return;
+    await ctx.db.patch(args.orgId, {
+      rolloverMinutes: 0,
+      overageMinutesThisCycle: 0,
+    });
+  },
+});
+
+// Zero out rollover when a subscription is downgraded to a lower tier.
+// Per pricing rules: rollover resets on downgrade to prevent gaming.
+export const resetRolloverOnDowngrade = internalMutation({
+  args: { orgId: v.id("organizations") },
+  handler: async (ctx, args) => {
+    const org = await ctx.db.get(args.orgId);
+    if (!org) return;
+    await ctx.db.patch(args.orgId, { rolloverMinutes: 0 });
   },
 });
 
