@@ -22,6 +22,7 @@ export default defineSchema({
     amount: v.number(), // Amount in cents
     credits: v.number(),
     stripeSessionId: v.optional(v.string()),
+    stripePaymentIntentId: v.optional(v.string()), // Legacy field from old test data
     status: v.union(v.literal("pending"), v.literal("completed"), v.literal("failed")),
     purchasedAt: v.number(),
   })
