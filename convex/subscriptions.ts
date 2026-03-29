@@ -181,6 +181,7 @@ export const getSubscriptionByClerkOrgId = query({
           org: {
             name: org.name,
             slug: org.slug,
+            stripeCustomerId: org.stripeCustomerId,
             creditPoolMode: org.creditPoolMode,
             totalMinutesAvailable: org.totalMinutesAvailable,
             minutesUsedThisCycle: org.minutesUsedThisCycle,

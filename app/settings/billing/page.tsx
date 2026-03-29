@@ -47,7 +47,7 @@ const STATUS_STYLES: Record<string, { bg: string; label: string }> = {
 };
 
 function formatDate(ts: number) {
-  return new Date(ts * 1000).toLocaleDateString('nb-NO', {
+  return new Date(ts).toLocaleDateString('nb-NO', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
