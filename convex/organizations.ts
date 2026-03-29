@@ -204,3 +204,18 @@ export const getByClerkOrgId = internalQuery({
       .withIndex("by_clerk_org_id", (q) => q.eq("clerkOrgId", args.clerkOrgId))
       .first(),
 });
+
+// Persist the Stripe customer ID on an org after first successful checkout
+export const updateStripeCustomerId = internalMutation({
+  args: {
+    orgId: v.id("organizations"),
+    stripeCustomerId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const org = await ctx.db.get(args.orgId);
+    if (!org) throw new Error(`Organization not found: ${args.orgId}`);
+    // Idempotent – skip if already set to the same value
+    if (org.stripeCustomerId === args.stripeCustomerId) return;
+    await ctx.db.patch(args.orgId, { stripeCustomerId: args.stripeCustomerId });
+  },
+});
