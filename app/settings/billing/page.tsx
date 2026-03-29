@@ -32,9 +32,10 @@ const ExternalLinkIcon = () => (
 );
 
 const TIER_LABELS: Record<string, string> = {
-  starter: 'Starter',
-  professional: 'Professional',
-  business: 'Business',
+  free: 'Free',
+  small: 'Small',
+  medium: 'Medium',
+  large: 'Large',
   enterprise: 'Enterprise',
 };
 
@@ -421,7 +422,7 @@ export default function BillingPage() {
                   Ingen aktiv abonnementsplan
                 </h3>
                 <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
-                  Fra 990 kr/mnd. Ingen bestilling. Ingen ventetid.
+                  Fra 190 kr/mnd. Ingen bestilling. Ingen ventetid.
                 </p>
                 <Link href="/subscribe">
                   <button

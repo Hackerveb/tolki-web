@@ -9,16 +9,15 @@ import { api } from '@/convex/_generated/api';
 
 // ─── Pricing data ────────────────────────────────────────────────────────────
 
-// Pricing is preliminary — final numbers from CFO (TOL-128).
-// Target: 2.5–3.5 NOK/min. Cost basis: ~0.15 NOK/min.
+// CEO-approved pricing (2026-03-29, TOL-128).
 const PLANS = [
   {
     id: 'small' as const,
     name: 'Small',
     monthlyNok: 190,
-    annualMonthlyNok: 159,
+    annualMonthlyNok: 158,
     minutes: 60,
-    overageNok: 3.5,
+    overageNok: 4.0,
     features: [
       '60 inkluderte minutter per måned',
       'Ubrukte minutter overføres',
@@ -33,10 +32,10 @@ const PLANS = [
     name: 'Medium',
     monthlyNok: 990,
     annualMonthlyNok: 825,
-    minutes: 330,
-    overageNok: 3.0,
+    minutes: 300,
+    overageNok: 3.5,
     features: [
-      '330 inkluderte minutter per måned',
+      '300 inkluderte minutter per måned',
       'Ubrukte minutter overføres',
       '100+ språkpar',
       'GDPR-compliant',
@@ -50,11 +49,11 @@ const PLANS = [
     id: 'large' as const,
     name: 'Large',
     monthlyNok: 4990,
-    annualMonthlyNok: 4159,
-    minutes: 1800,
-    overageNok: 2.5,
+    annualMonthlyNok: 4158,
+    minutes: 2000,
+    overageNok: 3.0,
     features: [
-      '1 800 inkluderte minutter per måned',
+      '2 000 inkluderte minutter per måned',
       'Ubrukte minutter overføres',
       '100+ språkpar',
       'GDPR-compliant',
@@ -262,10 +261,10 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect }: PlanC
 
 function PlanComparisonTable({ interval }: { interval: BillingInterval }) {
   const rows: { label: string; values: (string | boolean)[] }[] = [
-    { label: 'Minutter per måned', values: ['60', '200', '600'] },
-    { label: 'Månedspris', values: ['990 kr', '2 490 kr', '5 990 kr'] },
-    { label: 'Årspris per måned', values: ['825 kr', '2 075 kr', '4 990 kr'] },
-    { label: 'Overskridelsespris', values: ['12 kr/min', '10 kr/min', '8 kr/min'] },
+    { label: 'Minutter per måned', values: ['60', '300', '2 000'] },
+    { label: 'Månedspris', values: ['190 kr', '990 kr', '4 990 kr'] },
+    { label: 'Årspris per måned', values: ['158 kr', '825 kr', '4 158 kr'] },
+    { label: 'Overskridelsespris', values: ['4,00 kr/min', '3,50 kr/min', '3,00 kr/min'] },
     { label: 'Ubrukte minutter overføres', values: [true, true, true] },
     { label: 'Teamadministrasjon', values: [false, true, true] },
     { label: 'Prioritert support', values: [false, true, true] },

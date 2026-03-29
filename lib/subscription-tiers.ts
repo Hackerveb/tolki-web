@@ -2,17 +2,16 @@
  * Subscription tier configuration and Stripe price ID → tier metadata mapping.
  * Server-only: reads env vars at runtime.
  *
- * Tiers (board directive 2026-03-29, final pricing TBD from CFO):
- *   Free   →  20 min/mo,  non-accumulative (no rollover, no overage)
- *   Small  →  TBD min/mo, ~190 NOK/mo
- *   Medium →  TBD min/mo, ~990 NOK/mo
- *   Large  →  TBD min/mo, ~4,990 NOK/mo
+ * Tiers (CEO-approved pricing 2026-03-29, TOL-128):
+ *   Free   →  20 min/mo,  non-accumulative (no rollover, no overage, service pauses at 0)
+ *   Small  →  60 min/mo,  190 NOK/mo, overage 4.00 NOK/min
+ *   Medium →  300 min/mo, 990 NOK/mo, overage 3.50 NOK/min
+ *   Large  →  2000 min/mo, 4990 NOK/mo, overage 3.00 NOK/min
  *
- * Target charge: 2.5–3.5 NOK/min depending on tier.
- * Actual cost: ~0.15 NOK/min.
- *
- * Credit add-ons available for subscribers (not free tier).
- * Pricing awaiting CFO update at TOL-128.
+ * Annual pricing (~17% discount):
+ *   Small:  158 NOK/mo (1 896 NOK/yr)
+ *   Medium: 825 NOK/mo (9 900 NOK/yr)
+ *   Large:  4 158 NOK/mo (49 896 NOK/yr)
  */
 
 export type SubscriptionTier = 'free' | 'small' | 'medium' | 'large';
@@ -24,8 +23,6 @@ export interface TierMeta {
   billingInterval: 'monthly' | 'annual';
 }
 
-// Placeholder minutes — will be updated once CFO completes TOL-128 pricing analysis.
-// Using rough estimates: price / ~3 NOK per minute.
 const TIER_DEFINITIONS: Array<{
   tier: SubscriptionTier;
   includedMinutes: number;
@@ -35,22 +32,22 @@ const TIER_DEFINITIONS: Array<{
 }> = [
   {
     tier: 'small',
-    includedMinutes: 60,    // ~190 NOK / 3.17 NOK/min
-    overageRateNok: 3.5,
+    includedMinutes: 60,
+    overageRateNok: 4.0,
     monthlyEnvKey: 'STRIPE_PRICE_SMALL_MONTHLY',
     annualEnvKey: 'STRIPE_PRICE_SMALL_ANNUAL',
   },
   {
     tier: 'medium',
-    includedMinutes: 330,   // ~990 NOK / 3.0 NOK/min
-    overageRateNok: 3.0,
+    includedMinutes: 300,
+    overageRateNok: 3.5,
     monthlyEnvKey: 'STRIPE_PRICE_MEDIUM_MONTHLY',
     annualEnvKey: 'STRIPE_PRICE_MEDIUM_ANNUAL',
   },
   {
     tier: 'large',
-    includedMinutes: 1800,  // ~4990 NOK / 2.77 NOK/min
-    overageRateNok: 2.5,
+    includedMinutes: 2000,
+    overageRateNok: 3.0,
     monthlyEnvKey: 'STRIPE_PRICE_LARGE_MONTHLY',
     annualEnvKey: 'STRIPE_PRICE_LARGE_ANNUAL',
   },
@@ -93,22 +90,22 @@ export const FREE_TIER = {
   tier: 'free' as const,
   includedMinutes: 20,
   overageRateNok: 0,        // Free tier has no overage — session blocked when exhausted
-  rolloverEnabled: false,    // Non-accumulative per board directive
+  rolloverEnabled: false,    // Non-accumulative: resets monthly, no rollover
   priceNok: 0,
 };
 
-/** Included minutes per tier (placeholder — update after TOL-128). */
+/** Included minutes per billing cycle per tier (CEO-approved, TOL-128). */
 export const TIER_INCLUDED_MINUTES: Record<SubscriptionTier, number> = {
   free: 20,
   small: 60,
-  medium: 330,
-  large: 1800,
+  medium: 300,
+  large: 2000,
 };
 
-/** Overage rate in NOK per minute per tier. */
+/** Overage rate in NOK per minute per tier (CEO-approved, TOL-128). */
 export const TIER_OVERAGE_RATE_NOK: Record<SubscriptionTier, number> = {
   free: 0,
-  small: 3.5,
-  medium: 3.0,
-  large: 2.5,
+  small: 4.0,
+  medium: 3.5,
+  large: 3.0,
 };

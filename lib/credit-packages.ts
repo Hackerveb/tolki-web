@@ -1,11 +1,10 @@
-// Credit/minute packages available for purchase (add-ons for subscribers only).
-// Pricing in NOK (øre for Stripe). Free-tier users cannot purchase credits.
+// Credit/minute add-on packages available for purchase (subscribers only).
+// Pricing in NOK øre for Stripe (1 NOK = 100 øre). Free-tier users cannot purchase credits.
 //
-// Board directive (2026-03-29): credits priced at 2.5–3.5 NOK/min depending on
-// the subscriber's plan tier. These packages use 3.0 NOK/min as a mid-range
-// default; the actual charge may be adjusted per-tier in the checkout flow.
-//
-// Final pricing subject to CFO review (TOL-129).
+// CEO-approved pricing (2026-03-29, TOL-128):
+//   Ekstra 50:  50 min,  175 NOK (3.50 NOK/min)
+//   Ekstra 200: 200 min, 549 NOK (2.75 NOK/min)
+//   Ekstra 600: 600 min, 1 490 NOK (2.48 NOK/min)
 
 export interface CreditPackage {
   id: string;
@@ -18,33 +17,26 @@ export interface CreditPackage {
 
 export const creditPackages: CreditPackage[] = [
   {
-    id: 'minutes_15',
-    name: '15 minutter',
-    minutes: 15,
-    priceOre: 4900, // 49 NOK
-    displayPrice: '49 kr',
+    id: 'ekstra_50',
+    name: 'Ekstra 50',
+    minutes: 50,
+    priceOre: 17500, // 175 NOK
+    displayPrice: '175 kr',
   },
   {
-    id: 'minutes_60',
-    name: '1 time',
-    minutes: 60,
-    priceOre: 17900, // 179 NOK
-    displayPrice: '179 kr',
+    id: 'ekstra_200',
+    name: 'Ekstra 200',
+    minutes: 200,
+    priceOre: 54900, // 549 NOK
+    displayPrice: '549 kr',
     popular: true,
   },
   {
-    id: 'minutes_180',
-    name: '3 timer',
-    minutes: 180,
-    priceOre: 49900, // 499 NOK
-    displayPrice: '499 kr',
-  },
-  {
-    id: 'minutes_600',
-    name: '10 timer',
+    id: 'ekstra_600',
+    name: 'Ekstra 600',
     minutes: 600,
-    priceOre: 149900, // 1 499 NOK
-    displayPrice: '1 499 kr',
+    priceOre: 149000, // 1 490 NOK
+    displayPrice: '1 490 kr',
   },
 ];
 
