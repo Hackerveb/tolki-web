@@ -1,52 +1,50 @@
-// Credit packages available for purchase
-// This file can be safely imported by both client and server components
-// Packages match exactly with React Native app (TolKI/src/screens/BuyCreditsScreen.tsx)
+// Credit/minute packages available for purchase (add-ons for subscribers only).
+// Pricing in NOK (øre for Stripe). Free-tier users cannot purchase credits.
+//
+// Board directive (2026-03-29): credits priced at 2.5–3.5 NOK/min depending on
+// the subscriber's plan tier. These packages use 3.0 NOK/min as a mid-range
+// default; the actual charge may be adjusted per-tier in the checkout flow.
+//
+// Final pricing subject to CFO review (TOL-129).
 
 export interface CreditPackage {
   id: string;
   name: string;
-  credits: number;
-  price: number; // in USD cents
-  displayPrice: string;
+  minutes: number;      // minutes of translation time
+  priceOre: number;     // price in NOK øre (1 NOK = 100 øre)
+  displayPrice: string; // human-readable NOK price
   popular?: boolean;
 }
 
 export const creditPackages: CreditPackage[] = [
   {
-    id: 'credits_30',
-    name: 'Starter',
-    credits: 30,
-    price: 599, // $5.99
-    displayPrice: '$5.99',
+    id: 'minutes_15',
+    name: '15 minutter',
+    minutes: 15,
+    priceOre: 4900, // 49 NOK
+    displayPrice: '49 kr',
   },
   {
-    id: 'credits_60',
-    name: 'Basic',
-    credits: 60,
-    price: 1099, // $10.99
-    displayPrice: '$10.99',
-    popular: true, // Best value - matches ⭐ in React Native
+    id: 'minutes_60',
+    name: '1 time',
+    minutes: 60,
+    priceOre: 17900, // 179 NOK
+    displayPrice: '179 kr',
+    popular: true,
   },
   {
-    id: 'credits_360',
-    name: 'Standard',
-    credits: 360,
-    price: 5999, // $59.99
-    displayPrice: '$59.99',
+    id: 'minutes_180',
+    name: '3 timer',
+    minutes: 180,
+    priceOre: 49900, // 499 NOK
+    displayPrice: '499 kr',
   },
   {
-    id: 'credits_720',
-    name: 'Premium',
-    credits: 720,
-    price: 11499, // $114.99
-    displayPrice: '$114.99',
-  },
-  {
-    id: 'credits_1440',
-    name: 'Ultimate',
-    credits: 1440,
-    price: 21999, // $219.99
-    displayPrice: '$219.99',
+    id: 'minutes_600',
+    name: '10 timer',
+    minutes: 600,
+    priceOre: 149900, // 1 499 NOK
+    displayPrice: '1 499 kr',
   },
 ];
 

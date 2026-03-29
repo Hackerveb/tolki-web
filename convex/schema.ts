@@ -93,8 +93,8 @@ export default defineSchema({
       v.literal("canceled"),
       v.literal("trialing")
     ),
-    includedMinutes: v.number(), // 60 / 200 / 600 depending on tier
-    overageRateNok: v.number(), // 12 / 10 / 8 NOK per minute
+    includedMinutes: v.number(), // 60 / 330 / 1800 depending on tier
+    overageRateNok: v.number(), // 3.5 / 3.0 / 2.5 NOK per minute
     billingInterval: v.union(v.literal("monthly"), v.literal("annual")),
     currentPeriodStart: v.number(),
     currentPeriodEnd: v.number(),

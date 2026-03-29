@@ -70,9 +70,10 @@ export const updateSubscription = internalMutation({
     stripePriceId: v.optional(v.string()),
     tier: v.optional(
       v.union(
-        v.literal("starter"),
-        v.literal("professional"),
-        v.literal("business"),
+        v.literal("free"),
+        v.literal("small"),
+        v.literal("medium"),
+        v.literal("large"),
         v.literal("enterprise")
       )
     ),

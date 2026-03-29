@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { motion } from 'motion/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { creditPackages, type CreditPackage } from '@/lib/credit-packages';
 
 const BackIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -18,30 +19,16 @@ const BackIcon = () => (
   </svg>
 );
 
-interface CreditPackage {
-  id: number;
-  credits: number;
-  price: number;
-}
-
-const creditPackages: CreditPackage[] = [
-  { id: 0, credits: 30, price: 599 },
-  { id: 1, credits: 60, price: 1099 },
-  { id: 2, credits: 360, price: 5999 },
-  { id: 3, credits: 720, price: 11499 },
-  { id: 4, credits: 1440, price: 21999 },
-];
-
 // Recommended package index
-const RECOMMENDED_ID = 1;
+const RECOMMENDED_INDEX = 1;
 
-const formatTime = (credits: number): string => {
-  const hours = Math.floor(credits / 60);
-  const minutes = Math.floor(credits % 60);
+const formatTime = (minutes: number): string => {
+  const hours = Math.floor(minutes / 60);
+  const mins = Math.floor(minutes % 60);
   if (hours >= 1) {
-    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    return mins > 0 ? `${hours}t ${mins}m` : `${hours}t`;
   }
-  return `${minutes}m`;
+  return `${mins}m`;
 };
 
 function StripeRedirectHandler() {
@@ -53,10 +40,10 @@ function StripeRedirectHandler() {
     const canceled = searchParams.get('canceled');
 
     if (success) {
-      alert('Payment successful! Your credits have been added to your account.');
+      alert('Betaling vellykket! Minuttene er lagt til kontoen din.');
       router.replace('/settings/credits');
     } else if (canceled) {
-      alert('Payment canceled. No charges were made.');
+      alert('Betaling avbrutt. Ingen belastning.');
       router.replace('/settings/credits');
     }
   }, [searchParams, router]);
@@ -68,22 +55,22 @@ function BuyCreditsContent() {
   const router = useRouter();
   const { user } = useUser();
   const { credits } = useCurrentUser();
-  const [selectedPackageId, setSelectedPackageId] = useState<number>(RECOMMENDED_ID);
+  const [selectedIndex, setSelectedIndex] = useState<number>(RECOMMENDED_INDEX);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
   const balance = credits || 0;
-  const selectedPackage = creditPackages[selectedPackageId];
-  const priceInDollars = (selectedPackage.price / 100).toFixed(2);
+  const selectedPackage = creditPackages[selectedIndex];
+  const priceInNok = (selectedPackage.priceOre / 100).toFixed(0);
 
-  const handleSelectPackage = (packageId: number) => {
-    if (packageId === selectedPackageId || isPurchasing) return;
-    setSelectedPackageId(packageId);
+  const handleSelectPackage = (index: number) => {
+    if (index === selectedIndex || isPurchasing) return;
+    setSelectedIndex(index);
   };
 
   const handlePurchase = async () => {
     if (isPurchasing || !user?.id) {
       if (!user?.id) {
-        alert('You must be signed in to purchase credits.');
+        alert('Du må være logget inn for å kjøpe minutter.');
       }
       return;
     }
@@ -95,7 +82,7 @@ function BuyCreditsContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          packageId: `credits_${selectedPackage.credits}`,
+          packageId: selectedPackage.id,
           clerkId: user.id,
         }),
       });
@@ -109,7 +96,7 @@ function BuyCreditsContent() {
       window.location.href = url;
     } catch (error) {
       console.error('Error creating checkout session:', error);
-      alert('Failed to start checkout. Please try again.');
+      alert('Kunne ikke starte betaling. Prøv igjen.');
       setIsPurchasing(false);
     }
   };
@@ -146,7 +133,7 @@ function BuyCreditsContent() {
           <BackIcon />
         </button>
         <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
-          Buy Credits
+          Kjøp minutter
         </h1>
         {/* Balance badge */}
         <div
@@ -160,7 +147,7 @@ function BuyCreditsContent() {
           }}
         >
           <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--color-primary)' }}>
-            {balance.toFixed(0)} credits
+            {balance.toFixed(0)} min
           </span>
         </div>
       </header>
@@ -185,19 +172,19 @@ function BuyCreditsContent() {
             letterSpacing: '0.6px',
           }}
         >
-          Choose a package
+          Velg en pakke
         </p>
 
         {/* Package Cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {creditPackages.map((pkg) => {
-            const isSelected = selectedPackageId === pkg.id;
-            const isRecommended = pkg.id === RECOMMENDED_ID;
+          {creditPackages.map((pkg, index) => {
+            const isSelected = selectedIndex === index;
+            const isRecommended = index === RECOMMENDED_INDEX;
 
             return (
               <motion.button
                 key={pkg.id}
-                onClick={() => handleSelectPackage(pkg.id)}
+                onClick={() => handleSelectPackage(index)}
                 whileTap={{ scale: 0.98 }}
                 className="relative"
                 style={{
@@ -208,7 +195,6 @@ function BuyCreditsContent() {
                   paddingRight: '20px',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
-                  // Glass base
                   background: isSelected
                     ? 'linear-gradient(135deg, rgba(37,99,235,0.12), rgba(79,70,229,0.08))'
                     : 'var(--glass-bg)',
@@ -240,7 +226,7 @@ function BuyCreditsContent() {
                       boxShadow: 'var(--glass-glow-primary)',
                     }}
                   >
-                    Best Value
+                    Beste verdi
                   </div>
                 )}
 
@@ -251,7 +237,7 @@ function BuyCreditsContent() {
                     justifyContent: 'space-between',
                   }}
                 >
-                  {/* Left: credits + time */}
+                  {/* Left: minutes + time */}
                   <div style={{ textAlign: 'left' }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
                       <span
@@ -261,7 +247,7 @@ function BuyCreditsContent() {
                           color: isSelected ? 'var(--color-primary)' : 'var(--color-text-primary)',
                         }}
                       >
-                        {pkg.credits} credits
+                        {pkg.minutes} minutter
                       </span>
                     </div>
                     <span
@@ -271,7 +257,7 @@ function BuyCreditsContent() {
                         fontWeight: 500,
                       }}
                     >
-                      {formatTime(pkg.credits)} of translation
+                      {formatTime(pkg.minutes)} tolking
                     </span>
                   </div>
 
@@ -284,7 +270,7 @@ function BuyCreditsContent() {
                         color: isSelected ? 'var(--color-primary)' : 'var(--color-text-secondary)',
                       }}
                     >
-                      ${(pkg.price / 100).toFixed(2)}
+                      {pkg.displayPrice}
                     </span>
                     {isSelected && (
                       <div
@@ -362,7 +348,7 @@ function BuyCreditsContent() {
                 letterSpacing: '0.3px',
               }}
             >
-              Buy Now — ${priceInDollars}
+              Kjøp nå — {priceInNok} kr
             </span>
           )}
         </motion.button>

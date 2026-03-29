@@ -35,25 +35,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the origin for redirect URLs
-    // Use the request origin first, then NEXT_PUBLIC_URL env var
-    // Vercel automatically provides VERCEL_URL as a fallback
     const origin = request.headers.get('origin')
       || process.env.NEXT_PUBLIC_URL
       || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
-    // Create Stripe Checkout session
+    // Create Stripe Checkout session (NOK currency)
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
           price_data: {
-            currency: 'usd',
+            currency: 'nok',
             product_data: {
-              name: `${creditPackage.name} - ${creditPackage.credits} Credits`,
-              description: `${creditPackage.credits} credits for TolKI translation service`,
-              images: ['https://tolki.app/icon.png'], // Update with your actual icon URL
+              name: `${creditPackage.name} — ${creditPackage.minutes} min`,
+              description: `${creditPackage.minutes} minutter tolketjeneste fra TolKI`,
             },
-            unit_amount: creditPackage.price,
+            unit_amount: creditPackage.priceOre,
           },
           quantity: 1,
         },
@@ -65,7 +62,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         clerkId,
         packageId,
-        credits: creditPackage.credits.toString(),
+        credits: creditPackage.minutes.toString(),
       },
     });
 
