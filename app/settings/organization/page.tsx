@@ -57,16 +57,18 @@ const CreditCardIcon = () => (
 // ─── Tier config ──────────────────────────────────────────────────────────────
 
 const TIER_LABELS: Record<string, string> = {
-  starter: 'Starter',
-  professional: 'Professional',
-  business: 'Business',
+  free: 'Free',
+  small: 'Small',
+  medium: 'Medium',
+  large: 'Large',
   enterprise: 'Enterprise',
 };
 
 const TIER_COLORS: Record<string, string> = {
-  starter: 'var(--color-text-secondary)',
-  professional: 'var(--color-primary)',
-  business: '#8B5CF6',
+  free: 'var(--color-text-tertiary)',
+  small: 'var(--color-text-secondary)',
+  medium: 'var(--color-primary)',
+  large: '#8B5CF6',
   enterprise: '#F59E0B',
 };
 
