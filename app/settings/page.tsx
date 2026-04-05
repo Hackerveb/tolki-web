@@ -38,6 +38,73 @@ const BackIcon = memo(() => (
 ));
 BackIcon.displayName = 'BackIcon';
 
+// ─── Menu item icons ─────────────────────────────────────────────────────────
+
+const UpgradeIcon = memo(() => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+));
+UpgradeIcon.displayName = 'UpgradeIcon';
+
+const BillingIcon = memo(() => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <rect x="1" y="4" width="22" height="16" rx="2" stroke="var(--color-text-secondary)" strokeWidth="2" />
+    <line x1="1" y1="10" x2="23" y2="10" stroke="var(--color-text-secondary)" strokeWidth="2" />
+  </svg>
+));
+BillingIcon.displayName = 'BillingIcon';
+
+const OrgIcon = memo(() => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="9" cy="7" r="4" stroke="var(--color-text-secondary)" strokeWidth="2" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+));
+OrgIcon.displayName = 'OrgIcon';
+
+const ProfileIcon = memo(() => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="12" cy="7" r="4" stroke="var(--color-text-secondary)" strokeWidth="2" />
+  </svg>
+));
+ProfileIcon.displayName = 'ProfileIcon';
+
+const MoonIcon = memo(() => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+));
+MoonIcon.displayName = 'MoonIcon';
+
+const GlobeIcon = memo(() => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" stroke="var(--color-text-secondary)" strokeWidth="2" />
+    <line x1="2" y1="12" x2="22" y2="12" stroke="var(--color-text-secondary)" strokeWidth="2" />
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke="var(--color-text-secondary)" strokeWidth="2" />
+  </svg>
+));
+GlobeIcon.displayName = 'GlobeIcon';
+
+const SignOutIcon = memo(() => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="var(--color-error)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <polyline points="16 17 21 12 16 7" stroke="var(--color-error)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <line x1="21" y1="12" x2="9" y2="12" stroke="var(--color-error)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+));
+SignOutIcon.displayName = 'SignOutIcon';
+
+const ClockIcon = memo(() => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" stroke="var(--color-primary)" strokeWidth="2" />
+    <polyline points="12 6 12 12 16 14" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+));
+ClockIcon.displayName = 'ClockIcon';
+
 function SettingsScreenInner() {
   const router = useRouter();
   const { signOut } = useClerk();
@@ -205,9 +272,12 @@ function SettingsScreenInner() {
               gap: '8px',
             }}
           >
-            <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--color-primary)', lineHeight: '1' }}>
-              {formatCreditsDisplay(balance)}
-            </span>
+            <div className="flex items-center gap-2">
+              <ClockIcon />
+              <span style={{ fontSize: '28px', fontWeight: '700', color: 'var(--color-primary)', lineHeight: '1' }}>
+                {formatCreditsDisplay(balance)}
+              </span>
+            </div>
             <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--color-text-secondary)' }}>
               {balance.toFixed(0)} {tt('settings.creditsRemaining')}
             </span>
@@ -240,7 +310,8 @@ function SettingsScreenInner() {
             style={{ padding: '20px', borderRadius: '20px', marginBottom: '16px' }}
           >
             <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
+              <h3 className="flex items-center gap-2" style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
+                <OrgIcon />
                 {tt('settings.organization')}
               </h3>
               <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
@@ -286,7 +357,8 @@ function SettingsScreenInner() {
                 cursor: 'pointer',
               }}
             >
-              <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+              <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                <UpgradeIcon />
                 {tt('settings.upgrade')}
               </span>
               <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
@@ -301,7 +373,8 @@ function SettingsScreenInner() {
                 cursor: 'pointer',
               }}
             >
-              <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+              <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                <BillingIcon />
                 {tt('settings.billing')}
               </span>
               <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
@@ -332,7 +405,8 @@ function SettingsScreenInner() {
               borderRadius: '12px',
             }}
           >
-            <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+            <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+              <MoonIcon />
               {tt('settings.darkMode')}
             </span>
             <button
@@ -377,27 +451,48 @@ function SettingsScreenInner() {
               marginTop: '10px',
             }}
           >
-            <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+            <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+              <GlobeIcon />
               {tt('settings.language')}
             </span>
-            <select
-              value={locale}
-              onChange={(e) => setLocale(e.target.value as Locale)}
-              style={{
-                background: 'var(--glass-bg)',
-                color: 'var(--color-text-primary)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '8px',
-                padding: '6px 12px',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                appearance: 'auto',
-              }}
-            >
-              <option value="nb">Norsk</option>
-              <option value="en">English</option>
-            </select>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setLocale('nb')}
+                className="flex items-center gap-1.5 transition-all"
+                style={{
+                  background: locale === 'nb' ? 'var(--color-primary-alpha)' : 'var(--glass-bg)',
+                  border: locale === 'nb' ? '2px solid var(--color-primary)' : '1px solid var(--glass-border)',
+                  borderRadius: '10px',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: locale === 'nb' ? '600' : '500',
+                  color: locale === 'nb' ? 'var(--color-primary)' : 'var(--color-text-primary)',
+                }}
+                aria-label="Norsk"
+              >
+                <span className="text-base leading-none">&#x1F1F3;&#x1F1F4;</span>
+                <span>NO</span>
+              </button>
+              <button
+                onClick={() => setLocale('en')}
+                className="flex items-center gap-1.5 transition-all"
+                style={{
+                  background: locale === 'en' ? 'var(--color-primary-alpha)' : 'var(--glass-bg)',
+                  border: locale === 'en' ? '2px solid var(--color-primary)' : '1px solid var(--glass-border)',
+                  borderRadius: '10px',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: locale === 'en' ? '600' : '500',
+                  color: locale === 'en' ? 'var(--color-primary)' : 'var(--color-text-primary)',
+                }}
+                aria-label="English"
+              >
+                <span className="text-base leading-none">&#x1F1EC;&#x1F1E7;</span>
+                <span>EN</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -426,7 +521,8 @@ function SettingsScreenInner() {
                 cursor: 'pointer',
               }}
             >
-              <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+              <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                <ProfileIcon />
                 {tt('settings.editProfile')}
               </span>
               <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
@@ -442,7 +538,7 @@ function SettingsScreenInner() {
           >
             <button
               onClick={handleSignOut}
-              className="flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] glass"
+              className="flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.98] glass"
               style={{
                 width: '100%',
                 paddingTop: '14px',
@@ -452,6 +548,7 @@ function SettingsScreenInner() {
                 marginBottom: '12px',
               }}
             >
+              <SignOutIcon />
               <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--color-error)' }}>
                 {tt('settings.signOut')}
               </span>

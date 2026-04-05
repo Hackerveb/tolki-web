@@ -148,25 +148,44 @@ const OnboardingPage = () => {
     >
       <div className="w-full max-w-sm" style={{ marginTop: '8px', marginBottom: '8px' }}>
 
-        {/* Language selector */}
-        <div className="flex justify-end mb-4">
-          <select
-            value={locale}
-            onChange={(e) => setLocale(e.target.value as Locale)}
+        {/* Language selector — flag buttons for non-readers */}
+        <div className="flex justify-end gap-2 mb-4">
+          <button
+            onClick={() => setLocale('nb')}
+            className="flex items-center gap-1.5 transition-all"
             style={{
-              background: 'var(--glass-bg)',
-              color: 'var(--color-text-secondary)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: '8px',
-              padding: '4px 10px',
-              fontSize: '13px',
+              background: locale === 'nb' ? 'var(--color-primary-alpha, rgba(37,99,235,0.1))' : 'var(--glass-bg)',
+              border: locale === 'nb' ? '2px solid var(--color-primary)' : '1px solid var(--glass-border)',
+              borderRadius: '10px',
+              padding: '5px 10px',
               cursor: 'pointer',
-              appearance: 'auto',
+              fontSize: '13px',
+              fontWeight: locale === 'nb' ? '600' : '400',
+              color: locale === 'nb' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
             }}
+            aria-label="Norsk"
           >
-            <option value="nb">Norsk</option>
-            <option value="en">English</option>
-          </select>
+            <span className="text-base leading-none" role="img" aria-label="Norwegian flag">&#x1F1F3;&#x1F1F4;</span>
+            <span>NO</span>
+          </button>
+          <button
+            onClick={() => setLocale('en')}
+            className="flex items-center gap-1.5 transition-all"
+            style={{
+              background: locale === 'en' ? 'var(--color-primary-alpha, rgba(37,99,235,0.1))' : 'var(--glass-bg)',
+              border: locale === 'en' ? '2px solid var(--color-primary)' : '1px solid var(--glass-border)',
+              borderRadius: '10px',
+              padding: '5px 10px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: locale === 'en' ? '600' : '400',
+              color: locale === 'en' ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+            }}
+            aria-label="English"
+          >
+            <span className="text-base leading-none" role="img" aria-label="British flag">&#x1F1EC;&#x1F1E7;</span>
+            <span>EN</span>
+          </button>
         </div>
 
         {/* App brand */}

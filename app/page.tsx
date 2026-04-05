@@ -350,6 +350,11 @@ function MainScreenContent() {
         >
           {/* Always show remaining balance */}
           <motion.div className="flex items-center gap-2">
+            {/* Clock icon for time remaining */}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
+              <circle cx="12" cy="12" r="10" stroke={isLowOnCredits ? 'var(--color-error)' : 'var(--color-text-primary)'} strokeWidth="2" />
+              <polyline points="12 6 12 12 16 14" stroke={isLowOnCredits ? 'var(--color-error)' : 'var(--color-text-primary)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
             <motion.span
               className="text-2xl font-light tracking-tight"
               style={{
@@ -365,9 +370,13 @@ function MainScreenContent() {
               <Link
                 href="/subscribe"
                 prefetch
-                className="text-xs font-semibold"
+                className="text-xs font-semibold flex items-center gap-1"
                 style={{ color: 'var(--color-primary)' }}
               >
+                {/* Upward arrow icon for upgrade */}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 19V5M5 12l7-7 7 7" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
                 {tt('main.upgradeNow')}
               </Link>
             )}
@@ -456,16 +465,25 @@ function MainScreenContent() {
           {/* Mute indicator — shown when holding visualizer */}
           <AnimatePresence>
             {isMuted && connectionStatus === 'connected' && (
-              <motion.p
+              <motion.div
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.2 }}
-                className="mt-2 text-xs font-medium"
-                style={{ color: 'var(--color-error)' }}
+                className="mt-2 flex items-center gap-1.5"
               >
-                {tt('main.micMuted')}
-              </motion.p>
+                {/* Mic-off icon */}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <line x1="1" y1="1" x2="23" y2="23" stroke="var(--color-error)" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" stroke="var(--color-error)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M17 16.95A7 7 0 0 1 5 12m14 0a7 7 0 0 1-.11 1.23" stroke="var(--color-error)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <line x1="12" y1="19" x2="12" y2="23" stroke="var(--color-error)" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="8" y1="23" x2="16" y2="23" stroke="var(--color-error)" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+                <span className="text-xs font-medium" style={{ color: 'var(--color-error)' }}>
+                  {tt('main.micMuted')}
+                </span>
+              </motion.div>
             )}
           </AnimatePresence>
 
@@ -486,13 +504,16 @@ function MainScreenContent() {
                   {tt('main.needCredits')}
                 </p>
                 <span
-                  className="inline-block px-6 py-3 rounded-xl text-sm font-semibold"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold"
                   style={{
                     background: 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
                     color: '#fff',
                     boxShadow: 'var(--glass-glow-primary)',
                   }}
                 >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                   {tt('main.upgradeNow')}
                 </span>
               </div>

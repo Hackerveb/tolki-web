@@ -141,7 +141,8 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
           transition: 'all 0.15s ease-out',
         }}
       >
-        <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+        <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)' }}>
+          <span className="text-lg leading-none" role="img" aria-label={selectedLanguage.name}>{selectedLanguage.flag}</span>
           {selectedLanguage.name}
         </span>
         <motion.svg
@@ -269,6 +270,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                         }}
                       >
                         <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)' }}>
+                          <span className="text-base leading-none" role="img" aria-label={language.name}>{language.flag}</span>
                           {language.name}
                           {language.deepgramSupport && <DeepgramBadge />}
                         </span>
@@ -311,6 +313,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                       }}
                     >
                       <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)' }}>
+                        <span className="text-base leading-none" role="img" aria-label={language.name}>{language.flag}</span>
                         {language.name}
                         {language.deepgramSupport && <DeepgramBadge />}
                       </span>
