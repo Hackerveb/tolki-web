@@ -16,6 +16,7 @@ import { useLiveKitRoom } from '@/hooks/useLiveKitRoom';
 import { useTrackUsage } from '@/hooks/useTrackUsage';
 import { useToast } from '@/hooks/useToast';
 import { useLocale } from '@/hooks/useLocale';
+import { useTheme } from '@/hooks/useTheme';
 import { useT } from '@/lib/i18n';
 import { languageStorage } from '@/utils/languageStorage';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -40,8 +41,10 @@ function MainScreenContent() {
   const holdTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const agentTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
   const isHoldingRef = useRef(false);
+  const pageRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { locale } = useLocale();
+  const { resolvedTheme } = useTheme();
   const tt = useT(locale);
   const { room, connect, disconnect, isConnected, error } = useLiveKitRoom();
   const { state: agentState, audioTrack } = useVoiceAssistant();
@@ -57,6 +60,15 @@ function MainScreenContent() {
   useEffect(() => {
     if (isLoaded && !isSignedIn) router.push('/onboarding');
   }, [isLoaded, isSignedIn, router]);
+
+  // Force mobile Safari to repaint gradient background on theme change
+  useEffect(() => {
+    const el = pageRef.current;
+    if (el) {
+      const bg = getComputedStyle(document.documentElement).getPropertyValue('--glass-page-bg');
+      el.style.background = bg;
+    }
+  }, [resolvedTheme]);
 
   // When room connects, start waiting for agent to join (timeout 12s)
   useEffect(() => {
@@ -268,11 +280,13 @@ function MainScreenContent() {
   }
 
   return (
-    <div className="glass-page h-screen flex flex-col overflow-hidden">
+    <div ref={pageRef} className="glass-page h-screen flex flex-col overflow-hidden">
       {/* ── Glass header ─────────────────────────────────────────── */}
       <header
         className="glass flex-shrink-0"
         style={{
+          position: 'relative',
+          zIndex: 40,
           paddingTop: 'max(16px, env(safe-area-inset-top))',
           paddingBottom: '14px',
           paddingLeft: 'max(16px, env(safe-area-inset-left))',

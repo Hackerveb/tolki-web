@@ -170,7 +170,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className="absolute left-0 right-0 rounded-2xl overflow-hidden"
             style={{
-              background: 'var(--glass-bg-strong)',
+              background: 'var(--color-surface-elevated)',
               backdropFilter: 'var(--glass-blur-lg)',
               WebkitBackdropFilter: 'var(--glass-blur-lg)',
               border: '1px solid var(--glass-border)',
@@ -184,9 +184,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
             <div
               className="sticky top-0 px-4 py-3"
               style={{
-                background: 'var(--glass-bg-strong)',
-                backdropFilter: 'var(--glass-blur)',
-                WebkitBackdropFilter: 'var(--glass-blur)',
+                background: 'var(--color-surface-elevated)',
                 borderBottom: '1px solid var(--glass-border-subtle)',
                 zIndex: 10,
               }}
@@ -234,7 +232,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
             </div>
 
             {/* List */}
-            <div className="overflow-y-auto" style={{ maxHeight: '350px' }}>
+            <div className="overflow-y-auto" style={{ maxHeight: '350px', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
               {/* Recent section */}
               {showRecentSection && (
                 <>
