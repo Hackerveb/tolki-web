@@ -18,8 +18,8 @@ const translations = {
   'settings.cancel': { nb: 'Avbryt', en: 'Cancel' },
   'settings.organization': { nb: 'Organisasjon', en: 'Organization' },
   'settings.manageOrg': { nb: 'Administrer organisasjon', en: 'Manage organization' },
-  'settings.creditsRemaining': { nb: 'gjenværende credits', en: 'credits remaining' },
-  'settings.lowCredits': { nb: 'Lite credits', en: 'Low credits' },
+  'settings.creditsRemaining': { nb: 'gjenværende minutter', en: 'minutes remaining' },
+  'settings.lowCredits': { nb: 'Lite minutter', en: 'Low minutes' },
   'settings.goBack': { nb: 'Gå tilbake', en: 'Go back' },
 
   // ── Main page ──────────────────────────────────────────────
@@ -59,7 +59,6 @@ const translations = {
   'subscribe.comparison': { nb: 'Plansammenligning', en: 'Plan comparison' },
   'subscribe.annualNote': { nb: 'Faktureres som ett årlig beløp. Kan avsluttes når som helst — gjeldende periode løper ut.', en: 'Billed as a single annual payment. Cancel anytime — current period runs out.' },
   'subscribe.disclaimer': { nb: 'TolKI er ikke egnet for sertifisert rettstolking eller medisinsk tolking der nøyaktighet er juridisk krevd.', en: 'TolKI is not suitable for certified court or medical interpretation where accuracy is legally required.' },
-  'subscribe.needOrg': { nb: 'Du må ha en aktiv organisasjon for å abonnere på en plan.', en: 'You need an active organization to subscribe to a plan.' },
   'subscribe.checkoutFailed': { nb: 'Kunne ikke starte betaling. Prøv igjen.', en: 'Could not start payment. Please try again.' },
 
   // ── Common ─────────────────────────────────────────────────

@@ -5,11 +5,18 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { motion } from 'motion/react';
 import Link from 'next/link';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/useToast';
 import { useLocale } from '@/hooks/useLocale';
 import { useT } from '@/lib/i18n';
-import { creditPackages, type CreditPackage } from '@/lib/credit-packages';
+import {
+  getCreditRateForTier,
+  MIN_CREDIT_PURCHASE_MINUTES,
+  MAX_CREDIT_PURCHASE_MINUTES,
+} from '@/lib/credit-packages';
+import type { SubscriptionTier } from '@/lib/subscription-tiers';
 
 const BackIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -35,20 +42,6 @@ const CheckIcon = () => (
   </svg>
 );
 
-const formatTime = (minutes: number): string => {
-  const hours = Math.floor(minutes / 60);
-  const mins = Math.floor(minutes % 60);
-  if (hours >= 1) {
-    return mins > 0 ? `${hours}t ${mins}m` : `${hours}t`;
-  }
-  return `${mins}m`;
-};
-
-const perMinuteRate = (pkg: CreditPackage): string => {
-  const nok = pkg.priceOre / 100;
-  return (nok / pkg.minutes).toFixed(2).replace('.', ',');
-};
-
 function StripeRedirectHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -73,16 +66,45 @@ function AddOnContent() {
   const { toast } = useToast();
   const { locale } = useLocale();
   const tt = useT(locale);
-  const [selectedIndex, setSelectedIndex] = useState<number>(1);
+  const [minutes, setMinutes] = useState<number>(60);
+  const [inputValue, setInputValue] = useState<string>('60');
   const [isPurchasing, setIsPurchasing] = useState(false);
 
-  const balance = credits || 0;
-  const selectedPackage = creditPackages[selectedIndex];
-  const priceInNok = (selectedPackage.priceOre / 100).toLocaleString('nb-NO');
+  // Fetch user subscription to determine per-minute rate
+  const subscription = useQuery(
+    api.subscriptions.getSubscriptionByUserId,
+    user?.id ? { clerkId: user.id } : 'skip'
+  );
 
-  const handleSelectPackage = (index: number) => {
-    if (index === selectedIndex || isPurchasing) return;
-    setSelectedIndex(index);
+  const currentTier: SubscriptionTier | 'none' =
+    subscription?.tier && subscription.status !== 'canceled'
+      ? (subscription.tier as SubscriptionTier)
+      : 'none';
+
+  const rateNok = getCreditRateForTier(currentTier);
+  const totalNok = minutes * rateNok;
+  const balance = credits || 0;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^0-9]/g, '');
+    setInputValue(raw);
+    const parsed = parseInt(raw, 10);
+    if (!isNaN(parsed)) {
+      setMinutes(Math.min(Math.max(parsed, MIN_CREDIT_PURCHASE_MINUTES), MAX_CREDIT_PURCHASE_MINUTES));
+    }
+  };
+
+  const handleInputBlur = () => {
+    // Clamp and sync display value on blur
+    const clamped = Math.min(Math.max(minutes, MIN_CREDIT_PURCHASE_MINUTES), MAX_CREDIT_PURCHASE_MINUTES);
+    setMinutes(clamped);
+    setInputValue(String(clamped));
+  };
+
+  const adjustMinutes = (delta: number) => {
+    const next = Math.min(Math.max(minutes + delta, MIN_CREDIT_PURCHASE_MINUTES), MAX_CREDIT_PURCHASE_MINUTES);
+    setMinutes(next);
+    setInputValue(String(next));
   };
 
   const handlePurchase = async () => {
@@ -93,6 +115,11 @@ function AddOnContent() {
       return;
     }
 
+    if (minutes < MIN_CREDIT_PURCHASE_MINUTES) {
+      toast.error(locale === 'nb' ? `Minimum ${MIN_CREDIT_PURCHASE_MINUTES} minutt.` : `Minimum ${MIN_CREDIT_PURCHASE_MINUTES} minute.`);
+      return;
+    }
+
     setIsPurchasing(true);
 
     try {
@@ -100,7 +127,7 @@ function AddOnContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          packageId: selectedPackage.id,
+          minutes,
           clerkId: user.id,
         }),
       });
@@ -118,6 +145,9 @@ function AddOnContent() {
       setIsPurchasing(false);
     }
   };
+
+  const tierLabelNb = currentTier === 'active' ? 'Aktiv' : currentTier === 'enterprise' ? 'Enterprise' : 'Free';
+  const tierLabelEn = currentTier === 'active' ? 'Active' : currentTier === 'enterprise' ? 'Enterprise' : 'Free';
 
   return (
     <div className="h-screen flex flex-col overflow-hidden glass-page">
@@ -199,35 +229,36 @@ function AddOnContent() {
           </div>
         </div>
 
-        {/* Subscription upsell — subtle banner */}
-        <Link href="/subscribe" className="block">
-          <div
-            className="glass-subtle"
-            style={{
-              padding: '14px 18px',
-              borderRadius: '14px',
-              marginBottom: '24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              border: '1px solid var(--glass-border)',
-            }}
-          >
-            <div>
-              <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                {locale === 'nb' ? 'Spar mer med abonnement' : 'Save more with a subscription'}
-              </p>
-              <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
-                {locale === 'nb' ? 'Fra 190 kr/mnd — bedre minutt-pris' : 'From 190 NOK/mo — better per-minute rate'}
-              </p>
-            </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-              <polyline points="9 18 15 12 9 6" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+        {/* Per-minute rate info */}
+        <div
+          className="glass-subtle"
+          style={{
+            padding: '14px 18px',
+            borderRadius: '14px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+              {locale === 'nb' ? `Din pris (${tierLabelNb}-plan)` : `Your rate (${tierLabelEn} plan)`}
+            </p>
+            <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
+              {rateNok.toFixed(2).replace('.', ',')} kr/min
+            </p>
           </div>
-        </Link>
+          {currentTier === 'none' && (
+            <Link href="/subscribe">
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-primary)', textDecoration: 'underline' }}>
+                {locale === 'nb' ? 'Få bedre pris' : 'Get better rate'}
+              </span>
+            </Link>
+          )}
+        </div>
 
-        {/* Section label */}
+        {/* Minute quantity input */}
         <p
           style={{
             fontSize: '13px',
@@ -237,123 +268,138 @@ function AddOnContent() {
             letterSpacing: '0.3px',
           }}
         >
-          {locale === 'nb' ? 'Velg pakke' : 'Choose package'}
+          {locale === 'nb' ? 'Antall minutter' : 'Number of minutes'}
         </p>
 
-        {/* Package Cards — premium flat design */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
-          {creditPackages.map((pkg, index) => {
-            const isSelected = selectedIndex === index;
-            const isRecommended = index === 1;
+        <div
+          className="glass"
+          style={{
+            borderRadius: '16px',
+            padding: '20px',
+            marginBottom: '16px',
+          }}
+        >
+          {/* Stepper + input row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <button
+              onClick={() => adjustMinutes(-10)}
+              disabled={minutes <= MIN_CREDIT_PURCHASE_MINUTES}
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                border: '1px solid var(--glass-border)',
+                background: 'var(--glass-bg)',
+                fontSize: '20px',
+                fontWeight: 700,
+                color: minutes <= MIN_CREDIT_PURCHASE_MINUTES ? 'var(--color-text-tertiary)' : 'var(--color-text-primary)',
+                cursor: minutes <= MIN_CREDIT_PURCHASE_MINUTES ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+              aria-label={locale === 'nb' ? '10 minutter mindre' : '10 minutes less'}
+            >
+              −
+            </button>
 
-            return (
-              <motion.button
-                key={pkg.id}
-                onClick={() => handleSelectPackage(index)}
-                whileTap={{ scale: 0.98 }}
-                className="relative w-full text-left"
+            <div style={{ flex: 1, position: 'relative' }}>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={inputValue}
+                onChange={handleInputChange}
+                onBlur={handleInputBlur}
                 style={{
-                  borderRadius: '16px',
-                  padding: '18px 20px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  background: isSelected
-                    ? 'linear-gradient(135deg, rgba(37,99,235,0.10), rgba(79,70,229,0.06))'
-                    : 'var(--glass-bg)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  border: isSelected
-                    ? '2px solid var(--color-primary)'
-                    : '1px solid var(--glass-border)',
-                  boxShadow: isSelected ? 'var(--glass-glow-primary)' : 'var(--glass-shadow-sm)',
+                  width: '100%',
+                  textAlign: 'center',
+                  fontSize: '28px',
+                  fontWeight: 800,
+                  color: 'var(--color-text-primary)',
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  padding: '8px 0',
+                }}
+                aria-label={locale === 'nb' ? 'Antall minutter' : 'Number of minutes'}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  bottom: '10px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  color: 'var(--color-text-tertiary)',
                 }}
               >
-                {/* Recommended badge */}
-                {isRecommended && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '-1px',
-                      right: '16px',
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      background: 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
-                      color: '#FFFFFF',
-                      padding: '3px 10px',
-                      borderRadius: '0 0 8px 8px',
-                      letterSpacing: '0.3px',
-                    }}
-                  >
-                    {locale === 'nb' ? 'Populær' : 'Popular'}
-                  </div>
-                )}
+                min
+              </span>
+            </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  {/* Left: minutes + per-minute rate */}
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                      <span
-                        style={{
-                          fontSize: '17px',
-                          fontWeight: 700,
-                          color: isSelected ? 'var(--color-primary)' : 'var(--color-text-primary)',
-                        }}
-                      >
-                        {pkg.minutes} {locale === 'nb' ? 'minutter' : 'minutes'}
-                      </span>
-                      <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', fontWeight: 500 }}>
-                        {formatTime(pkg.minutes)}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
-                      {perMinuteRate(pkg)} kr/min
-                    </span>
-                  </div>
+            <button
+              onClick={() => adjustMinutes(10)}
+              disabled={minutes >= MAX_CREDIT_PURCHASE_MINUTES}
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                border: '1px solid var(--glass-border)',
+                background: 'var(--glass-bg)',
+                fontSize: '20px',
+                fontWeight: 700,
+                color: minutes >= MAX_CREDIT_PURCHASE_MINUTES ? 'var(--color-text-tertiary)' : 'var(--color-text-primary)',
+                cursor: minutes >= MAX_CREDIT_PURCHASE_MINUTES ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+              aria-label={locale === 'nb' ? '10 minutter mer' : '10 minutes more'}
+            >
+              +
+            </button>
+          </div>
 
-                  {/* Right: price + selection */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <span
-                        style={{
-                          fontSize: '18px',
-                          fontWeight: 800,
-                          color: isSelected ? 'var(--color-primary)' : 'var(--color-text-primary)',
-                        }}
-                      >
-                        {pkg.displayPrice}
-                      </span>
-                    </div>
-                    {isSelected && (
-                      <div
-                        style={{
-                          width: '22px',
-                          height: '22px',
-                          borderRadius: '50%',
-                          backgroundColor: 'var(--color-primary)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                          <path d="M5 13l4 4L19 7" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.button>
-            );
-          })}
+          {/* Quick amounts */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {[30, 60, 120, 300].map((qty) => (
+              <button
+                key={qty}
+                onClick={() => { setMinutes(qty); setInputValue(String(qty)); }}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  border: minutes === qty ? '2px solid var(--color-primary)' : '1px solid var(--glass-border)',
+                  background: minutes === qty ? 'var(--color-primary-alpha)' : 'var(--glass-bg)',
+                  color: minutes === qty ? 'var(--color-primary)' : 'var(--color-text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {qty} min
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* What you get */}
+        {/* Price breakdown */}
         <div
           className="glass-subtle"
           style={{ padding: '16px 18px', borderRadius: '14px', marginBottom: '16px' }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+              {minutes} min × {rateNok.toFixed(2).replace('.', ',')} kr/min
+            </span>
+            <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--color-text-primary)' }}>
+              {totalNok.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr
+            </span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--glass-border)' }}>
             {[
               locale === 'nb' ? 'Minutter utløper aldri' : 'Minutes never expire',
               locale === 'nb' ? 'Bruk umiddelbart etter kjøp' : 'Use immediately after purchase',
@@ -404,7 +450,7 @@ function AddOnContent() {
       >
         <motion.button
           onClick={handlePurchase}
-          disabled={isPurchasing}
+          disabled={isPurchasing || minutes < MIN_CREDIT_PURCHASE_MINUTES}
           whileTap={{ scale: isPurchasing ? 1 : 0.97 }}
           style={{
             width: '100%',
@@ -428,8 +474,8 @@ function AddOnContent() {
           ) : (
             <span style={{ fontSize: '16px', fontWeight: 700, color: '#FFFFFF' }}>
               {locale === 'nb'
-                ? `Kjøp ${selectedPackage.minutes} minutter — ${priceInNok} kr`
-                : `Buy ${selectedPackage.minutes} minutes — ${priceInNok} NOK`}
+                ? `Kjøp ${minutes} minutter — ${totalNok.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr`
+                : `Buy ${minutes} minutes — ${totalNok.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NOK`}
             </span>
           )}
         </motion.button>

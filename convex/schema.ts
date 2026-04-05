@@ -14,6 +14,14 @@ export default defineSchema({
     onboardingCompleted: v.optional(v.boolean()),
     createdAt: v.number(),
     lastActive: v.number(),
+    // User-level subscription minute tracking
+    stripeCustomerId: v.optional(v.string()),
+    totalMinutesAvailable: v.optional(v.number()),
+    minutesUsedThisCycle: v.optional(v.number()),
+    rolloverMinutes: v.optional(v.number()),
+    overageMinutesThisCycle: v.optional(v.number()),
+    currentBillingCycleStart: v.optional(v.number()),
+    currentBillingCycleEnd: v.optional(v.number()),
   })
     .index("by_clerk_id", ["clerkId"]),
 
@@ -75,16 +83,15 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_org_and_user", ["orgId", "userId"]),
 
-  // Stripe subscription records for organizations
+  // Stripe subscription records (org-level or user-level)
   subscriptions: defineTable({
-    orgId: v.id("organizations"),
+    orgId: v.optional(v.id("organizations")), // Set for org-level subscriptions
+    userId: v.optional(v.id("users")),         // Set for user-level subscriptions
     stripeSubscriptionId: v.string(),
     stripePriceId: v.string(),
     tier: v.union(
       v.literal("free"),
-      v.literal("small"),
-      v.literal("medium"),
-      v.literal("large"),
+      v.literal("active"),
       v.literal("enterprise")
     ),
     status: v.union(
@@ -93,13 +100,14 @@ export default defineSchema({
       v.literal("canceled"),
       v.literal("trialing")
     ),
-    includedMinutes: v.number(), // 60 / 300 / 2000 depending on tier (CEO-approved, TOL-128)
-    overageRateNok: v.number(), // 4.0 / 3.5 / 3.0 NOK per minute (CEO-approved, TOL-128)
+    includedMinutes: v.number(), // 300 / 2000 depending on tier
+    overageRateNok: v.number(),  // 3.00 / 2.00 NOK per minute
     billingInterval: v.union(v.literal("monthly"), v.literal("annual")),
     currentPeriodStart: v.number(),
     currentPeriodEnd: v.number(),
     createdAt: v.number(),
   })
     .index("by_org", ["orgId"])
+    .index("by_user", ["userId"])
     .index("by_stripe_subscription_id", ["stripeSubscriptionId"]),
 });

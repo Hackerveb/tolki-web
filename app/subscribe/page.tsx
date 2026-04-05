@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useOrganization } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import { motion } from 'motion/react';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
@@ -11,40 +11,16 @@ import { useT } from '@/lib/i18n';
 
 // ─── Pricing data ────────────────────────────────────────────────────────────
 
-// CEO-approved pricing (2026-03-29, TOL-128).
+// CEO-approved pricing (2026-04-05, TOL-145). Two plans: Active and Enterprise.
 const PLANS = [
   {
-    id: 'small' as const,
-    name: 'Small',
-    monthlyNok: 190,
-    annualMonthlyNok: 158,
-    minutes: 60,
-    overageNok: 4.0,
-    features: {
-      nb: [
-        '60 inkluderte minutter per måned',
-        'Ubrukte minutter overføres',
-        '100+ språkpar',
-        'GDPR-compliant',
-        'E-post support',
-      ],
-      en: [
-        '60 included minutes per month',
-        'Unused minutes roll over',
-        '100+ language pairs',
-        'GDPR compliant',
-        'Email support',
-      ],
-    },
-    recommended: false,
-  },
-  {
-    id: 'medium' as const,
-    name: 'Medium',
+    id: 'active' as const,
+    name: 'Aktiv',
+    nameEn: 'Active',
     monthlyNok: 990,
     annualMonthlyNok: 825,
     minutes: 300,
-    overageNok: 3.5,
+    overageNok: 3.0,
     features: {
       nb: [
         '300 inkluderte minutter per måned',
@@ -52,7 +28,6 @@ const PLANS = [
         '100+ språkpar',
         'GDPR-compliant',
         'Prioritert support',
-        'Teamadministrasjon',
         'Bruksstatistikk',
       ],
       en: [
@@ -61,19 +36,19 @@ const PLANS = [
         '100+ language pairs',
         'GDPR compliant',
         'Priority support',
-        'Team management',
         'Usage statistics',
       ],
     },
     recommended: true,
   },
   {
-    id: 'large' as const,
-    name: 'Large',
+    id: 'enterprise' as const,
+    name: 'Enterprise',
+    nameEn: 'Enterprise',
     monthlyNok: 4990,
     annualMonthlyNok: 4158,
     minutes: 2000,
-    overageNok: 3.0,
+    overageNok: 2.0,
     features: {
       nb: [
         '2 000 inkluderte minutter per måned',
@@ -81,7 +56,6 @@ const PLANS = [
         '100+ språkpar',
         'GDPR-compliant',
         'Dedikert support',
-        'Teamadministrasjon',
         'Avansert bruksstatistikk',
         'Tilpasset fakturering',
       ],
@@ -91,7 +65,6 @@ const PLANS = [
         '100+ language pairs',
         'GDPR compliant',
         'Dedicated support',
-        'Team management',
         'Advanced usage statistics',
         'Custom invoicing',
       ],
@@ -145,6 +118,7 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect, locale,
     ((plan.monthlyNok - plan.annualMonthlyNok) / plan.monthlyNok) * 100
   );
   const features = plan.features[locale];
+  const displayName = locale === 'nb' ? plan.name : plan.nameEn;
 
   return (
     <motion.button
@@ -222,10 +196,10 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect, locale,
               marginBottom: '2px',
             }}
           >
-            {plan.name}
+            {displayName}
           </h3>
           <p style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>
-            {plan.minutes} min/{locale === 'nb' ? 'mnd' : 'mo'} · {plan.overageNok} kr/min {locale === 'nb' ? 'ekstra' : 'overage'}
+            {plan.minutes} min/{locale === 'nb' ? 'mnd' : 'mo'} · {plan.overageNok.toFixed(2).replace('.', ',')} kr/min {locale === 'nb' ? 'ekstra' : 'overage'}
           </p>
         </div>
 
@@ -298,24 +272,28 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect, locale,
 
 function PlanComparisonTable({ interval, locale, tt }: { interval: BillingInterval; locale: 'nb' | 'en'; tt: ReturnType<typeof useT> }) {
   const rows: { label: string; values: (string | boolean)[] }[] = locale === 'nb' ? [
-    { label: 'Minutter per måned', values: ['60', '300', '2 000'] },
-    { label: 'Månedspris', values: ['190 kr', '990 kr', '4 990 kr'] },
-    { label: 'Årspris per måned', values: ['158 kr', '825 kr', '4 158 kr'] },
-    { label: 'Overskridelsespris', values: ['4,00 kr/min', '3,50 kr/min', '3,00 kr/min'] },
-    { label: 'Ubrukte minutter overføres', values: [true, true, true] },
-    { label: 'Teamadministrasjon', values: [false, true, true] },
-    { label: 'Prioritert support', values: [false, true, true] },
-    { label: 'Avansert statistikk', values: [false, false, true] },
+    { label: 'Minutter per måned', values: ['300', '2 000'] },
+    { label: 'Månedspris', values: ['990 kr', '4 990 kr'] },
+    { label: 'Årspris per måned', values: ['825 kr', '4 158 kr'] },
+    { label: 'Overskridelsespris', values: ['3,00 kr/min', '2,00 kr/min'] },
+    { label: 'Ubrukte minutter overføres', values: [true, true] },
+    { label: 'Prioritert support', values: [true, true] },
+    { label: 'Avansert statistikk', values: [false, true] },
+    { label: 'Tilpasset fakturering', values: [false, true] },
   ] : [
-    { label: 'Minutes per month', values: ['60', '300', '2,000'] },
-    { label: 'Monthly price', values: ['190 NOK', '990 NOK', '4,990 NOK'] },
-    { label: 'Annual price/mo', values: ['158 NOK', '825 NOK', '4,158 NOK'] },
-    { label: 'Overage rate', values: ['4.00 NOK/min', '3.50 NOK/min', '3.00 NOK/min'] },
-    { label: 'Unused minutes roll over', values: [true, true, true] },
-    { label: 'Team management', values: [false, true, true] },
-    { label: 'Priority support', values: [false, true, true] },
-    { label: 'Advanced analytics', values: [false, false, true] },
+    { label: 'Minutes per month', values: ['300', '2,000'] },
+    { label: 'Monthly price', values: ['990 NOK', '4,990 NOK'] },
+    { label: 'Annual price/mo', values: ['825 NOK', '4,158 NOK'] },
+    { label: 'Overage rate', values: ['3.00 NOK/min', '2.00 NOK/min'] },
+    { label: 'Unused minutes roll over', values: [true, true] },
+    { label: 'Priority support', values: [true, true] },
+    { label: 'Advanced analytics', values: [false, true] },
+    { label: 'Custom invoicing', values: [false, true] },
   ];
+
+  const planNames = locale === 'nb'
+    ? PLANS.map((p) => p.name)
+    : PLANS.map((p) => p.nameEn);
 
   return (
     <div
@@ -336,14 +314,14 @@ function PlanComparisonTable({ interval, locale, tt }: { interval: BillingInterv
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '1fr repeat(3, 1fr)',
+          gridTemplateColumns: '1fr repeat(2, 1fr)',
           padding: '10px 20px',
           borderBottom: '1px solid var(--glass-border)',
           backgroundColor: 'var(--glass-bg)',
         }}
       >
         <div />
-        {PLANS.map((plan) => (
+        {PLANS.map((plan, i) => (
           <div key={plan.id} style={{ textAlign: 'center' }}>
             <span
               style={{
@@ -354,7 +332,7 @@ function PlanComparisonTable({ interval, locale, tt }: { interval: BillingInterv
                 letterSpacing: '0.4px',
               }}
             >
-              {plan.name}
+              {planNames[i]}
             </span>
           </div>
         ))}
@@ -366,7 +344,7 @@ function PlanComparisonTable({ interval, locale, tt }: { interval: BillingInterv
           key={row.label}
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr repeat(3, 1fr)',
+            gridTemplateColumns: '1fr repeat(2, 1fr)',
             padding: '10px 20px',
             borderBottom: i < rows.length - 1 ? '1px solid var(--glass-border)' : 'none',
           }}
@@ -411,26 +389,22 @@ function CancelHandler() {
 
 function SubscribePage() {
   const router = useRouter();
-  const { organization } = useOrganization();
+  const { user } = useUser();
   const { locale } = useLocale();
   const tt = useT(locale);
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>('medium');
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>('active');
   const [interval, setInterval] = useState<BillingInterval>('monthly');
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const subscription = useQuery(
-    api.subscriptions.getSubscriptionByClerkOrgId,
-    organization?.id ? { clerkOrgId: organization.id } : 'skip'
+    api.subscriptions.getSubscriptionByUserId,
+    user?.id ? { clerkId: user.id } : 'skip'
   );
 
   const currentTier = subscription?.tier ?? null;
 
   const handleSubscribe = async () => {
     if (isCheckingOut) return;
-    if (!organization?.id) {
-      alert(tt('subscribe.needOrg'));
-      return;
-    }
 
     const plan = PLANS.find((p) => p.id === selectedPlan);
     if (!plan) return;
@@ -464,6 +438,7 @@ function SubscribePage() {
       : selectedPlanData?.annualMonthlyNok;
 
   const isCurrentPlan = currentTier === selectedPlan;
+  const selectedDisplayName = locale === 'nb' ? selectedPlanData?.name : selectedPlanData?.nameEn;
 
   return (
     <div className="h-screen flex flex-col overflow-hidden glass-page">
@@ -659,7 +634,7 @@ function SubscribePage() {
             </span>
           ) : (
             <span style={{ fontSize: '16px', fontWeight: 700, color: '#FFFFFF' }}>
-              {tt('subscribe.subscribeTo')} {selectedPlanData?.name} — {selectedPrice?.toLocaleString('nb-NO')} {locale === 'nb' ? 'kr/mnd' : 'NOK/mo'}
+              {tt('subscribe.subscribeTo')} {selectedDisplayName} — {selectedPrice?.toLocaleString('nb-NO')} {locale === 'nb' ? 'kr/mnd' : 'NOK/mo'}
             </span>
           )}
         </motion.button>

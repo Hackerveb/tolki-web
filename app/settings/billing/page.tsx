@@ -3,7 +3,7 @@
 import React, { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from 'convex/react';
-import { useUser, useOrganization } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { api } from '@/convex/_generated/api';
 
@@ -33,9 +33,7 @@ const ExternalLinkIcon = () => (
 
 const TIER_LABELS: Record<string, string> = {
   free: 'Free',
-  small: 'Small',
-  medium: 'Medium',
-  large: 'Large',
+  active: 'Aktiv',
   enterprise: 'Enterprise',
 };
 
@@ -146,7 +144,7 @@ function MinutesUsageBar({
   );
 }
 
-// ─── Personal billing (credit purchase history) ────────────────────────────────
+// ─── Credit purchase history ────────────────────────────────────────────────────
 
 interface CreditPurchase {
   id: string;
@@ -176,12 +174,12 @@ function TransactionItem({ transaction }: { transaction: CreditPurchase }) {
             {transaction.description}
           </p>
           <p style={{ fontSize: '13px', color: 'var(--color-primary)', fontWeight: 600 }}>
-            +{transaction.credits} credits
+            +{transaction.credits} min
           </p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: '16px', gap: '8px' }}>
           <p style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-            ${transaction.amount.toFixed(2)}
+            {transaction.amount.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr
           </p>
           <div style={{ paddingTop: '3px', paddingBottom: '3px', paddingLeft: '10px', paddingRight: '10px', borderRadius: '99px', fontSize: '10px', fontWeight: 700, color: '#FFFFFF', backgroundColor: style.bg, letterSpacing: '0.3px' }}>
             {style.label}
@@ -197,53 +195,49 @@ function TransactionItem({ transaction }: { transaction: CreditPurchase }) {
 export default function BillingPage() {
   const router = useRouter();
   const { user } = useUser();
-  const { organization } = useOrganization();
 
-  // Org subscription
+  // User-level subscription
   const subscription = useQuery(
-    api.subscriptions.getSubscriptionByClerkOrgId,
-    organization?.id ? { clerkOrgId: organization.id } : 'skip'
+    api.subscriptions.getSubscriptionByUserId,
+    user?.id ? { clerkId: user.id } : 'skip'
   );
 
-  // Personal credit purchase history (for non-org users)
+  // Credit purchase history
   const purchases = useQuery(
     api.payments.getRecentPurchases,
-    user?.id && !organization?.id ? { clerkId: user.id } : 'skip'
+    user?.id ? { clerkId: user.id } : 'skip'
   );
 
-  const isOrgMode = !!organization?.id;
-  const isLoading = isOrgMode ? subscription === undefined : purchases === undefined;
+  const isLoading = subscription === undefined || purchases === undefined;
 
   const transactions: CreditPurchase[] =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     purchases?.map((p: any) => ({
       id: p.id,
       date: p.date,
-      amount: p.amount,
+      amount: p.amount / 100, // convert from øre to NOK
       credits: p.credits,
       status: p.status as 'completed' | 'pending' | 'failed',
       description: p.description,
     })) ?? [];
 
   const handleManageSubscription = async () => {
-    if (!subscription?.org) return;
-    // We need the Stripe customer ID from the org record — fetch via the org query
-    const org = await fetch('/api/stripe/portal', {
+    if (!subscription?.user?.stripeCustomerId) return;
+
+    const res = await fetch('/api/stripe/portal', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        // stripeCustomerId comes from the org record; use a placeholder if not set yet
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        stripeCustomerId: (subscription as any).org?.stripeCustomerId ?? '',
+        stripeCustomerId: subscription.user.stripeCustomerId,
       }),
     });
 
-    if (!org.ok) {
+    if (!res.ok) {
       alert('Kunne ikke åpne faktureringsportalen. Prøv igjen.');
       return;
     }
 
-    const { url } = await org.json();
+    const { url } = await res.json();
     window.location.href = url;
   };
 
@@ -281,7 +275,7 @@ export default function BillingPage() {
           <BackIcon />
         </button>
         <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
-          {isOrgMode ? 'Abonnement og fakturering' : 'Faktureringshistorikk'}
+          Abonnement og fakturering
         </h1>
       </header>
 
@@ -305,9 +299,9 @@ export default function BillingPage() {
             />
             <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>Laster...</p>
           </div>
-        ) : isOrgMode ? (
-          // ── Org subscription view ──────────────────────────────────────────
+        ) : (
           <>
+            {/* ── Subscription section ── */}
             {subscription ? (
               <>
                 {/* Current plan card */}
@@ -361,9 +355,9 @@ export default function BillingPage() {
 
                   {/* Minutes usage */}
                   <MinutesUsageBar
-                    used={subscription.org.minutesUsedThisCycle}
-                    total={subscription.org.totalMinutesAvailable}
-                    rollover={subscription.org.rolloverMinutes}
+                    used={subscription.user.minutesUsedThisCycle}
+                    total={subscription.user.totalMinutesAvailable}
+                    rollover={subscription.user.rolloverMinutes}
                   />
 
                   {/* Overage rate */}
@@ -373,16 +367,18 @@ export default function BillingPage() {
                 </div>
 
                 {/* Manage subscription button */}
-                <button
-                  onClick={handleManageSubscription}
-                  className="glass w-full flex items-center justify-between transition-all active:scale-[0.98]"
-                  style={{ padding: '16px', borderRadius: '16px', marginBottom: '16px', cursor: 'pointer' }}
-                >
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                    Administrer abonnement
-                  </span>
-                  <ExternalLinkIcon />
-                </button>
+                {subscription.user.stripeCustomerId && (
+                  <button
+                    onClick={handleManageSubscription}
+                    className="glass w-full flex items-center justify-between transition-all active:scale-[0.98]"
+                    style={{ padding: '16px', borderRadius: '16px', marginBottom: '16px', cursor: 'pointer' }}
+                  >
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                      Administrer abonnement
+                    </span>
+                    <ExternalLinkIcon />
+                  </button>
+                )}
 
                 {/* Upgrade / change plan */}
                 <Link href="/subscribe" className="block">
@@ -424,7 +420,7 @@ export default function BillingPage() {
                   Ingen aktiv abonnementsplan
                 </h3>
                 <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
-                  Fra 190 kr/mnd. Ingen bestilling. Ingen ventetid.
+                  Fra 990 kr/mnd. Ingen bestilling. Ingen ventetid.
                 </p>
                 <Link href="/subscribe">
                   <button
@@ -445,10 +441,8 @@ export default function BillingPage() {
                 </Link>
               </div>
             )}
-          </>
-        ) : (
-          // ── Personal credit purchase history ───────────────────────────────
-          <>
+
+            {/* ── Credit purchase history ── */}
             <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-tertiary)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
               Transaksjonshistorikk
             </h3>
