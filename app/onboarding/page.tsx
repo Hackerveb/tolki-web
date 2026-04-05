@@ -165,8 +165,7 @@ const OnboardingPage = () => {
             }}
             aria-label="Norsk"
           >
-            <span className="text-base leading-none" role="img" aria-label="Norwegian flag">&#x1F1F3;&#x1F1F4;</span>
-            <span>NO</span>
+            <span className="text-lg leading-none" role="img" aria-label="Norwegian flag">&#x1F1F3;&#x1F1F4;</span>
           </button>
           <button
             onClick={() => setLocale('en')}
@@ -183,8 +182,7 @@ const OnboardingPage = () => {
             }}
             aria-label="English"
           >
-            <span className="text-base leading-none" role="img" aria-label="British flag">&#x1F1EC;&#x1F1E7;</span>
-            <span>EN</span>
+            <span className="text-lg leading-none" role="img" aria-label="British flag">&#x1F1EC;&#x1F1E7;</span>
           </button>
         </div>
 

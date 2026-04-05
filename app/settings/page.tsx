@@ -471,8 +471,7 @@ function SettingsScreenInner() {
                 }}
                 aria-label="Norsk"
               >
-                <span className="text-base leading-none">&#x1F1F3;&#x1F1F4;</span>
-                <span>NO</span>
+                <span className="text-lg leading-none">&#x1F1F3;&#x1F1F4;</span>
               </button>
               <button
                 onClick={() => setLocale('en')}
@@ -489,8 +488,7 @@ function SettingsScreenInner() {
                 }}
                 aria-label="English"
               >
-                <span className="text-base leading-none">&#x1F1EC;&#x1F1E7;</span>
-                <span>EN</span>
+                <span className="text-lg leading-none">&#x1F1EC;&#x1F1E7;</span>
               </button>
             </div>
           </div>
