@@ -13,6 +13,8 @@ import { internal } from '@/convex/_generated/api';
 const internalOrgs = (internal as any).organizations;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const internalSubs = (internal as any).subscriptions;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const internalUsers = (internal as any).users;
 
 export async function POST(request: NextRequest) {
   console.log('=== STRIPE WEBHOOK RECEIVED ===');
@@ -132,10 +134,11 @@ export async function POST(request: NextRequest) {
 // ─── Handler: one-time credit checkout ───────────────────────────────────────
 async function handleCreditCheckoutCompleted(session: Stripe.Checkout.Session) {
   const clerkId = session.metadata?.clerkId || session.client_reference_id;
-  const credits = parseInt(session.metadata?.credits || '0', 10);
+  // Support both new `minutes` metadata and legacy `credits` metadata
+  const minutes = parseInt(session.metadata?.minutes || session.metadata?.credits || '0', 10);
   const amount = session.amount_total ? session.amount_total / 100 : 0;
 
-  if (!clerkId || !credits) {
+  if (!clerkId || !minutes) {
     console.error('❌ Missing required metadata in credit checkout session:', session.id);
     throw new Error('Missing metadata in credit checkout session');
   }
@@ -143,7 +146,7 @@ async function handleCreditCheckoutCompleted(session: Stripe.Checkout.Session) {
   // @ts-expect-error internal reference not in generated types
   const result = await fetchMutation(internal.payments.recordPurchase, {
     clerkId,
-    credits,
+    credits: minutes,
     amount,
     stripeSessionId: session.id,
     status: 'completed',
@@ -152,35 +155,49 @@ async function handleCreditCheckoutCompleted(session: Stripe.Checkout.Session) {
   if ('duplicate' in result && result.duplicate) {
     console.log('⚠️ Duplicate credit webhook – already processed. Balance:', result.newBalance);
   } else {
-    console.log(`🎉 ${result.creditsAdded} credits added to ${clerkId}. Balance: ${result.newBalance}`);
+    console.log(`🎉 ${result.creditsAdded} minutes added to ${clerkId}. Balance: ${result.newBalance}`);
   }
 }
 
 // ─── Handler: subscription checkout completed ─────────────────────────────────
-// Saves the Stripe customer ID on the org for future customer reuse.
+// Saves the Stripe customer ID on the org or user record for future customer reuse.
 // Minute provisioning happens in customer.subscription.created.
 async function handleSubscriptionCheckoutCompleted(session: Stripe.Checkout.Session) {
-  const clerkOrgId = session.metadata?.clerkOrgId || (session.client_reference_id ?? '');
+  const clerkOrgId = session.metadata?.clerkOrgId;
+  const clerkUserId = session.metadata?.clerkUserId || session.client_reference_id;
   const stripeCustomerId =
     typeof session.customer === 'string' ? session.customer : session.customer?.id;
 
-  if (!clerkOrgId) {
-    console.error('❌ Missing clerkOrgId in subscription checkout session:', session.id);
-    return;
-  }
-
-  const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId });
-  if (!org) {
-    console.error('❌ Org not found for clerkOrgId:', clerkOrgId);
-    return;
-  }
-
-  if (stripeCustomerId && !org.stripeCustomerId) {
-    await fetchMutation(internalOrgs.updateStripeCustomerId, {
-      orgId: org._id,
-      stripeCustomerId,
-    });
-    console.log(`✅ Saved stripeCustomerId ${stripeCustomerId} for org ${clerkOrgId}`);
+  if (clerkOrgId) {
+    // Org-level subscription — save customer ID on org
+    const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId });
+    if (!org) {
+      console.error('❌ Org not found for clerkOrgId:', clerkOrgId);
+      return;
+    }
+    if (stripeCustomerId && !org.stripeCustomerId) {
+      await fetchMutation(internalOrgs.updateStripeCustomerId, {
+        orgId: org._id,
+        stripeCustomerId,
+      });
+      console.log(`✅ Saved stripeCustomerId ${stripeCustomerId} for org ${clerkOrgId}`);
+    }
+  } else if (clerkUserId) {
+    // User-level subscription — save customer ID on user
+    const user = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId });
+    if (!user) {
+      console.error('❌ User not found for clerkUserId:', clerkUserId);
+      return;
+    }
+    if (stripeCustomerId && !user.stripeCustomerId) {
+      await fetchMutation(internalUsers.updateStripeCustomerId, {
+        userId: user._id,
+        stripeCustomerId,
+      });
+      console.log(`✅ Saved stripeCustomerId ${stripeCustomerId} for user ${clerkUserId}`);
+    }
+  } else {
+    console.error('❌ Missing clerkOrgId and clerkUserId in subscription checkout session:', session.id);
   }
 }
 
@@ -203,16 +220,7 @@ function getSubscriptionPeriod(sub: Stripe.Subscription): { start: number; end: 
 // ─── Handler: customer.subscription.created ───────────────────────────────────
 async function handleSubscriptionCreated(sub: Stripe.Subscription) {
   const clerkOrgId = sub.metadata?.clerkOrgId;
-  if (!clerkOrgId) {
-    console.error('❌ customer.subscription.created missing clerkOrgId metadata, sub:', sub.id);
-    return;
-  }
-
-  const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId });
-  if (!org) {
-    console.error('❌ Org not found for clerkOrgId:', clerkOrgId, 'sub:', sub.id);
-    return;
-  }
+  const clerkUserId = sub.metadata?.clerkUserId;
 
   const priceId = sub.items.data[0]?.price?.id ?? '';
   const tierMeta = getTierForPriceId(priceId);
@@ -223,22 +231,54 @@ async function handleSubscriptionCreated(sub: Stripe.Subscription) {
 
   const status = mapStripeSubStatus(sub.status);
   const period = getSubscriptionPeriod(sub);
-  await fetchMutation(internalSubs.createSubscription, {
-    orgId: org._id,
-    stripeSubscriptionId: sub.id,
-    stripePriceId: priceId,
-    tier: tierMeta.tier,
-    status,
-    includedMinutes: tierMeta.includedMinutes,
-    overageRateNok: tierMeta.overageRateNok,
-    billingInterval: tierMeta.billingInterval,
-    currentPeriodStart: period.start * 1000,
-    currentPeriodEnd: period.end * 1000,
-  });
 
-  console.log(
-    `✅ Subscription created in Convex: org=${clerkOrgId} tier=${tierMeta.tier} minutes=${tierMeta.includedMinutes}`
-  );
+  if (clerkOrgId) {
+    // Org-level subscription
+    const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId });
+    if (!org) {
+      console.error('❌ Org not found for clerkOrgId:', clerkOrgId, 'sub:', sub.id);
+      return;
+    }
+    await fetchMutation(internalSubs.createSubscription, {
+      orgId: org._id,
+      stripeSubscriptionId: sub.id,
+      stripePriceId: priceId,
+      tier: tierMeta.tier,
+      status,
+      includedMinutes: tierMeta.includedMinutes,
+      overageRateNok: tierMeta.overageRateNok,
+      billingInterval: tierMeta.billingInterval,
+      currentPeriodStart: period.start * 1000,
+      currentPeriodEnd: period.end * 1000,
+    });
+    console.log(
+      `✅ Org subscription created in Convex: org=${clerkOrgId} tier=${tierMeta.tier} minutes=${tierMeta.includedMinutes}`
+    );
+  } else if (clerkUserId) {
+    // User-level subscription
+    const user = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId });
+    if (!user) {
+      console.error('❌ User not found for clerkUserId:', clerkUserId, 'sub:', sub.id);
+      return;
+    }
+    await fetchMutation(internalSubs.createSubscription, {
+      userId: user._id,
+      stripeSubscriptionId: sub.id,
+      stripePriceId: priceId,
+      tier: tierMeta.tier,
+      status,
+      includedMinutes: tierMeta.includedMinutes,
+      overageRateNok: tierMeta.overageRateNok,
+      billingInterval: tierMeta.billingInterval,
+      currentPeriodStart: period.start * 1000,
+      currentPeriodEnd: period.end * 1000,
+    });
+    console.log(
+      `✅ User subscription created in Convex: user=${clerkUserId} tier=${tierMeta.tier} minutes=${tierMeta.includedMinutes}`
+    );
+  } else {
+    console.error('❌ customer.subscription.created missing clerkOrgId and clerkUserId metadata, sub:', sub.id);
+  }
 }
 
 // ─── Handler: customer.subscription.updated ───────────────────────────────────
@@ -257,7 +297,11 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
       console.log(
         `⬇️ Plan downgrade detected for ${sub.id}: ${convexSub.includedMinutes} → ${tierMeta.includedMinutes} min — resetting rollover`
       );
-      await fetchMutation(internalOrgs.resetRolloverOnDowngrade, { orgId: convexSub.orgId });
+      if (convexSub.orgId) {
+        await fetchMutation(internalOrgs.resetRolloverOnDowngrade, { orgId: convexSub.orgId });
+      } else if (convexSub.userId) {
+        await fetchMutation(internalSubs.resetUserRolloverOnDowngrade, { userId: convexSub.userId });
+      }
     }
   }
 
@@ -328,47 +372,85 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   const newPeriodStart = renewalPeriod.start * 1000;
   const newPeriodEnd = renewalPeriod.end * 1000;
 
-  // ── Report overage from closing cycle to Stripe ──────────────────────────
-  // Fetch current org state to check for outstanding overage minutes.
-  const org = await fetchQuery(internalOrgs.getById, { orgId: convexSub.orgId });
-  const overageMinutes = org?.overageMinutesThisCycle ?? 0;
+  if (convexSub.orgId) {
+    // ── Org-level renewal ─────────────────────────────────────────────────
 
-  if (overageMinutes > 0 && org?.stripeCustomerId) {
-    const overageRateNok = convexSub.overageRateNok; // e.g. 12 NOK/min
-    const overageAmountOre = Math.ceil(overageMinutes * overageRateNok * 100); // øre (Stripe smallest unit)
-    const overageDescription =
-      `Overage: ${Math.ceil(overageMinutes)} min × ${overageRateNok} NOK/min (${tierMeta.tier} plan)`;
+    // Report overage from closing cycle to Stripe
+    const org = await fetchQuery(internalOrgs.getById, { orgId: convexSub.orgId });
+    const overageMinutes = org?.overageMinutesThisCycle ?? 0;
 
-    try {
-      await stripe.invoiceItems.create({
-        customer: org.stripeCustomerId,
-        amount: overageAmountOre,
-        currency: 'nok',
-        description: overageDescription,
-      });
-      console.log(
-        `📊 Overage invoice item created: ${Math.ceil(overageMinutes)} min × ${overageRateNok} NOK = ${overageAmountOre / 100} NOK for ${org.stripeCustomerId}`
-      );
-    } catch (err) {
-      // Non-fatal: log and continue so rollover still happens
-      console.error('❌ Failed to create overage invoice item — proceeding with rollover anyway:', err);
+    if (overageMinutes > 0 && org?.stripeCustomerId) {
+      const overageRateNok = convexSub.overageRateNok;
+      const overageAmountOre = Math.ceil(overageMinutes * overageRateNok * 100);
+      const overageDescription =
+        `Overage: ${Math.ceil(overageMinutes)} min × ${overageRateNok} NOK/min (${tierMeta.tier} plan)`;
+      try {
+        await stripe.invoiceItems.create({
+          customer: org.stripeCustomerId,
+          amount: overageAmountOre,
+          currency: 'nok',
+          description: overageDescription,
+        });
+        console.log(
+          `📊 Overage invoice item created: ${Math.ceil(overageMinutes)} min × ${overageRateNok} NOK = ${overageAmountOre / 100} NOK for ${org.stripeCustomerId}`
+        );
+      } catch (err) {
+        console.error('❌ Failed to create overage invoice item — proceeding with rollover anyway:', err);
+      }
+    } else if (overageMinutes > 0) {
+      console.warn(`⚠️ Org ${convexSub.orgId} has ${overageMinutes} overage minutes but no stripeCustomerId — skipping Stripe report`);
     }
-  } else if (overageMinutes > 0) {
-    console.warn(`⚠️ Org ${convexSub.orgId} has ${overageMinutes} overage minutes but no stripeCustomerId — skipping Stripe report`);
+
+    // Roll over unused minutes and reset cycle counters
+    await fetchMutation(internalOrgs.processRollover, {
+      orgId: convexSub.orgId,
+      newIncludedMinutes: tierMeta.includedMinutes,
+      newBillingCycleStart: newPeriodStart,
+      newBillingCycleEnd: newPeriodEnd,
+    });
+
+    // Reset per-member usage counters for the new cycle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const internalMemberships = (internal as any).memberships;
+    await fetchMutation(internalMemberships.resetMemberMinutes, { orgId: convexSub.orgId });
+
+  } else if (convexSub.userId) {
+    // ── User-level renewal ────────────────────────────────────────────────
+
+    // Report overage from closing cycle to Stripe
+    const user = await fetchQuery(internalUsers.getById, { userId: convexSub.userId });
+    const overageMinutes = user?.overageMinutesThisCycle ?? 0;
+
+    if (overageMinutes > 0 && user?.stripeCustomerId) {
+      const overageRateNok = convexSub.overageRateNok;
+      const overageAmountOre = Math.ceil(overageMinutes * overageRateNok * 100);
+      const overageDescription =
+        `Overage: ${Math.ceil(overageMinutes)} min × ${overageRateNok} NOK/min (${tierMeta.tier} plan)`;
+      try {
+        await stripe.invoiceItems.create({
+          customer: user.stripeCustomerId,
+          amount: overageAmountOre,
+          currency: 'nok',
+          description: overageDescription,
+        });
+        console.log(
+          `📊 User overage invoice item created: ${Math.ceil(overageMinutes)} min × ${overageRateNok} NOK = ${overageAmountOre / 100} NOK for ${user.stripeCustomerId}`
+        );
+      } catch (err) {
+        console.error('❌ Failed to create user overage invoice item — proceeding with rollover anyway:', err);
+      }
+    } else if (overageMinutes > 0) {
+      console.warn(`⚠️ User ${convexSub.userId} has ${overageMinutes} overage minutes but no stripeCustomerId — skipping Stripe report`);
+    }
+
+    // Roll over unused minutes and reset cycle for user
+    await fetchMutation(internalSubs.processUserRollover, {
+      userId: convexSub.userId,
+      newIncludedMinutes: tierMeta.includedMinutes,
+      newCycleStart: newPeriodStart,
+      newCycleEnd: newPeriodEnd,
+    });
   }
-
-  // ── Roll over unused minutes and reset cycle counters ────────────────────
-  await fetchMutation(internalOrgs.processRollover, {
-    orgId: convexSub.orgId,
-    newIncludedMinutes: tierMeta.includedMinutes,
-    newBillingCycleStart: newPeriodStart,
-    newBillingCycleEnd: newPeriodEnd,
-  });
-
-  // Reset per-member usage counters for the new cycle
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const internalMemberships = (internal as any).memberships;
-  await fetchMutation(internalMemberships.resetMemberMinutes, { orgId: convexSub.orgId });
 
   // Sync subscription period boundaries
   await fetchMutation(internalSubs.updateSubscription, {
@@ -379,23 +461,24 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   });
 
   console.log(
-    `✅ Renewal processed for ${stripeSubId}: ${tierMeta.includedMinutes} min provisioned (overage reported: ${overageMinutes > 0 ? Math.ceil(overageMinutes) + ' min' : 'none'})`
+    `✅ Renewal processed for ${stripeSubId}: ${tierMeta.includedMinutes} min provisioned`
   );
 }
 
 // ─── Handler: customer.subscription.deleted ──────────────────────────────────
-// Marks subscription canceled and resets rollover balance to 0 per pricing rules.
+// Marks subscription canceled; user-level rollover reset is handled inside cancelSubscription mutation.
 async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
+  // cancelSubscription handles user-level rollover reset internally
   await fetchMutation(internalSubs.cancelSubscription, {
     stripeSubscriptionId: sub.id,
   });
   console.log('✅ Subscription marked canceled in Convex:', sub.id);
 
-  // Look up the Convex subscription to find orgId for rollover reset
+  // For org-level subscriptions, also reset org rollover balance
   const convexSub = await fetchQuery(internalSubs.getByStripeSubscriptionId, {
     stripeSubscriptionId: sub.id,
   });
-  if (convexSub) {
+  if (convexSub?.orgId) {
     await fetchMutation(internalOrgs.resetRolloverOnCancellation, { orgId: convexSub.orgId });
     console.log('✅ Rollover balance reset for org:', convexSub.orgId);
   }

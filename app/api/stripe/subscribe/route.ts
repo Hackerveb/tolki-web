@@ -7,32 +7,36 @@ import { internal } from '@/convex/_generated/api';
 // Stripe Price IDs per tier and billing interval.
 // Set via env vars so they can be configured per environment without code changes.
 const PRICE_IDS: Record<string, Record<string, string>> = {
-  small: {
-    monthly: process.env.STRIPE_PRICE_SMALL_MONTHLY ?? '',
-    annual: process.env.STRIPE_PRICE_SMALL_ANNUAL ?? '',
+  active: {
+    monthly: process.env.STRIPE_PRICE_ACTIVE_MONTHLY ?? '',
+    annual: process.env.STRIPE_PRICE_ACTIVE_ANNUAL ?? '',
   },
-  medium: {
-    monthly: process.env.STRIPE_PRICE_MEDIUM_MONTHLY ?? '',
-    annual: process.env.STRIPE_PRICE_MEDIUM_ANNUAL ?? '',
-  },
-  large: {
-    monthly: process.env.STRIPE_PRICE_LARGE_MONTHLY ?? '',
-    annual: process.env.STRIPE_PRICE_LARGE_ANNUAL ?? '',
+  enterprise: {
+    monthly: process.env.STRIPE_PRICE_ENTERPRISE_MONTHLY ?? '',
+    annual: process.env.STRIPE_PRICE_ENTERPRISE_ANNUAL ?? '',
   },
 };
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, orgId } = await auth();
-    if (!userId || !orgId) {
+    // Only userId is required — orgId is optional (user-level subscriptions are supported)
+    const { userId, orgId: sessionOrgId } = await auth();
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized — must be signed in with an active organization' },
+        { error: 'Unauthorized — must be signed in' },
         { status: 401 }
       );
     }
 
     const body = await request.json();
-    const { tier, billingInterval } = body as { tier: string; billingInterval: 'monthly' | 'annual' };
+    const { tier, billingInterval, orgId: bodyOrgId } = body as {
+      tier: string;
+      billingInterval: 'monthly' | 'annual';
+      orgId?: string;
+    };
+
+    // Use orgId from body if provided, otherwise fall back to Clerk session orgId
+    const effectiveOrgId = bodyOrgId || sessionOrgId || null;
 
     if (!tier || !billingInterval) {
       return NextResponse.json({ error: 'tier and billingInterval are required' }, { status: 400 });
@@ -51,20 +55,45 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_URL ||
       (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
-    // Reuse the existing Stripe customer if the org already has one.
-    // This prevents duplicate customers in Stripe and enables the billing portal.
+    // Reuse existing Stripe customer to prevent duplicates and enable billing portal.
     let stripeCustomerId: string | undefined;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const org = await fetchQuery((internal as any).organizations.getByClerkOrgId, {
-        clerkOrgId: orgId,
-      });
-      if (org?.stripeCustomerId) {
-        stripeCustomerId = org.stripeCustomerId;
+
+    if (effectiveOrgId) {
+      // Org-level subscription: look up stripeCustomerId on org record
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const org = await fetchQuery((internal as any).organizations.getByClerkOrgId, {
+          clerkOrgId: effectiveOrgId,
+        });
+        if (org?.stripeCustomerId) {
+          stripeCustomerId = org.stripeCustomerId;
+        }
+      } catch {
+        console.warn('[stripe/subscribe] Could not look up org stripeCustomerId – proceeding without customer reuse');
       }
-    } catch {
-      // Non-fatal: if Convex lookup fails we proceed without customer reuse
-      console.warn('[stripe/subscribe] Could not look up org stripeCustomerId – proceeding without customer reuse');
+    } else {
+      // User-level subscription: look up stripeCustomerId on user record
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const user = await fetchQuery((internal as any).users.getByClerkId, {
+          clerkId: userId,
+        });
+        if (user?.stripeCustomerId) {
+          stripeCustomerId = user.stripeCustomerId;
+        }
+      } catch {
+        console.warn('[stripe/subscribe] Could not look up user stripeCustomerId – proceeding without customer reuse');
+      }
+    }
+
+    // Always include clerkUserId; only include clerkOrgId when subscribing via org
+    const metadata: Record<string, string> = {
+      clerkUserId: userId,
+      tier,
+      billingInterval,
+    };
+    if (effectiveOrgId) {
+      metadata.clerkOrgId = effectiveOrgId;
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -73,14 +102,10 @@ export async function POST(request: NextRequest) {
       mode: 'subscription',
       success_url: `${origin}/settings/billing?subscribed=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/subscribe?canceled=true`,
-      client_reference_id: orgId,
+      // client_reference_id is orgId for org subscriptions, userId for user-level
+      client_reference_id: effectiveOrgId ?? userId,
       ...(stripeCustomerId ? { customer: stripeCustomerId } : {}),
-      metadata: {
-        clerkOrgId: orgId,
-        clerkUserId: userId,
-        tier,
-        billingInterval,
-      },
+      metadata,
     });
 
     return NextResponse.json({ url: session.url, sessionId: session.id });

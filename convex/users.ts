@@ -328,3 +328,20 @@ export const list = internalQuery({
   },
 });
 
+// Get user by Convex ID (INTERNAL ONLY — webhook handlers)
+export const getById = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => ctx.db.get(args.userId),
+});
+
+// Save Stripe customer ID on user record (INTERNAL ONLY — webhook handler)
+export const updateStripeCustomerId = internalMutation({
+  args: {
+    userId: v.id("users"),
+    stripeCustomerId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, { stripeCustomerId: args.stripeCustomerId });
+  },
+});
+

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { stripe, getCreditPackageById } from '@/lib/stripe';
+import { stripe } from '@/lib/stripe';
+import { CREDIT_RATES_NOK_PER_MIN, MIN_CREDIT_PURCHASE_MINUTES, MAX_CREDIT_PURCHASE_MINUTES, getCreditRateForTier } from '@/lib/credit-packages';
+import { fetchQuery } from 'convex/nextjs';
+import { internal } from '@/convex/_generated/api';
+import type { SubscriptionTier } from '@/lib/subscription-tiers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { packageId, clerkId } = body;
+    const { minutes, clerkId } = body as { minutes: number; clerkId: string };
 
     // Verify the authenticated user matches the requested user
     if (userId !== clerkId) {
@@ -25,14 +29,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get credit package
-    const creditPackage = getCreditPackageById(packageId);
-    if (!creditPackage) {
+    // Validate minutes parameter
+    if (!minutes || typeof minutes !== 'number' || !Number.isInteger(minutes)) {
+      return NextResponse.json({ error: 'minutes must be a positive integer' }, { status: 400 });
+    }
+    if (minutes < MIN_CREDIT_PURCHASE_MINUTES || minutes > MAX_CREDIT_PURCHASE_MINUTES) {
       return NextResponse.json(
-        { error: 'Invalid package ID' },
+        { error: `minutes must be between ${MIN_CREDIT_PURCHASE_MINUTES} and ${MAX_CREDIT_PURCHASE_MINUTES}` },
         { status: 400 }
       );
     }
+
+    // Determine the user's subscription tier to apply the correct rate
+    let tier: SubscriptionTier | 'none' = 'none';
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const internalUsers = (internal as any).users;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const internalSubs = (internal as any).subscriptions;
+
+      const user = await fetchQuery(internalUsers.getByClerkId, { clerkId });
+      if (user) {
+        const sub = await fetchQuery(internalSubs.getActiveSubscriptionByUserInternal, {
+          userId: user._id,
+        });
+        if (sub?.tier) {
+          tier = sub.tier as SubscriptionTier;
+        } else {
+          // User exists but no paid subscription — free tier rate applies
+          tier = 'free';
+        }
+      }
+    } catch {
+      console.warn('[stripe/checkout] Could not look up user tier – using default rate');
+    }
+
+    const rateNokPerMin = getCreditRateForTier(tier);
+    const priceOre = Math.ceil(minutes * rateNokPerMin * 100); // øre (Stripe smallest unit for NOK)
 
     // Get the origin for redirect URLs
     const origin = request.headers.get('origin')
@@ -47,10 +80,10 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: 'nok',
             product_data: {
-              name: `${creditPackage.name} — ${creditPackage.minutes} min`,
-              description: `${creditPackage.minutes} minutter tolketjeneste fra TolKI`,
+              name: `${minutes} minutter tolketjeneste`,
+              description: `${minutes} minutter tolketjeneste fra TolKI`,
             },
-            unit_amount: creditPackage.priceOre,
+            unit_amount: priceOre,
           },
           quantity: 1,
         },
@@ -61,8 +94,9 @@ export async function POST(request: NextRequest) {
       client_reference_id: clerkId,
       metadata: {
         clerkId,
-        packageId,
-        credits: creditPackage.minutes.toString(),
+        minutes: minutes.toString(),
+        rateNokPerMin: rateNokPerMin.toString(),
+        tier,
       },
     });
 
