@@ -64,5 +64,8 @@ export const getLanguageByCode = (code: string): Language | undefined => {
   return languages.find(lang => lang.code === code);
 };
 
+/** Returns "🇬🇧 English" — flag emoji prepended to the language name for display. */
+export const displayName = (lang: Language): string => `${lang.flag} ${lang.name}`;
+
 export const defaultSourceLanguage = languages.find(l => l.name === 'English')!;
 export const defaultTargetLanguage = languages.find(l => l.name === 'Spanish')!;

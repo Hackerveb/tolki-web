@@ -6,7 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { useQuery, useMutation } from 'convex/react';
 import { AnimatePresence, motion } from 'motion/react';
 import { api } from '@/convex/_generated/api';
-import { languages, defaultSourceLanguage, defaultTargetLanguage } from '@/lib/languages';
+import { languages, defaultSourceLanguage, defaultTargetLanguage, displayName } from '@/lib/languages';
 import { languageStorage } from '@/utils/languageStorage';
 import { colors } from '@/styles/colors';
 import type { Language } from '@/types';
@@ -130,7 +130,7 @@ function LanguagePicker({
         aria-label={`${label}: ${selected.name}`}
       >
         <span style={{ fontSize: 15, color: 'var(--color-text-primary)', fontWeight: 500 }}>
-          {selected.flag} {selected.name}
+          {displayName(selected)}
         </span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M6 9l6 6 6-6" stroke="var(--color-text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -210,8 +210,7 @@ function LanguagePicker({
                       textAlign: 'left',
                     }}
                   >
-                    <span style={{ fontSize: 22 }}>{lang.flag}</span>
-                    <span style={{ fontSize: 15, color: 'var(--color-text-primary)', flex: 1 }}>{lang.name}</span>
+                    <span style={{ fontSize: 15, color: 'var(--color-text-primary)', flex: 1 }}>{displayName(lang)}</span>
                     {lang.code === selected.code && (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M5 13l4 4L19 7" stroke={colors.primary} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
