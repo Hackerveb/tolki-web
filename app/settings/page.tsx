@@ -370,12 +370,29 @@ function SettingsScreenInner() {
               style={{
                 padding: '14px 16px',
                 borderRadius: '12px',
+                marginBottom: '10px',
                 cursor: 'pointer',
               }}
             >
               <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
                 <BillingIcon />
                 {tt('settings.billing')}
+              </span>
+              <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
+            </button>
+          </Link>
+          <Link href="/settings/credits" prefetch={true} className="w-full">
+            <button
+              className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
+              style={{
+                padding: '14px 16px',
+                borderRadius: '12px',
+                cursor: 'pointer',
+              }}
+            >
+              <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {tt('settings.buyCredits')}
               </span>
               <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
             </button>

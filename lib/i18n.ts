@@ -6,6 +6,7 @@ const translations = {
   'settings.manage': { nb: 'Administrer', en: 'Manage' },
   'settings.upgrade': { nb: 'Oppgrader', en: 'Upgrade' },
   'settings.billing': { nb: 'Fakturahistorikk', en: 'Billing History' },
+  'settings.buyCredits': { nb: 'Kjøp minutter', en: 'Buy Minutes' },
   'settings.appearance': { nb: 'Utseende', en: 'Appearance' },
   'settings.darkMode': { nb: 'Mørk modus', en: 'Dark mode' },
   'settings.language': { nb: 'Språk', en: 'Language' },
@@ -59,6 +60,8 @@ const translations = {
   'subscribe.comparison': { nb: 'Plansammenligning', en: 'Plan comparison' },
   'subscribe.annualNote': { nb: 'Faktureres som ett årlig beløp. Kan avsluttes når som helst — gjeldende periode løper ut.', en: 'Billed as a single annual payment. Cancel anytime — current period runs out.' },
   'subscribe.disclaimer': { nb: 'TolKI er ikke egnet for sertifisert rettstolking eller medisinsk tolking der nøyaktighet er juridisk krevd.', en: 'TolKI is not suitable for certified court or medical interpretation where accuracy is legally required.' },
+  'subscribe.justNeedMinutes': { nb: 'Trenger du bare ekstra minutter?', en: 'Just need extra minutes?' },
+  'subscribe.buyMinutes': { nb: 'Kjøp minutter enkeltvis', en: 'Buy minutes individually' },
   'subscribe.checkoutFailed': { nb: 'Kunne ikke starte betaling. Prøv igjen.', en: 'Could not start payment. Please try again.' },
 
   // ── Common ─────────────────────────────────────────────────

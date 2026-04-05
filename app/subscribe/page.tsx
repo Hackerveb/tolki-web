@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { motion } from 'motion/react';
@@ -566,6 +567,27 @@ function SubscribePage() {
 
         {/* Comparison table */}
         <PlanComparisonTable interval={interval} locale={locale} tt={tt} />
+
+        {/* Buy minutes individually */}
+        <Link href="/settings/credits">
+          <div
+            className="glass-subtle"
+            style={{
+              padding: '14px 16px',
+              borderRadius: '12px',
+              marginBottom: '20px',
+              textAlign: 'center',
+              cursor: 'pointer',
+            }}
+          >
+            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>
+              {tt('subscribe.justNeedMinutes')}
+            </p>
+            <p style={{ fontSize: '14px', color: 'var(--color-primary)', fontWeight: 600 }}>
+              {tt('subscribe.buyMinutes')} &rarr;
+            </p>
+          </div>
+        </Link>
 
         {/* Disclaimer */}
         <p

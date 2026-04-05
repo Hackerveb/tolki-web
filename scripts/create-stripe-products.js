@@ -5,10 +5,9 @@
  * Creates TolKI subscription products and prices in Stripe, then prints the
  * environment variable block you need to add to .env.local (or Vercel settings).
  *
- * Board pricing (2026-03-29):
- *   Small  → 190 NOK/mo, ~1 900 NOK/yr (~17% off)
- *   Medium → 990 NOK/mo, ~9 900 NOK/yr (~17% off)
- *   Large  → 4 990 NOK/mo, ~49 900 NOK/yr (~17% off)
+ * Board pricing (2026-04-05, TOL-141):
+ *   Active     → 990 NOK/mo, ~9 900 NOK/yr (~17% off)
+ *   Enterprise → 4 990 NOK/mo, ~49 900 NOK/yr (~17% off)
  *
  * Usage:
  *   STRIPE_SECRET_KEY=sk_test_... node scripts/create-stripe-products.js
@@ -30,22 +29,16 @@ const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2025-10-29.clover' }
 // NOK prices (will be converted to øre for Stripe)
 const PLANS = [
   {
-    name: 'TolKI Small',
-    monthlyNok: 190,
-    annualNok: 1_900,       // ~158/mo effective (~17% off)
-    envPrefix: 'SMALL',
-  },
-  {
-    name: 'TolKI Medium',
+    name: 'TolKI Active',
     monthlyNok: 990,
     annualNok: 9_900,       // ~825/mo effective (~17% off)
-    envPrefix: 'MEDIUM',
+    envPrefix: 'ACTIVE',
   },
   {
-    name: 'TolKI Large',
+    name: 'TolKI Enterprise',
     monthlyNok: 4_990,
     annualNok: 49_900,      // ~4,158/mo effective (~17% off)
-    envPrefix: 'LARGE',
+    envPrefix: 'ENTERPRISE',
   },
 ];
 
