@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
+import { useUser, CreateOrganization } from '@clerk/nextjs';
 import { useQuery, useMutation } from 'convex/react';
 import { AnimatePresence, motion } from 'motion/react';
 import { api } from '@/convex/_generated/api';
@@ -13,7 +13,7 @@ import type { Language } from '@/types';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -228,6 +228,272 @@ function LanguagePicker({
 }
 
 // ─── Step Components ──────────────────────────────────────────────────────────
+
+function StepAccountType({ onSelect, onBack }: {
+  onSelect: (type: 'personal' | 'org') => void;
+  onBack: () => void;
+}) {
+  return (
+    <div style={{ padding: '24px 24px 32px' }}>
+      <div className="text-center mb-8">
+        <div style={{ fontSize: 48, marginBottom: 12 }} aria-hidden="true">🧭</div>
+        <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
+          How will you use TolKI?
+        </h2>
+        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+          Choose how you&apos;d like to get started.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-4" style={{ marginBottom: 32 }}>
+        {/* Personal option */}
+        <button
+          onClick={() => onSelect('personal')}
+          className="glass text-left transition-all active:scale-[0.98]"
+          style={{ padding: '20px', borderRadius: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, border: 'none' }}
+          aria-label="Personal use"
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              background: `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 26,
+              flexShrink: 0,
+            }}
+            aria-hidden="true"
+          >
+            👤
+          </div>
+          <div style={{ flex: 1 }}>
+            <p className="font-semibold mb-1" style={{ fontSize: 16, color: 'var(--color-text-primary)' }}>
+              Personal Use
+            </p>
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: 6 }}>
+              I want to use TolKI for myself
+            </p>
+            <span
+              style={{
+                fontSize: 12,
+                color: colors.primary,
+                fontWeight: 500,
+                background: `${colors.primary}18`,
+                padding: '3px 10px',
+                borderRadius: 99,
+                display: 'inline-block',
+              }}
+            >
+              20 free minutes/month
+            </span>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" stroke="var(--color-text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        {/* Organisation option */}
+        <button
+          onClick={() => onSelect('org')}
+          className="glass text-left transition-all active:scale-[0.98]"
+          style={{ padding: '20px', borderRadius: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, border: 'none' }}
+          aria-label="Organisation use"
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              background: `linear-gradient(135deg, ${colors.success}, #059669)`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 26,
+              flexShrink: 0,
+            }}
+            aria-hidden="true"
+          >
+            🏢
+          </div>
+          <div style={{ flex: 1 }}>
+            <p className="font-semibold mb-1" style={{ fontSize: 16, color: 'var(--color-text-primary)' }}>
+              For My Organisation
+            </p>
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: 6 }}>
+              I want to set up TolKI for my team or business
+            </p>
+            <span
+              style={{
+                fontSize: 12,
+                color: colors.success,
+                fontWeight: 500,
+                background: `${colors.success}18`,
+                padding: '3px 10px',
+                borderRadius: 99,
+                display: 'inline-block',
+              }}
+            >
+              Team collaboration
+            </span>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" stroke="var(--color-text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+
+      <button
+        onClick={onBack}
+        className="font-medium transition-all glass"
+        style={{ minHeight: 52, width: 52, borderRadius: 14, fontSize: 20, cursor: 'pointer', border: 'none' }}
+        aria-label="Go back"
+      >
+        ←
+      </button>
+    </div>
+  );
+}
+
+function StepCreateOrg({ onBeforeCreate, onSkip, onBack, loading }: {
+  onBeforeCreate: () => Promise<void>;
+  onSkip: () => void;
+  onBack: () => void;
+  loading: boolean;
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleCreate = async () => {
+    setIsSubmitting(true);
+    try {
+      await onBeforeCreate();
+      setShowForm(true);
+    } catch {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (showForm) {
+    return (
+      <div style={{ padding: '24px 24px 32px' }}>
+        <div className="text-center mb-6">
+          <div style={{ fontSize: 48, marginBottom: 12 }} aria-hidden="true">🏢</div>
+          <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
+            Create your organisation
+          </h2>
+          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+            Set up your team workspace in TolKI.
+          </p>
+        </div>
+
+        <div
+          className="glass"
+          style={{ borderRadius: 20, padding: 16, marginBottom: 16, overflow: 'hidden' }}
+        >
+          <CreateOrganization
+            afterCreateOrganizationUrl="/subscribe"
+            appearance={{
+              elements: {
+                rootBox: { width: '100%' },
+                card: {
+                  boxShadow: 'none',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  padding: 0,
+                  margin: 0,
+                },
+              },
+            }}
+          />
+        </div>
+
+        <button
+          onClick={onSkip}
+          className="w-full font-medium transition-all"
+          style={{
+            minHeight: 44,
+            borderRadius: 12,
+            fontSize: 15,
+            cursor: 'pointer',
+            color: 'var(--color-text-tertiary)',
+            background: 'transparent',
+            border: 'none',
+          }}
+        >
+          Skip for now
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: '24px 24px 32px' }}>
+      <div className="text-center mb-8">
+        <div style={{ fontSize: 48, marginBottom: 12 }} aria-hidden="true">🏢</div>
+        <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
+          Set up your organisation
+        </h2>
+        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+          Create a team workspace and invite colleagues to TolKI.
+        </p>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.1 }}
+        className="glass"
+        style={{ borderRadius: 20, padding: '16px 20px', marginBottom: 28 }}
+      >
+        {[
+          { icon: '👥', text: 'Invite your team members' },
+          { icon: '📊', text: 'Shared usage dashboard' },
+          { icon: '💳', text: 'Centralised billing for your team' },
+        ].map(({ icon, text }) => (
+          <div key={text} className="flex items-center gap-3" style={{ marginBottom: 10 }}>
+            <span style={{ fontSize: 20, width: 28, textAlign: 'center' }} aria-hidden="true">{icon}</span>
+            <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{text}</span>
+          </div>
+        ))}
+      </motion.div>
+
+      <div className="flex gap-3" style={{ marginBottom: 12 }}>
+        <button
+          onClick={onBack}
+          className="flex-shrink-0 font-medium transition-all glass"
+          style={{ minHeight: 52, width: 52, borderRadius: 14, fontSize: 20, cursor: 'pointer', border: 'none' }}
+          aria-label="Go back"
+        >
+          ←
+        </button>
+        <div style={{ flex: 1 }}>
+          <PrimaryButton onClick={handleCreate} loading={isSubmitting || loading}>
+            Create Organisation
+          </PrimaryButton>
+        </div>
+      </div>
+
+      <button
+        onClick={onSkip}
+        className="w-full font-medium transition-all"
+        style={{
+          minHeight: 44,
+          borderRadius: 12,
+          fontSize: 15,
+          cursor: 'pointer',
+          color: 'var(--color-text-tertiary)',
+          background: 'transparent',
+          border: 'none',
+        }}
+      >
+        Skip for now
+      </button>
+    </div>
+  );
+}
 
 function StepWelcome({ onNext }: { onNext: () => void }) {
   return (
@@ -868,6 +1134,7 @@ export default function OnboardingNewPage() {
   const [sourceLanguage, setSourceLanguage] = useState<Language>(defaultSourceLanguage);
   const [targetLanguage, setTargetLanguage] = useState<Language>(defaultTargetLanguage);
   const [finishing, setFinishing] = useState(false);
+  const [accountType, setAccountType] = useState<'personal' | 'org'>('personal');
 
   const completeOnboarding = useMutation(api.users.completeOnboarding);
   const onboardingDone = useQuery(
@@ -925,6 +1192,23 @@ export default function OnboardingNewPage() {
     router.push('/');
   };
 
+  const handleOrgBeforeCreate = async () => {
+    if (!clerkUser?.id) return;
+    setFinishing(true);
+    try {
+      await completeOnboarding({
+        clerkId: clerkUser.id,
+        sourceLanguage: sourceLanguage.code,
+        targetLanguage: targetLanguage.code,
+      });
+      languageStorage.saveLanguagePair(sourceLanguage, targetLanguage);
+    } catch (err) {
+      console.error('Failed to complete onboarding before org creation:', err);
+      setFinishing(false);
+      throw err;
+    }
+  };
+
   if (!isLoaded || onboardingDone === undefined) {
     return (
       <div
@@ -949,6 +1233,11 @@ export default function OnboardingNewPage() {
 
   const steps = [
     <StepWelcome key="welcome" onNext={goNext} />,
+    <StepAccountType
+      key="accountType"
+      onSelect={(type) => { setAccountType(type); goNext(); }}
+      onBack={goBack}
+    />,
     <StepLanguages
       key="languages"
       sourceLanguage={sourceLanguage}
@@ -959,7 +1248,15 @@ export default function OnboardingNewPage() {
       onBack={goBack}
     />,
     <StepMicTest key="mic" onNext={goNext} onBack={goBack} />,
-    <StepHowItWorks key="howitworks" onNext={goNext} onBack={goBack} />,
+    accountType === 'org'
+      ? <StepCreateOrg
+          key="createOrg"
+          onBeforeCreate={handleOrgBeforeCreate}
+          onSkip={goNext}
+          onBack={goBack}
+          loading={finishing}
+        />
+      : <StepHowItWorks key="howitworks" onNext={goNext} onBack={goBack} />,
     <StepFreeCredits key="credits" onFinish={handleFinish} onBack={goBack} loading={finishing} />,
   ];
 

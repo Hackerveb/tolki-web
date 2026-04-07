@@ -334,6 +334,61 @@ function SettingsScreenInner() {
           </div>
         )}
 
+        {/* Create Organisation CTA — shown to private users with no org */}
+        {!organization && tier === 'private' && (
+          <div
+            className="glass"
+            style={{ padding: '20px', borderRadius: '20px', marginBottom: '16px' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '16px' }}>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: 'linear-gradient(135deg, #059669, #10B981)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 22,
+                  flexShrink: 0,
+                }}
+                aria-hidden="true"
+              >
+                🏢
+              </div>
+              <div>
+                <p style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
+                  Using TolKI for work?
+                </p>
+                <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
+                  Set up an organisation to share TolKI with your team and manage billing centrally.
+                </p>
+              </div>
+            </div>
+            <Link href="/settings/organization" prefetch={true} className="w-full">
+              <button
+                className="flex items-center justify-between transition-all active:scale-[0.98] w-full"
+                style={{
+                  padding: '13px 16px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #059669, #10B981)',
+                  border: 'none',
+                  color: '#fff',
+                }}
+              >
+                <span style={{ fontSize: '14px', fontWeight: '600' }}>
+                  Create Organisation
+                </span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <polyline points="9 18 15 12 9 6" stroke="rgba(255,255,255,0.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </Link>
+          </div>
+        )}
+
         {/* Management Section — hidden for org members (billing is handled by org admin) */}
         {tier !== 'org_member' && (
           <div
