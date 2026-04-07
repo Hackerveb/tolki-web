@@ -67,6 +67,10 @@ const translations = {
   'subscribe.orgManagedMessage': { nb: 'Ditt abonnement administreres av organisasjonsadministratoren din. Kontakt dem for planendringer.', en: 'Your subscription is managed by your organization admin. Contact them for plan changes.' },
   'subscribe.subscribeForOrg': { nb: 'Abonner for {orgName}', en: 'Subscribe for {orgName}' },
 
+  // ── Credits page ──────────────────────────────────────────
+  'credits.orgManagedTitle': { nb: 'Minutter administrert av organisasjon', en: 'Minutes managed by organization' },
+  'credits.orgManagedMessage': { nb: 'Minuttene dine administreres av organisasjonsadministratoren din. Kontakt dem for å be om tilgang til ekstra minutter.', en: 'Your minutes are managed by your organization admin. Contact them to request additional minutes.' },
+
   // ── Common ─────────────────────────────────────────────────
   'common.minutes': { nb: 'minutter', en: 'minutes' },
   'common.hours': { nb: 'timer', en: 'hours' },

@@ -11,6 +11,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/useToast';
 import { useLocale } from '@/hooks/useLocale';
 import { useT } from '@/lib/i18n';
+import { useUserTier } from '@/hooks/useUserTier';
 import {
   getCreditRateForTier,
   MIN_CREDIT_PURCHASE_MINUTES,
@@ -59,6 +60,72 @@ function StripeRedirectHandler() {
   return null;
 }
 
+function OrgMemberCreditsView({ onBack, tt }: { onBack: () => void; tt: ReturnType<typeof useT> }) {
+  return (
+    <div className="h-screen flex flex-col overflow-hidden glass-page">
+      <header
+        className="flex items-center glass-strong"
+        style={{
+          gap: '15px',
+          paddingTop: 'max(20px, env(safe-area-inset-top))',
+          paddingBottom: '20px',
+          paddingLeft: 'max(20px, env(safe-area-inset-left))',
+          paddingRight: 'max(20px, env(safe-area-inset-right))',
+          borderBottom: '1px solid var(--glass-border)',
+          borderRadius: 0,
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <button
+          onClick={onBack}
+          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
+          aria-label={tt('settings.goBack')}
+        >
+          <BackIcon />
+        </button>
+        <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
+          {tt('settings.buyCredits')}
+        </h1>
+      </header>
+
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{
+          paddingTop: '40px',
+          paddingLeft: 'max(24px, env(safe-area-inset-left))',
+          paddingRight: 'max(24px, env(safe-area-inset-right))',
+          paddingBottom: 'max(40px, env(safe-area-inset-bottom))',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div
+          className="glass"
+          style={{
+            padding: '32px 24px',
+            borderRadius: '24px',
+            textAlign: 'center',
+            maxWidth: '380px',
+            width: '100%',
+          }}
+        >
+          <div style={{ fontSize: '48px', marginBottom: '20px' }}>🏢</div>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '12px' }}>
+            {tt('credits.orgManagedTitle')}
+          </h2>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+            {tt('credits.orgManagedMessage')}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AddOnContent() {
   const router = useRouter();
   const { user } = useUser();
@@ -66,6 +133,7 @@ function AddOnContent() {
   const { toast } = useToast();
   const { locale } = useLocale();
   const tt = useT(locale);
+  const { tier, isLoaded } = useUserTier();
   const [minutes, setMinutes] = useState<number>(60);
   const [inputValue, setInputValue] = useState<string>('60');
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -80,6 +148,10 @@ function AddOnContent() {
     subscription?.tier && subscription.status !== 'canceled'
       ? (subscription.tier as SubscriptionTier)
       : 'none';
+
+  if (isLoaded && tier === 'org_member') {
+    return <OrgMemberCreditsView onBack={() => router.back()} tt={tt} />;
+  }
 
   const rateNok = getCreditRateForTier(currentTier);
   const totalNok = minutes * rateNok;
