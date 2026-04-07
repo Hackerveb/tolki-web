@@ -6,6 +6,8 @@ import { useOrganization } from '@clerk/nextjs';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
+import { useLocale } from '@/hooks/useLocale';
+import { useT } from '@/lib/i18n';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -64,12 +66,14 @@ function MemberCard({
   poolMode,
   orgId,
   onAllocationSave,
+  tt,
 }: {
   member: MemberData;
   isAdmin: boolean;
   poolMode: string;
   orgId: Id<'organizations'>;
   onAllocationSave: (userId: Id<'users'>, minutes: number | undefined) => Promise<void>;
+  tt: (key: Parameters<ReturnType<typeof useT>>[0], params?: Record<string, string>) => string;
 }) {
   const [editingAllocation, setEditingAllocation] = useState(false);
   const [allocationInput, setAllocationInput] = useState(
@@ -128,7 +132,7 @@ function MemberCard({
             {member.minutesUsedThisCycle.toFixed(0)}
           </span>
           <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>
-            min used
+            {tt('org.minUsed')}
           </span>
         </div>
       </div>
@@ -158,22 +162,22 @@ function MemberCard({
                 fontSize: '13px', fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer',
                 opacity: saving ? 0.6 : 1,
               }}>
-                {saving ? 'Saving…' : 'Save'}
+                {saving ? tt('org.saving') : tt('org.save')}
               </button>
               <button onClick={() => setEditingAllocation(false)} style={{
                 padding: '8px 12px', borderRadius: '8px', border: 'none',
                 backgroundColor: 'transparent', color: 'var(--color-text-tertiary)',
                 fontSize: '13px', cursor: 'pointer',
               }}>
-                Cancel
+                {tt('settings.cancel')}
               </button>
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
-                Allocation:{' '}
+                {tt('org.allocation')}{' '}
                 <strong style={{ color: 'var(--color-text-secondary)' }}>
-                  {member.minuteAllocation != null ? `${member.minuteAllocation} min` : 'No limit'}
+                  {member.minuteAllocation != null ? `${member.minuteAllocation} min` : tt('org.noLimit')}
                 </strong>
               </span>
               <button onClick={() => {
@@ -184,7 +188,7 @@ function MemberCard({
                 backgroundColor: 'var(--color-primary-alpha)', color: 'var(--color-primary)',
                 fontSize: '12px', fontWeight: 600, cursor: 'pointer',
               }}>
-                Edit
+                {tt('org.edit')}
               </button>
             </div>
           )}
@@ -211,9 +215,10 @@ function MemberCard({
 
 // ─── Invite modal ─────────────────────────────────────────────────────────────
 
-function InviteModal({ onClose, onInvite }: {
+function InviteModal({ onClose, onInvite, tt }: {
   onClose: () => void;
   onInvite: (email: string, role: string) => Promise<void>;
+  tt: (key: Parameters<ReturnType<typeof useT>>[0], params?: Record<string, string>) => string;
 }) {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'org:member' | 'org:admin'>('org:member');
@@ -229,7 +234,7 @@ function InviteModal({ onClose, onInvite }: {
       await onInvite(email.trim(), role);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send invite');
+      setError(err instanceof Error ? err.message : tt('org.failedToSendInvite'));
     } finally {
       setSending(false);
     }
@@ -250,7 +255,7 @@ function InviteModal({ onClose, onInvite }: {
       }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-            Invite member
+            {tt('org.inviteMember')}
           </h3>
           <button onClick={onClose} style={{
             width: '28px', height: '28px', borderRadius: '50%', border: 'none',
@@ -261,7 +266,7 @@ function InviteModal({ onClose, onInvite }: {
         </div>
         <form onSubmit={handleSubmit}>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: '6px' }}>
-            Email address
+            {tt('org.emailAddress')}
           </label>
           <input
             type="email"
@@ -280,7 +285,7 @@ function InviteModal({ onClose, onInvite }: {
             }}
           />
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)', marginBottom: '6px' }}>
-            Role
+            {tt('org.role')}
           </label>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
             {(['org:member', 'org:admin'] as const).map((r) => (
@@ -292,7 +297,7 @@ function InviteModal({ onClose, onInvite }: {
                 border: `1px solid ${role === r ? 'var(--color-primary)' : 'var(--glass-border)'}`,
                 transition: 'all 0.15s ease',
               }}>
-                {r === 'org:member' ? 'Member' : 'Admin'}
+                {r === 'org:member' ? tt('org.roleMember') : tt('org.roleAdmin')}
               </button>
             ))}
           </div>
@@ -307,7 +312,7 @@ function InviteModal({ onClose, onInvite }: {
             fontSize: '15px', fontWeight: 600, cursor: sending ? 'not-allowed' : 'pointer',
             opacity: sending || !email.trim() ? 0.6 : 1,
           }}>
-            {sending ? 'Sending invite…' : 'Send invite'}
+            {sending ? tt('org.sendingInvite') : tt('org.sendInvite')}
           </button>
         </form>
       </div>
@@ -321,6 +326,8 @@ export default function MembersPage() {
   const router = useRouter();
   const { organization, membership } = useOrganization();
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const { locale } = useLocale();
+  const tt = useT(locale);
 
   // Convex data
   const convexOrg = useQuery(
@@ -357,7 +364,7 @@ export default function MembersPage() {
   return (
     <>
       {showInviteModal && (
-        <InviteModal onClose={() => setShowInviteModal(false)} onInvite={handleInvite} />
+        <InviteModal onClose={() => setShowInviteModal(false)} onInvite={handleInvite} tt={tt} />
       )}
       <div className="glass-page" style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Header */}
@@ -372,17 +379,17 @@ export default function MembersPage() {
         }}>
           <button onClick={() => router.back()}
             className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
-            aria-label="Go back">
+            aria-label={tt('settings.goBack')}>
             <BackIcon />
           </button>
           <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
-            Members
+            {tt('org.members')}
           </h1>
           {isAdmin && (
             <button
               onClick={() => setShowInviteModal(true)}
               className="flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
-              aria-label="Invite member"
+              aria-label={tt('org.inviteMember')}
               style={{
                 padding: '8px 14px', borderRadius: '10px', border: 'none',
                 backgroundColor: 'var(--color-primary)', color: '#fff',
@@ -391,7 +398,7 @@ export default function MembersPage() {
               }}
             >
               <PlusIcon />
-              Invite
+              {tt('org.invite')}
             </button>
           )}
         </header>
@@ -414,7 +421,7 @@ export default function MembersPage() {
                 <line x1="12" y1="16" x2="12.01" y2="16" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" />
               </svg>
               <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>
-                Individual mode — set per-member allocations below.
+                {tt('org.individualModeInfo')}
               </p>
             </div>
           )}
@@ -424,7 +431,9 @@ export default function MembersPage() {
             fontSize: '13px', fontWeight: 600, color: 'var(--color-text-tertiary)',
             marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.6px',
           }}>
-            {members ? `${members.length} member${members.length !== 1 ? 's' : ''}` : 'Members'}
+            {members
+              ? `${members.length} ${members.length !== 1 ? tt('org.memberPlural') : tt('org.memberSingular')}`
+              : tt('org.members')}
           </p>
 
           {isLoading || (convexOrg && members === undefined) ? (
@@ -438,16 +447,16 @@ export default function MembersPage() {
           ) : !organization || (organization && !convexOrg) ? (
             <div className="glass" style={{ padding: '32px 24px', borderRadius: '20px', textAlign: 'center' }}>
               <p style={{ fontSize: '15px', color: 'var(--color-text-secondary)' }}>
-                No organization selected.
+                {tt('org.noOrgSelected')}
               </p>
             </div>
           ) : !members || members.length === 0 ? (
             <div className="glass" style={{ padding: '32px 24px', borderRadius: '20px', textAlign: 'center' }}>
               <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-                No members yet
+                {tt('org.noMembers')}
               </p>
               <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-                Invite your team to get started.
+                {tt('org.inviteTeam')}
               </p>
             </div>
           ) : (
@@ -459,6 +468,7 @@ export default function MembersPage() {
                 poolMode={poolMode}
                 orgId={convexOrg?._id}
                 onAllocationSave={handleAllocationSave}
+                tt={tt}
               />
             ))
           )}

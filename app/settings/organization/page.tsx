@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useOrganization, OrganizationSwitcher } from '@clerk/nextjs';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { useLocale } from '@/hooks/useLocale';
+import { useT } from '@/lib/i18n';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -72,16 +74,23 @@ const TIER_COLORS: Record<string, string> = {
   enterprise: '#F59E0B',
 };
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  active: { label: 'Active', color: 'var(--color-success)' },
-  trialing: { label: 'Trial', color: 'var(--color-primary)' },
-  past_due: { label: 'Past Due', color: 'var(--color-warning)' },
-  canceled: { label: 'Cancelled', color: 'var(--color-error)' },
+const STATUS_COLORS: Record<string, string> = {
+  active: 'var(--color-success)',
+  trialing: 'var(--color-primary)',
+  past_due: 'var(--color-warning)',
+  canceled: 'var(--color-error)',
+};
+
+const STATUS_I18N_KEYS: Record<string, 'billing.statusActive' | 'billing.statusTrialing' | 'billing.statusPastDue' | 'billing.statusCanceled'> = {
+  active: 'billing.statusActive',
+  trialing: 'billing.statusTrialing',
+  past_due: 'billing.statusPastDue',
+  canceled: 'billing.statusCanceled',
 };
 
 // ─── Usage progress bar ────────────────────────────────────────────────────────
 
-function UsageBar({ used, total }: { used: number; total: number }) {
+function UsageBar({ used, total, tt }: { used: number; total: number; tt: (key: Parameters<ReturnType<typeof useT>>[0], params?: Record<string, string>) => string }) {
   const pct = total > 0 ? Math.min((used / total) * 100, 100) : 0;
   const color =
     pct >= 100 ? 'var(--color-error)' :
@@ -93,7 +102,7 @@ function UsageBar({ used, total }: { used: number; total: number }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
         <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-          {used.toFixed(0)} / {total.toFixed(0)} min used
+          {tt('billing.minutesProgress', { used: used.toFixed(0), total: total.toFixed(0) })}
         </span>
         <span style={{ fontSize: '13px', fontWeight: 600, color }}>
           {pct.toFixed(0)}%
@@ -119,10 +128,12 @@ function SubscriptionBanner({
   subscription,
   org,
   isAdmin,
+  tt,
 }: {
   subscription: { status: string; tier: string; includedMinutes: number } | null | undefined;
   org: { minutesUsedThisCycle: number; totalMinutesAvailable: number } | null | undefined;
   isAdmin: boolean;
+  tt: (key: Parameters<ReturnType<typeof useT>>[0], params?: Record<string, string>) => string;
 }) {
   if (subscription === undefined || org === undefined) return null; // still loading
 
@@ -146,10 +157,10 @@ function SubscriptionBanner({
           </div>
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
-              No active subscription
+              {tt('org.noActiveSubscription')}
             </p>
             <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '16px', lineHeight: 1.5 }}>
-              Choose a plan to give your team access to TolKI interpretation minutes.
+              {tt('org.choosePlanForTeam')}
             </p>
             {isAdmin && (
               <Link href="/subscribe">
@@ -159,7 +170,7 @@ function SubscriptionBanner({
                   color: '#fff', fontSize: '14px', fontWeight: 700,
                   cursor: 'pointer', boxShadow: 'var(--glass-glow-primary)',
                 }}>
-                  Subscribe now →
+                  {tt('org.subscribeNow')}
                 </button>
               </Link>
             )}
@@ -180,10 +191,10 @@ function SubscriptionBanner({
         borderLeft: '3px solid var(--color-error)',
       }}>
         <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-error)', marginBottom: '4px' }}>
-          All minutes used
+          {tt('org.allMinutesUsed')}
         </p>
         <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-          Additional usage will be billed as overage. Upgrade your plan to add more minutes.
+          {tt('org.allMinutesUsedDesc')}
         </p>
       </div>
     );
@@ -196,10 +207,10 @@ function SubscriptionBanner({
         borderLeft: '3px solid var(--color-warning)',
       }}>
         <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-warning)', marginBottom: '4px' }}>
-          Nearing your limit
+          {tt('org.nearingLimit')}
         </p>
         <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-          {(100 - pct).toFixed(0)}% of minutes remaining this cycle. Consider upgrading.
+          {tt('org.nearingLimitDesc', { pct: (100 - pct).toFixed(0) })}
         </p>
       </div>
     );
@@ -213,6 +224,8 @@ function SubscriptionBanner({
 export default function OrganizationSettingsPage() {
   const router = useRouter();
   const { organization, membership } = useOrganization();
+  const { locale } = useLocale();
+  const tt = useT(locale);
 
   // Convex queries — cast to any since types regenerate on next `convex dev`
   const convexOrg = useQuery(
@@ -267,11 +280,11 @@ export default function OrganizationSettingsPage() {
         }}>
           <button onClick={() => router.back()}
             className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
-            aria-label="Go back">
+            aria-label={tt('settings.goBack')}>
             <BackIcon />
           </button>
           <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
-            Organization
+            {tt('settings.organization')}
           </h1>
         </header>
         <div style={{
@@ -281,10 +294,10 @@ export default function OrganizationSettingsPage() {
           <div className="glass" style={{ padding: '32px 24px', borderRadius: '20px', textAlign: 'center', maxWidth: '340px' }}>
             <div style={{ fontSize: '40px', marginBottom: '16px' }}>🏢</div>
             <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-              No organization selected
+              {tt('org.noOrgSelected')}
             </p>
             <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '24px', lineHeight: 1.5 }}>
-              Create or join an organization to access team management features.
+              {tt('org.createOrJoin')}
             </p>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <OrganizationSwitcher
@@ -315,8 +328,9 @@ export default function OrganizationSettingsPage() {
   const subData = subscription?.org;
   const usedMin = subData?.minutesUsedThisCycle ?? 0;
   const totalMin = subData?.totalMinutesAvailable ?? 0;
+  const dateLocale = locale === 'nb' ? 'nb-NO' : 'en-US';
   const cycleEnd = subData?.currentBillingCycleEnd
-    ? new Date(subData.currentBillingCycleEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    ? new Date(subData.currentBillingCycleEnd).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' })
     : null;
 
   return (
@@ -334,11 +348,11 @@ export default function OrganizationSettingsPage() {
       }}>
         <button onClick={() => router.back()}
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
-          aria-label="Go back">
+          aria-label={tt('settings.goBack')}>
           <BackIcon />
         </button>
         <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
-          Organization
+          {tt('settings.organization')}
         </h1>
         {/* Org switcher (compact) */}
         <div style={{ flexShrink: 0 }}>
@@ -414,6 +428,7 @@ export default function OrganizationSettingsPage() {
           subscription={subscription ?? null}
           org={subData ?? null}
           isAdmin={isAdmin}
+          tt={tt}
         />
 
         {/* Subscription card */}
@@ -421,7 +436,7 @@ export default function OrganizationSettingsPage() {
           <div className="glass" style={{ padding: '20px', borderRadius: '20px', marginBottom: '16px' }}>
             <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
-                Subscription
+                {tt('org.subscription')}
               </h3>
               {subscription && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -434,10 +449,10 @@ export default function OrganizationSettingsPage() {
                   </span>
                   <span style={{
                     padding: '2px 8px', borderRadius: '99px', fontSize: '11px', fontWeight: 600,
-                    backgroundColor: STATUS_LABELS[subscription.status]?.color ?? 'var(--color-text-secondary)',
+                    backgroundColor: STATUS_COLORS[subscription.status] ?? 'var(--color-text-secondary)',
                     color: '#fff',
                   }}>
-                    {STATUS_LABELS[subscription.status]?.label ?? subscription.status}
+                    {STATUS_I18N_KEYS[subscription.status] ? tt(STATUS_I18N_KEYS[subscription.status]) : subscription.status}
                   </span>
                 </div>
               )}
@@ -445,21 +460,21 @@ export default function OrganizationSettingsPage() {
 
             {subscription && subData ? (
               <>
-                <UsageBar used={usedMin} total={totalMin} />
+                <UsageBar used={usedMin} total={totalMin} tt={tt} />
                 {subData.rolloverMinutes > 0 && (
                   <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>
-                    Includes {subData.rolloverMinutes} rollover minutes
+                    {tt('org.includesRollover', { n: String(subData.rolloverMinutes) })}
                   </p>
                 )}
                 {cycleEnd && (
                   <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
-                    Resets {cycleEnd}
+                    {tt('org.resetsOn', { date: cycleEnd })}
                   </p>
                 )}
               </>
             ) : (
               <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
-                No active plan. Subscribe to allocate minutes to your team.
+                {tt('org.noActivePlanTeam')}
               </p>
             )}
           </div>
@@ -470,21 +485,19 @@ export default function OrganizationSettingsPage() {
           <div className="glass" style={{ padding: '20px', borderRadius: '20px', marginBottom: '16px' }}>
             <div style={{ marginBottom: '16px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.01em', marginBottom: '4px' }}>
-                Credit pool mode
+                {tt('org.creditPoolMode')}
               </h3>
               <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-                {poolMode === 'shared'
-                  ? 'All members share one minute pool.'
-                  : 'Each member has an individual minute allocation.'}
+                {poolMode === 'shared' ? tt('org.sharedPoolDesc') : tt('org.individualPoolDesc')}
               </p>
             </div>
             <div className="glass-subtle" style={{ padding: '14px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)', display: 'block', marginBottom: '2px' }}>
-                  {poolMode === 'shared' ? 'Shared pool' : 'Individual limits'}
+                  {poolMode === 'shared' ? tt('org.sharedPool') : tt('org.individualLimits')}
                 </span>
                 <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
-                  {poolMode === 'shared' ? 'Switch to set per-member limits' : 'Switch to share pool equally'}
+                  {poolMode === 'shared' ? tt('org.switchToIndividual') : tt('org.switchToShared')}
                 </span>
               </div>
               <button
@@ -492,7 +505,7 @@ export default function OrganizationSettingsPage() {
                 aria-checked={poolMode === 'individual'}
                 onClick={handlePoolModeToggle}
                 disabled={isTogglingMode}
-                aria-label="Toggle credit pool mode"
+                aria-label={tt('org.togglePoolMode')}
                 style={{
                   width: '52px', height: '30px', borderRadius: '15px',
                   backgroundColor: poolMode === 'individual' ? 'var(--color-primary)' : 'var(--color-neutral-300)',
@@ -517,7 +530,7 @@ export default function OrganizationSettingsPage() {
         <div className="glass" style={{ padding: '20px', borderRadius: '20px', marginBottom: '16px' }}>
           <div style={{ marginBottom: '16px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
-              Manage
+              {tt('settings.manage')}
             </h3>
           </div>
 
@@ -527,7 +540,7 @@ export default function OrganizationSettingsPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <UsersIcon />
                 <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                  Members
+                  {tt('org.members')}
                 </span>
               </div>
               <ArrowIcon />
@@ -540,7 +553,7 @@ export default function OrganizationSettingsPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <BarChartIcon />
                 <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                  Usage dashboard
+                  {tt('org.usageDashboard')}
                 </span>
               </div>
               <ArrowIcon />
@@ -571,7 +584,7 @@ export default function OrganizationSettingsPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <CreditCardIcon />
                 <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                  Billing portal
+                  {tt('org.billingPortal')}
                 </span>
               </div>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.5 }}>

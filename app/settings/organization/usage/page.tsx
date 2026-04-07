@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useOrganization } from '@clerk/nextjs';
 import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
+import { useLocale } from '@/hooks/useLocale';
+import { useT } from '@/lib/i18n';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -22,8 +24,8 @@ function formatMinutes(min: number): string {
   return `${(min / 60).toFixed(1)} h`;
 }
 
-function formatDate(ts: number): string {
-  return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+function formatDate(ts: number, dateLocale: string): string {
+  return new Date(ts).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 // ─── Usage progress bar ────────────────────────────────────────────────────────
@@ -35,6 +37,8 @@ function OrgUsageCard({
   cycleStart,
   cycleEnd,
   tier,
+  tt,
+  dateLocale,
 }: {
   minutesUsed: number;
   minutesTotal: number;
@@ -42,6 +46,8 @@ function OrgUsageCard({
   cycleStart?: number;
   cycleEnd?: number;
   tier?: string;
+  tt: (key: Parameters<ReturnType<typeof useT>>[0], params?: Record<string, string>) => string;
+  dateLocale: string;
 }) {
   const pct = minutesTotal > 0 ? Math.min((minutesUsed / minutesTotal) * 100, 100) : 0;
   const remaining = Math.max(minutesTotal - minutesUsed, 0);
@@ -56,7 +62,7 @@ function OrgUsageCard({
     <div className="glass" style={{ padding: '20px', borderRadius: '20px', marginBottom: '16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
         <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
-          This cycle
+          {tt('org.thisCycle')}
         </h3>
         {tier && (
           <span style={{
@@ -76,7 +82,7 @@ function OrgUsageCard({
             {formatMinutes(minutesUsed)}
           </span>
           <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', display: 'block', marginTop: '4px' }}>
-            used
+            {tt('org.statUsed')}
           </span>
         </div>
         <div style={{ flex: 1, textAlign: 'center' }}>
@@ -84,7 +90,7 @@ function OrgUsageCard({
             {isOverage ? '+' + formatMinutes(minutesUsed - minutesTotal) : formatMinutes(remaining)}
           </span>
           <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', display: 'block', marginTop: '4px' }}>
-            {isOverage ? 'overage' : 'remaining'}
+            {isOverage ? tt('org.statOverage') : tt('org.statRemaining')}
           </span>
         </div>
         <div style={{ flex: 1, textAlign: 'right' }}>
@@ -92,7 +98,7 @@ function OrgUsageCard({
             {formatMinutes(minutesTotal)}
           </span>
           <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', display: 'block', marginTop: '4px' }}>
-            included
+            {tt('org.statIncluded')}
           </span>
         </div>
       </div>
@@ -101,11 +107,11 @@ function OrgUsageCard({
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
           <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
-            {pct.toFixed(0)}% used
+            {tt('org.pctUsed', { pct: pct.toFixed(0) })}
           </span>
           {rolloverMinutes > 0 && (
             <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
-              +{formatMinutes(rolloverMinutes)} rollover
+              {tt('org.rolloverStat', { n: formatMinutes(rolloverMinutes) })}
             </span>
           )}
         </div>
@@ -124,10 +130,10 @@ function OrgUsageCard({
           paddingTop: '12px', borderTop: '1px solid var(--glass-border)',
         }}>
           <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
-            Started {formatDate(cycleStart)}
+            {tt('org.startedDate', { date: formatDate(cycleStart, dateLocale) })}
           </span>
           <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
-            Resets {formatDate(cycleEnd)}
+            {tt('org.resetsDate', { date: formatDate(cycleEnd, dateLocale) })}
           </span>
         </div>
       )}
@@ -201,6 +207,9 @@ interface MemberUsage {
 export default function UsageDashboardPage() {
   const router = useRouter();
   const { organization } = useOrganization();
+  const { locale } = useLocale();
+  const tt = useT(locale);
+  const dateLocale = locale === 'nb' ? 'nb-NO' : 'en-US';
 
   const convexOrg = useQuery(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -250,11 +259,11 @@ export default function UsageDashboardPage() {
       }}>
         <button onClick={() => router.back()}
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
-          aria-label="Go back">
+          aria-label={tt('settings.goBack')}>
           <BackIcon />
         </button>
         <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
-          Usage dashboard
+          {tt('org.usageDashboard')}
         </h1>
       </header>
 
@@ -276,15 +285,15 @@ export default function UsageDashboardPage() {
           </div>
         ) : !organization ? (
           <div className="glass" style={{ padding: '32px 24px', borderRadius: '20px', textAlign: 'center' }}>
-            <p style={{ fontSize: '15px', color: 'var(--color-text-secondary)' }}>No organization selected.</p>
+            <p style={{ fontSize: '15px', color: 'var(--color-text-secondary)' }}>{tt('org.noOrgSelected')}</p>
           </div>
         ) : !convexOrg ? (
           <div className="glass" style={{ padding: '32px 24px', borderRadius: '20px', textAlign: 'center' }}>
             <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-              Usage data not yet available
+              {tt('org.usageDataUnavailable')}
             </p>
             <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
-              Organization data syncs automatically. Check back after your first session or subscription activation.
+              {tt('org.usageDataSyncs')}
             </p>
           </div>
         ) : (
@@ -297,6 +306,8 @@ export default function UsageDashboardPage() {
               cycleStart={subData?.currentBillingCycleStart}
               cycleEnd={subData?.currentBillingCycleEnd}
               tier={subscription?.tier}
+              tt={tt}
+              dateLocale={dateLocale}
             />
 
             {/* No subscription notice */}
@@ -306,7 +317,7 @@ export default function UsageDashboardPage() {
                 borderLeft: '3px solid var(--color-primary)',
               }}>
                 <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-                  Activate a subscription plan to get included minutes and see detailed usage stats.
+                  {tt('org.activateSubForMinutes')}
                 </p>
               </div>
             )}
@@ -315,7 +326,7 @@ export default function UsageDashboardPage() {
             {sortedMembers.length > 0 && (
               <div className="glass" style={{ padding: '20px', borderRadius: '20px', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)', letterSpacing: '-0.01em', marginBottom: '20px' }}>
-                  Per-member usage
+                  {tt('org.perMemberUsage')}
                 </h3>
                 {sortedMembers.map((m) => (
                   <MemberUsageRow
@@ -337,11 +348,11 @@ export default function UsageDashboardPage() {
                 borderLeft: '3px solid var(--color-error)',
               }}>
                 <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-error)', marginBottom: '4px' }}>
-                  Overage active
+                  {tt('org.overageActive')}
                 </p>
                 <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-                  {formatMinutes(minutesUsed - minutesTotal)} over limit.
-                  {subscription && ` Charged at ${subscription.overageRateNok} NOK/min on next invoice.`}
+                  {tt('org.overLimitDesc', { n: formatMinutes(minutesUsed - minutesTotal) })}
+                  {subscription && ` ${tt('org.chargedAtRate', { rate: String(subscription.overageRateNok) })}`}
                 </p>
               </div>
             )}

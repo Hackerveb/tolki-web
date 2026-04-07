@@ -6,6 +6,8 @@ import { useQuery } from 'convex/react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { api } from '@/convex/_generated/api';
+import { useLocale } from '@/hooks/useLocale';
+import { useT } from '@/lib/i18n';
 
 const BackIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -33,29 +35,34 @@ const ExternalLinkIcon = () => (
 
 const TIER_LABELS: Record<string, string> = {
   free: 'Free',
-  active: 'Aktiv',
+  active: 'Active',
   enterprise: 'Enterprise',
 };
 
-const STATUS_STYLES: Record<string, { bg: string; label: string }> = {
-  active: { bg: 'var(--color-success)', label: 'Aktiv' },
-  trialing: { bg: 'var(--color-info)', label: 'Prøveperiode' },
-  past_due: { bg: 'var(--color-warning)', label: 'Forfalt' },
-  canceled: { bg: 'var(--color-error)', label: 'Avsluttet' },
+const STATUS_BG: Record<string, string> = {
+  active: 'var(--color-success)',
+  trialing: 'var(--color-info)',
+  past_due: 'var(--color-warning)',
+  canceled: 'var(--color-error)',
 };
 
-function formatDate(ts: number) {
-  return new Date(ts).toLocaleDateString('nb-NO', {
+const STATUS_I18N_KEYS: Record<string, 'billing.statusActive' | 'billing.statusTrialing' | 'billing.statusPastDue' | 'billing.statusCanceled'> = {
+  active: 'billing.statusActive',
+  trialing: 'billing.statusTrialing',
+  past_due: 'billing.statusPastDue',
+  canceled: 'billing.statusCanceled',
+};
+
+const TX_BG: Record<string, string> = {
+  completed: 'var(--color-success)',
+  pending: 'var(--color-warning)',
+  failed: 'var(--color-error)',
+};
+
+function formatDate(ts: number, dateLocale: string) {
+  return new Date(ts).toLocaleDateString(dateLocale, {
     day: 'numeric',
     month: 'long',
-    year: 'numeric',
-  });
-}
-
-function formatDateFromMs(ts: number) {
-  return new Date(ts).toLocaleDateString('nb-NO', {
-    month: 'short',
-    day: 'numeric',
     year: 'numeric',
   });
 }
@@ -81,10 +88,12 @@ function MinutesUsageBar({
   used,
   total,
   rollover,
+  tt,
 }: {
   used: number;
   total: number;
   rollover: number;
+  tt: (key: Parameters<ReturnType<typeof useT>>[0], params?: Record<string, string>) => string;
 }) {
   const included = total - rollover;
   const pct = total > 0 ? Math.min((used / total) * 100, 100) : 0;
@@ -106,7 +115,7 @@ function MinutesUsageBar({
         aria-valuenow={Math.round(pct)}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={`${Math.round(pct)}% av minutter brukt`}
+        aria-label={tt('billing.progressLabel', { pct: String(Math.round(pct)) })}
       >
         <div
           style={{
@@ -126,18 +135,18 @@ function MinutesUsageBar({
       {/* Labels */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
-          {Math.round(used)} / {Math.round(total)} min brukt
+          {tt('billing.minutesProgress', { used: String(Math.round(used)), total: String(Math.round(total)) })}
         </span>
         {rollover > 0 && (
           <span style={{ fontSize: '12px', color: 'var(--color-text-tertiary)' }}>
-            inkl. {Math.round(rollover)} min overført
+            {tt('billing.rolloverIncluded', { n: String(Math.round(rollover)) })}
           </span>
         )}
       </div>
 
       {included > 0 && (
         <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '4px' }}>
-          {Math.round(included)} inkluderte minutter per syklus
+          {tt('billing.includedPerCycle', { n: String(Math.round(included)) })}
         </p>
       )}
     </div>
@@ -155,20 +164,29 @@ interface CreditPurchase {
   description: string;
 }
 
-const PURCHASE_STATUS_STYLES: Record<string, { bg: string; label: string }> = {
-  completed: { bg: 'var(--color-success)', label: 'Fullført' },
-  pending: { bg: 'var(--color-warning)', label: 'Venter' },
-  failed: { bg: 'var(--color-error)', label: 'Feilet' },
-};
-
-function TransactionItem({ transaction }: { transaction: CreditPurchase }) {
-  const style = PURCHASE_STATUS_STYLES[transaction.status] ?? PURCHASE_STATUS_STYLES.completed;
+function TransactionItem({
+  transaction,
+  tt,
+  dateLocale,
+}: {
+  transaction: CreditPurchase;
+  tt: ReturnType<typeof useT>;
+  dateLocale: string;
+}) {
+  const txLabels: Record<string, string> = {
+    completed: tt('billing.txCompleted'),
+    pending: tt('billing.txPending'),
+    failed: tt('billing.txFailed'),
+  };
+  const bg = TX_BG[transaction.status] ?? TX_BG.completed;
+  const label = txLabels[transaction.status] ?? transaction.status;
+  const dateStr = new Date(transaction.date).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' });
   return (
     <div className="glass" style={{ marginBottom: '12px', padding: '16px', borderRadius: '16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ flex: 1 }}>
           <p style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginBottom: '4px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-            {formatDateFromMs(transaction.date)}
+            {dateStr}
           </p>
           <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
             {transaction.description}
@@ -179,10 +197,10 @@ function TransactionItem({ transaction }: { transaction: CreditPurchase }) {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: '16px', gap: '8px' }}>
           <p style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-            {transaction.amount.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr
+            {transaction.amount.toLocaleString(dateLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr
           </p>
-          <div style={{ paddingTop: '3px', paddingBottom: '3px', paddingLeft: '10px', paddingRight: '10px', borderRadius: '99px', fontSize: '10px', fontWeight: 700, color: '#FFFFFF', backgroundColor: style.bg, letterSpacing: '0.3px' }}>
-            {style.label}
+          <div style={{ paddingTop: '3px', paddingBottom: '3px', paddingLeft: '10px', paddingRight: '10px', borderRadius: '99px', fontSize: '10px', fontWeight: 700, color: '#FFFFFF', backgroundColor: bg, letterSpacing: '0.3px' }}>
+            {label}
           </div>
         </div>
       </div>
@@ -195,6 +213,9 @@ function TransactionItem({ transaction }: { transaction: CreditPurchase }) {
 export default function BillingPage() {
   const router = useRouter();
   const { user } = useUser();
+  const { locale } = useLocale();
+  const tt = useT(locale);
+  const dateLocale = locale === 'nb' ? 'nb-NO' : 'en-US';
 
   // User-level subscription
   const subscription = useQuery(
@@ -233,7 +254,7 @@ export default function BillingPage() {
     });
 
     if (!res.ok) {
-      alert('Kunne ikke åpne faktureringsportalen. Prøv igjen.');
+      alert(tt('billing.cannotOpenPortal'));
       return;
     }
 
@@ -241,8 +262,9 @@ export default function BillingPage() {
     window.location.href = url;
   };
 
-  const subStatus = subscription
-    ? (STATUS_STYLES[subscription.status] ?? STATUS_STYLES.active)
+  const subStatusBg = subscription ? (STATUS_BG[subscription.status] ?? STATUS_BG.active) : null;
+  const subStatusLabel = subscription
+    ? (STATUS_I18N_KEYS[subscription.status] ? tt(STATUS_I18N_KEYS[subscription.status]) : subscription.status)
     : null;
 
   return (
@@ -270,12 +292,12 @@ export default function BillingPage() {
         <button
           onClick={() => router.back()}
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
-          aria-label="Gå tilbake"
+          aria-label={tt('settings.goBack')}
         >
           <BackIcon />
         </button>
         <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
-          Abonnement og fakturering
+          {tt('billing.title')}
         </h1>
       </header>
 
@@ -297,7 +319,7 @@ export default function BillingPage() {
               className="animate-spin"
               style={{ width: '36px', height: '36px', border: '3px solid var(--glass-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%' }}
             />
-            <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>Laster...</p>
+            <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>{tt('billing.loading')}</p>
           </div>
         ) : (
           <>
@@ -312,16 +334,16 @@ export default function BillingPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                     <div>
                       <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '4px' }}>
-                        Gjeldende plan
+                        {tt('billing.currentPlan')}
                       </p>
                       <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--color-text-primary)' }}>
                         {TIER_LABELS[subscription.tier] ?? subscription.tier}
                       </h2>
                       <p style={{ fontSize: '13px', color: 'var(--color-text-tertiary)', marginTop: '2px' }}>
-                        {subscription.billingInterval === 'monthly' ? 'Månedlig fakturering' : 'Årlig fakturering'}
+                        {subscription.billingInterval === 'monthly' ? tt('billing.monthlyBilling') : tt('billing.annualBilling')}
                       </p>
                     </div>
-                    {subStatus && (
+                    {subStatusBg && subStatusLabel && (
                       <div
                         style={{
                           paddingTop: '4px',
@@ -329,13 +351,13 @@ export default function BillingPage() {
                           paddingLeft: '12px',
                           paddingRight: '12px',
                           borderRadius: '99px',
-                          backgroundColor: subStatus.bg,
+                          backgroundColor: subStatusBg,
                           fontSize: '12px',
                           fontWeight: 700,
                           color: '#FFFFFF',
                         }}
                       >
-                        {subStatus.label}
+                        {subStatusLabel}
                       </div>
                     )}
                   </div>
@@ -346,10 +368,10 @@ export default function BillingPage() {
                     style={{ padding: '12px 14px', borderRadius: '12px', marginBottom: '16px' }}
                   >
                     <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginBottom: '2px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                      Faktureringsperiode
+                      {tt('billing.billingPeriod')}
                     </p>
                     <p style={{ fontSize: '14px', color: 'var(--color-text-primary)', fontWeight: 500 }}>
-                      {formatDate(subscription.currentPeriodStart)} – {formatDate(subscription.currentPeriodEnd)}
+                      {formatDate(subscription.currentPeriodStart, dateLocale)} – {formatDate(subscription.currentPeriodEnd, dateLocale)}
                     </p>
                   </div>
 
@@ -358,11 +380,12 @@ export default function BillingPage() {
                     used={subscription.user.minutesUsedThisCycle}
                     total={subscription.user.totalMinutesAvailable}
                     rollover={subscription.user.rolloverMinutes}
+                    tt={tt}
                   />
 
                   {/* Overage rate */}
                   <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '10px' }}>
-                    Overskridelsespris: {subscription.overageRateNok} kr/min
+                    {tt('billing.overageRate', { rate: String(subscription.overageRateNok) })}
                   </p>
                 </div>
 
@@ -374,7 +397,7 @@ export default function BillingPage() {
                     style={{ padding: '16px', borderRadius: '16px', marginBottom: '16px', cursor: 'pointer' }}
                   >
                     <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                      Administrer abonnement
+                      {tt('billing.manageSubscription')}
                     </span>
                     <ExternalLinkIcon />
                   </button>
@@ -387,7 +410,7 @@ export default function BillingPage() {
                     style={{ padding: '16px', borderRadius: '16px', marginBottom: '24px', cursor: 'pointer' }}
                   >
                     <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-primary)' }}>
-                      Endre plan
+                      {tt('billing.changePlan')}
                     </span>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                       <polyline points="9 18 15 12 9 6" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -417,10 +440,10 @@ export default function BillingPage() {
                   📋
                 </div>
                 <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
-                  Ingen aktiv abonnementsplan
+                  {tt('billing.noPlan')}
                 </h3>
                 <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
-                  Fra 990 kr/mnd. Ingen bestilling. Ingen ventetid.
+                  {tt('billing.startingFrom')}
                 </p>
                 <Link href="/subscribe">
                   <button
@@ -436,7 +459,7 @@ export default function BillingPage() {
                       boxShadow: 'var(--glass-glow-primary)',
                     }}
                   >
-                    Se abonnementsplaner
+                    {tt('billing.viewPlans')}
                   </button>
                 </Link>
               </div>
@@ -444,11 +467,11 @@ export default function BillingPage() {
 
             {/* ── Credit purchase history ── */}
             <h3 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-tertiary)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-              Transaksjonshistorikk
+              {tt('billing.transactionHistory')}
             </h3>
 
             {transactions.length > 0 ? (
-              transactions.map((t) => <TransactionItem key={t.id} transaction={t} />)
+              transactions.map((t) => <TransactionItem key={t.id} transaction={t} tt={tt} dateLocale={dateLocale} />)
             ) : (
               <div
                 className="glass"
@@ -458,10 +481,10 @@ export default function BillingPage() {
                   💳
                 </div>
                 <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                  Ingen transaksjoner ennå
+                  {tt('billing.noTransactions')}
                 </p>
                 <p style={{ fontSize: '13px', color: 'var(--color-text-tertiary)', lineHeight: 1.5 }}>
-                  Kjøpshistorikken din vises her.
+                  {tt('billing.purchaseHistoryHere')}
                 </p>
               </div>
             )}
