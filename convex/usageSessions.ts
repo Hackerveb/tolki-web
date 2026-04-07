@@ -33,11 +33,16 @@ export const startSession = mutation({
       throw new Error("User not found");
     }
 
-    // Check if user belongs to an org with available minutes
-    const membership = await ctx.db
+    // Check if user belongs to an org with available minutes.
+    // Constraint: one org max per user. If multiple found, use first and warn.
+    const allMemberships = await ctx.db
       .query("memberships")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .first();
+      .collect();
+    if (allMemberships.length > 1) {
+      console.warn(`User ${user._id} has ${allMemberships.length} org memberships — expected max 1`);
+    }
+    const membership = allMemberships[0] ?? null;
 
     let orgId: Id<"organizations"> | undefined;
 
@@ -380,71 +385,6 @@ export const updateFractionalCredits = mutation({
         billedToOrg: false,
       };
     }
-  },
-});
-
-// Legacy function - kept for backwards compatibility but not used
-export const incrementSessionCredits = mutation({
-  args: {
-    clerkId: v.string(),
-  },
-  handler: async (ctx, args) => {
-    await verifyIdentity(ctx, args.clerkId);
-
-    // Get user
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    // Get active session
-    const activeSession = await ctx.db
-      .query("usageSessions")
-      .withIndex("by_active", (q) =>
-        q.eq("userId", user._id).eq("isActive", true)
-      )
-      .first();
-
-    if (!activeSession) {
-      throw new Error("No active session found");
-    }
-
-    // Legacy: 60 seconds = 1 credit (matches our current system of 1 credit/minute)
-    const secondsToAdd = 60;
-    const creditsToDeduct = (secondsToAdd / 60) * 1;
-
-    // Check if user has enough credits
-    if (user.credits < creditsToDeduct) {
-      throw new Error("Insufficient credits");
-    }
-
-    // Update seconds used
-    const currentSecondsUsed = activeSession.secondsUsed || 0;
-    const newSecondsUsed = currentSecondsUsed + secondsToAdd;
-    const newCreditsUsed = Math.round((newSecondsUsed / 60) * 1 * 100) / 100;
-
-    // Deduct credits from user
-    const newBalance = Math.round((user.credits - creditsToDeduct) * 100) / 100;
-    await ctx.db.patch(user._id, {
-      credits: newBalance,
-      lastActive: Date.now(),
-    });
-
-    // Update session
-    await ctx.db.patch(activeSession._id, {
-      secondsUsed: newSecondsUsed,
-      creditsUsed: newCreditsUsed,
-    });
-
-    return {
-      creditsRemaining: newBalance,
-      sessionCreditsUsed: newCreditsUsed,
-      secondsUsed: newSecondsUsed,
-    };
   },
 });
 

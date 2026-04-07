@@ -1,38 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
-
-// Helper: verify caller is authenticated
-async function requireAuth(ctx: { auth: { getUserIdentity: () => Promise<any> } }) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) throw new Error("Unauthorized");
-  return identity;
-}
-
-// Helper: look up Convex user by Clerk subject
-async function getUserByClerkId(ctx: any, clerkId: string) {
-  return ctx.db
-    .query("users")
-    .withIndex("by_clerk_id", (q: any) => q.eq("clerkId", clerkId))
-    .first();
-}
-
-// Helper: verify caller is owner or admin of the org
-async function requireOrgAdminOrOwner(ctx: any, orgId: any) {
-  const identity = await requireAuth(ctx);
-  const user = await getUserByClerkId(ctx, identity.subject);
-  if (!user) throw new Error("User not found");
-
-  const membership = await ctx.db
-    .query("memberships")
-    .withIndex("by_org_and_user", (q: any) => q.eq("orgId", orgId).eq("userId", user._id))
-    .first();
-
-  if (!membership || (membership.role !== "owner" && membership.role !== "admin")) {
-    throw new Error("Forbidden: owner or admin required");
-  }
-
-  return { identity, user, membership };
-}
+import { requireAuth, requireOrgAdminOrOwner, requireOrgMember } from "./lib/auth";
 
 // ─── Internal mutations (called from Clerk webhooks) ────────────────────────
 
@@ -53,41 +21,6 @@ export const addMember = internalMutation({
 
     if (existing) {
       // Update role/clerkMembershipId if changed
-      if (existing.role !== args.role || (args.clerkMembershipId && existing.clerkMembershipId !== args.clerkMembershipId)) {
-        await ctx.db.patch(existing._id, {
-          role: args.role,
-          ...(args.clerkMembershipId && { clerkMembershipId: args.clerkMembershipId }),
-        });
-      }
-      return existing._id;
-    }
-
-    return ctx.db.insert("memberships", {
-      orgId: args.orgId,
-      userId: args.userId,
-      clerkMembershipId: args.clerkMembershipId,
-      role: args.role,
-      minutesUsedThisCycle: 0,
-      joinedAt: Date.now(),
-    });
-  },
-});
-
-// Upsert membership from Clerk webhook — alias kept for webhook handler clarity
-export const syncMembership = internalMutation({
-  args: {
-    orgId: v.id("organizations"),
-    userId: v.id("users"),
-    clerkMembershipId: v.optional(v.string()),
-    role: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
-  },
-  handler: async (ctx, args) => {
-    const existing = await ctx.db
-      .query("memberships")
-      .withIndex("by_org_and_user", (q) => q.eq("orgId", args.orgId).eq("userId", args.userId))
-      .first();
-
-    if (existing) {
       if (existing.role !== args.role || (args.clerkMembershipId && existing.clerkMembershipId !== args.clerkMembershipId)) {
         await ctx.db.patch(existing._id, {
           role: args.role,
@@ -168,12 +101,12 @@ export const resetMemberMinutes = internalMutation({
 
 // ─── Client-callable mutations (admin/owner only) ───────────────────────────
 
-// Update a member's role (owner/admin only)
+// Update a member's role (owner/admin only). Cannot promote to owner or change the owner's role.
 export const updateMemberRole = mutation({
   args: {
     orgId: v.id("organizations"),
     targetUserId: v.id("users"),
-    role: v.union(v.literal("owner"), v.literal("admin"), v.literal("member")),
+    role: v.union(v.literal("admin"), v.literal("member")),
   },
   handler: async (ctx, args) => {
     await requireOrgAdminOrOwner(ctx, args.orgId);
@@ -184,6 +117,7 @@ export const updateMemberRole = mutation({
       .first();
 
     if (!membership) throw new Error("Membership not found");
+    if (membership.role === "owner") throw new Error("Cannot change the owner's role");
 
     await ctx.db.patch(membership._id, { role: args.role });
   },
@@ -212,11 +146,11 @@ export const setMemberAllocation = mutation({
 
 // ─── Client-callable queries ─────────────────────────────────────────────────
 
-// List all members of an org
+// List all members of an org (caller must be a member)
 export const getOrgMembers = query({
   args: { orgId: v.id("organizations") },
   handler: async (ctx, args) => {
-    await requireAuth(ctx);
+    await requireOrgMember(ctx, args.orgId);
 
     const memberships = await ctx.db
       .query("memberships")
@@ -245,11 +179,11 @@ export const getOrgMembers = query({
   },
 });
 
-// Get per-member minutes usage for the current cycle
+// Get per-member minutes usage for the current cycle (caller must be a member)
 export const getMemberUsage = query({
   args: { orgId: v.id("organizations") },
   handler: async (ctx, args) => {
-    await requireAuth(ctx);
+    await requireOrgMember(ctx, args.orgId);
 
     const memberships = await ctx.db
       .query("memberships")

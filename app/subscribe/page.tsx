@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { motion } from 'motion/react';
 import { useQuery } from 'convex/react';
@@ -10,6 +10,7 @@ import { api } from '@/convex/_generated/api';
 import { useLocale } from '@/hooks/useLocale';
 import { useT } from '@/lib/i18n';
 import { useUserTier } from '@/hooks/useUserTier';
+import { useToast } from '@/hooks/useToast';
 
 // ─── Pricing data ────────────────────────────────────────────────────────────
 
@@ -375,20 +376,6 @@ function PlanComparisonTable({ interval, locale, tt }: { interval: BillingInterv
   );
 }
 
-// ─── Cancel redirect handler ──────────────────────────────────────────────────
-
-function CancelHandler() {
-  const searchParams = useSearchParams();
-  useEffect(() => {
-    if (searchParams.get('canceled')) {
-      // Silently handled — user just sees the page again
-    }
-  }, [searchParams]);
-  return null;
-}
-
-// ─── Main page ────────────────────────────────────────────────────────────────
-
 // ─── Org member view ──────────────────────────────────────────────────────────
 
 function OrgMemberView({ onBack, tt }: { onBack: () => void; tt: ReturnType<typeof useT> }) {
@@ -464,6 +451,7 @@ function SubscribePage() {
   const { user } = useUser();
   const { locale } = useLocale();
   const tt = useT(locale);
+  const { toast } = useToast();
   const { tier, orgId, orgName, isLoaded } = useUserTier();
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('active');
   const [interval, setInterval] = useState<BillingInterval>('monthly');
@@ -478,7 +466,7 @@ function SubscribePage() {
   // Org admins: query by orgId
   const orgSubscription = useQuery(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (api as any).subscriptions.getSubscriptionByClerkOrgId,
+    api.subscriptions.getSubscriptionByClerkOrgId,
     tier === 'org_admin' && orgId ? { clerkOrgId: orgId } : 'skip'
   );
 
@@ -513,7 +501,7 @@ function SubscribePage() {
       window.location.href = url;
     } catch (error) {
       console.error('Subscribe error:', error);
-      alert(tt('subscribe.checkoutFailed'));
+      toast.error(tt('subscribe.checkoutFailed'));
       setIsCheckingOut(false);
     }
   };
@@ -543,10 +531,6 @@ function SubscribePage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden glass-page">
-      <Suspense fallback={null}>
-        <CancelHandler />
-      </Suspense>
-
       {/* Header */}
       <header
         className="flex items-center glass-strong"

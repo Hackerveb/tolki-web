@@ -7,8 +7,6 @@ import { fetchMutation, fetchQuery } from 'convex/nextjs';
 import { internal } from '@/convex/_generated/api';
 
 // ─── Internal function references ────────────────────────────────────────────
-// The generated API types only include modules deployed before TOL-119.
-// These references resolve correctly at runtime via the Convex deploy key.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const internalOrgs = (internal as any).organizations;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -410,6 +408,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     });
 
     // Reset per-member usage counters for the new cycle
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const internalMemberships = (internal as any).memberships;
     await fetchMutation(internalMemberships.resetMemberMinutes, { orgId: convexSub.orgId });

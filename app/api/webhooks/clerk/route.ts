@@ -5,6 +5,7 @@ import { fetchMutation, fetchQuery } from 'convex/nextjs';
 import { internal } from '@/convex/_generated/api';
 
 // ─── Internal function references ────────────────────────────────────────────
+// fetchQuery/fetchMutation require `as any` for internal function references
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const internalOrgs = (internal as any).organizations;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        await fetchMutation(internalMembers.syncMembership, {
+        await fetchMutation(internalMembers.addMember, {
           orgId: org._id,
           userId: user._id,
           clerkMembershipId: membership.id,

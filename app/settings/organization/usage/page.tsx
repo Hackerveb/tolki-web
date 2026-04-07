@@ -212,20 +212,20 @@ export default function UsageDashboardPage() {
   const dateLocale = locale === 'nb' ? 'nb-NO' : 'en-US';
 
   const convexOrg = useQuery(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (api as any).organizations.getOrganizationByClerkId,
+
+    api.organizations.getOrganizationByClerkId,
     organization?.id ? { clerkOrgId: organization.id } : 'skip'
   );
 
   const subscription = useQuery(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (api as any).subscriptions.getSubscriptionByClerkOrgId,
+
+    api.subscriptions.getSubscriptionByClerkOrgId,
     organization?.id ? { clerkOrgId: organization.id } : 'skip'
   );
 
   const members = useQuery(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (api as any).memberships.getOrgMembers,
+
+    api.memberships.getOrgMembers,
     convexOrg?._id ? { orgId: convexOrg._id } : 'skip'
   ) as MemberUsage[] | null | undefined;
 
@@ -233,7 +233,8 @@ export default function UsageDashboardPage() {
 
   const subData = subscription?.org ?? convexOrg;
   const minutesUsed = subData?.minutesUsedThisCycle ?? 0;
-  const minutesTotal = subData?.totalMinutesAvailable ?? 0;
+  // Total budget = included minutes from plan + rollover (not the remaining pool)
+  const minutesTotal = (subscription?.includedMinutes ?? 0) + (subData?.rolloverMinutes ?? 0);
   const rollover = subData?.rolloverMinutes ?? 0;
 
   // Sort members by usage descending

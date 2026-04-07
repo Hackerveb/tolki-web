@@ -140,6 +140,13 @@ const translations = {
   'org.overageActive': { nb: 'Overforbruk aktivt', en: 'Overage active' },
   'org.overLimitDesc': { nb: '{n} over grensen.', en: '{n} over limit.' },
   'org.chargedAtRate': { nb: 'Faktureres til {rate} NOK/min på neste faktura.', en: 'Charged at {rate} NOK/min on next invoice.' },
+  'org.removeMember': { nb: 'Fjern', en: 'Remove' },
+  'org.confirmRemoveTitle': { nb: 'Fjern medlem', en: 'Remove member' },
+  'org.confirmRemoveMessage': { nb: 'Er du sikker på at du vil fjerne {name} fra organisasjonen? De vil miste tilgang umiddelbart.', en: 'Are you sure you want to remove {name} from the organization? They will lose access immediately.' },
+  'org.memberRemoved': { nb: 'Medlem fjernet', en: 'Member removed' },
+  'org.confirmPoolModeTitle': { nb: 'Endre kredittspolemodus', en: 'Change credit pool mode' },
+  'org.confirmPoolModeSharedMsg': { nb: 'Bytte til delt pool betyr at alle medlemmer deler fra den samme minuttspoolen. Er du sikker?', en: 'Switching to shared pool means all members draw from the same minute pool. Are you sure?' },
+  'org.confirmPoolModeIndividualMsg': { nb: 'Bytte til individuell modus lar deg sette minuttgrenser per medlem. Er du sikker?', en: 'Switching to individual mode lets you set per-member minute limits. Are you sure?' },
 
   // ── Billing page ───────────────────────────────────────────
   'billing.title': { nb: 'Abonnement og fakturering', en: 'Subscription & Billing' },

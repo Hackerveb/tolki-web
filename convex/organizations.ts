@@ -1,38 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation, internalQuery } from "./_generated/server";
-
-// Helper: verify caller is authenticated
-async function requireAuth(ctx: { auth: { getUserIdentity: () => Promise<any> } }) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) throw new Error("Unauthorized");
-  return identity;
-}
-
-// Helper: look up user from Convex by Clerk subject
-async function getUserByClerkId(ctx: any, clerkId: string) {
-  return ctx.db
-    .query("users")
-    .withIndex("by_clerk_id", (q: any) => q.eq("clerkId", clerkId))
-    .first();
-}
-
-// Helper: verify caller is an owner or admin of the given org
-async function requireOrgAdminOrOwner(ctx: any, orgId: any) {
-  const identity = await requireAuth(ctx);
-  const user = await getUserByClerkId(ctx, identity.subject);
-  if (!user) throw new Error("User not found");
-
-  const membership = await ctx.db
-    .query("memberships")
-    .withIndex("by_org_and_user", (q: any) => q.eq("orgId", orgId).eq("userId", user._id))
-    .first();
-
-  if (!membership || (membership.role !== "owner" && membership.role !== "admin")) {
-    throw new Error("Forbidden: owner or admin required");
-  }
-
-  return { identity, user, membership };
-}
+import { requireAuth, getUserByClerkId, requireOrgAdminOrOwner, requireOrgMember } from "./lib/auth";
 
 // ─── Internal mutations (called from Clerk webhooks) ────────────────────────
 
@@ -237,15 +205,18 @@ export const resetRolloverOnDowngrade = internalMutation({
 
 // ─── Client-callable queries ────────────────────────────────────────────────
 
-// Get org by Clerk org ID
+// Get org by Clerk org ID (caller must be a member)
 export const getOrganizationByClerkId = query({
   args: { clerkOrgId: v.string() },
   handler: async (ctx, args) => {
-    await requireAuth(ctx);
-    return ctx.db
+    const org = await ctx.db
       .query("organizations")
       .withIndex("by_clerk_org_id", (q) => q.eq("clerkOrgId", args.clerkOrgId))
       .first();
+    if (!org) return null;
+
+    await requireOrgMember(ctx, org._id);
+    return org;
   },
 });
 

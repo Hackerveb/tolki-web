@@ -378,7 +378,7 @@ export default function BillingPage() {
                   {/* Minutes usage */}
                   <MinutesUsageBar
                     used={subscription.user.minutesUsedThisCycle}
-                    total={subscription.user.totalMinutesAvailable}
+                    total={(subscription.includedMinutes ?? 0) + subscription.user.rolloverMinutes}
                     rollover={subscription.user.rolloverMinutes}
                     tt={tt}
                   />

@@ -8,6 +8,7 @@ import { api } from '@/convex/_generated/api';
 import { Id } from '@/convex/_generated/dataModel';
 import { useLocale } from '@/hooks/useLocale';
 import { useT } from '@/lib/i18n';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -65,14 +66,18 @@ function MemberCard({
   isAdmin,
   poolMode,
   orgId,
+  currentUserClerkId,
   onAllocationSave,
+  onRemove,
   tt,
 }: {
   member: MemberData;
   isAdmin: boolean;
   poolMode: string;
   orgId: Id<'organizations'>;
+  currentUserClerkId?: string;
   onAllocationSave: (userId: Id<'users'>, minutes: number | undefined) => Promise<void>;
+  onRemove: (member: MemberData) => void;
   tt: (key: Parameters<ReturnType<typeof useT>>[0], params?: Record<string, string>) => string;
 }) {
   const [editingAllocation, setEditingAllocation] = useState(false);
@@ -80,6 +85,9 @@ function MemberCard({
     member.minuteAllocation?.toString() ?? ''
   );
   const [saving, setSaving] = useState(false);
+
+  // Can remove: admin/owner can remove non-owner members (but not themselves)
+  const canRemove = isAdmin && member.role !== 'owner' && member.userClerkId !== currentUserClerkId;
 
   const initials = member.userName
     .split(' ')
@@ -126,21 +134,36 @@ function MemberCard({
           </span>
         </div>
 
-        {/* Usage */}
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-text-primary)', display: 'block' }}>
-            {member.minutesUsedThisCycle.toFixed(0)}
-          </span>
-          <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>
-            {tt('org.minUsed')}
-          </span>
+        {/* Usage + Remove */}
+        <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div>
+            <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-text-primary)', display: 'block' }}>
+              {member.minutesUsedThisCycle.toFixed(0)}
+            </span>
+            <span style={{ fontSize: '11px', color: 'var(--color-text-tertiary)' }}>
+              {tt('org.minUsed')}
+            </span>
+          </div>
+          {canRemove && (
+            <button
+              onClick={() => onRemove(member)}
+              aria-label={tt('org.removeMember')}
+              style={{
+                padding: '4px 8px', borderRadius: '6px', border: 'none',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-error)',
+                fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              {tt('org.removeMember')}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Individual mode: allocation editor */}
-      {poolMode === 'individual' && isAdmin && (
+      {/* Individual mode: allocation display (visible to all) + editor (admin only) */}
+      {poolMode === 'individual' && (
         <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--glass-border)' }}>
-          {editingAllocation ? (
+          {editingAllocation && isAdmin ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <input
                 type="number"
@@ -180,16 +203,18 @@ function MemberCard({
                   {member.minuteAllocation != null ? `${member.minuteAllocation} min` : tt('org.noLimit')}
                 </strong>
               </span>
-              <button onClick={() => {
-                setAllocationInput(member.minuteAllocation?.toString() ?? '');
-                setEditingAllocation(true);
-              }} style={{
-                padding: '4px 10px', borderRadius: '6px', border: 'none',
-                backgroundColor: 'var(--color-primary-alpha)', color: 'var(--color-primary)',
-                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-              }}>
-                {tt('org.edit')}
-              </button>
+              {isAdmin && (
+                <button onClick={() => {
+                  setAllocationInput(member.minuteAllocation?.toString() ?? '');
+                  setEditingAllocation(true);
+                }} style={{
+                  padding: '4px 10px', borderRadius: '6px', border: 'none',
+                  backgroundColor: 'var(--color-primary-alpha)', color: 'var(--color-primary)',
+                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                }}>
+                  {tt('org.edit')}
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -326,24 +351,26 @@ export default function MembersPage() {
   const router = useRouter();
   const { organization, membership, isLoaded } = useOrganization();
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<MemberData | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
   const { locale } = useLocale();
   const tt = useT(locale);
 
   // Convex data
   const convexOrg = useQuery(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (api as any).organizations.getOrganizationByClerkId,
+
+    api.organizations.getOrganizationByClerkId,
     organization?.id ? { clerkOrgId: organization.id } : 'skip'
   );
   const members = useQuery(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (api as any).memberships.getOrgMembers,
+
+    api.memberships.getOrgMembers,
     convexOrg?._id ? { orgId: convexOrg._id } : 'skip'
   ) as MemberData[] | null | undefined;
 
   const setMemberAllocation = useMutation(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (api as any).memberships.setMemberAllocation
+
+    api.memberships.setMemberAllocation
   );
 
   const isAdmin = membership?.role === 'org:admin' || membership?.role === 'org:owner';
@@ -359,13 +386,39 @@ export default function MembersPage() {
     await setMemberAllocation({ orgId: convexOrg._id, targetUserId: userId, minuteAllocation: minutes });
   };
 
+  const handleRemoveMember = async () => {
+    if (!organization || !memberToRemove) return;
+    setIsRemoving(true);
+    try {
+      await organization.removeMember(memberToRemove.userClerkId);
+    } catch (e) {
+      console.error('Failed to remove member:', e);
+    } finally {
+      setIsRemoving(false);
+      setMemberToRemove(null);
+    }
+  };
+
   const isLoading = !isLoaded || (organization && convexOrg === undefined);
+
+  // Get current user's clerkId for self-removal prevention
+  const currentUserClerkId = membership?.publicUserData?.userId;
 
   return (
     <>
       {showInviteModal && (
         <InviteModal onClose={() => setShowInviteModal(false)} onInvite={handleInvite} tt={tt} />
       )}
+      <ConfirmDialog
+        isOpen={!!memberToRemove}
+        title={tt('org.confirmRemoveTitle')}
+        message={tt('org.confirmRemoveMessage', { name: memberToRemove?.userName || memberToRemove?.userEmail || '' })}
+        confirmLabel={isRemoving ? '...' : tt('org.removeMember')}
+        cancelLabel={tt('settings.cancel')}
+        isDangerous
+        onConfirm={handleRemoveMember}
+        onCancel={() => setMemberToRemove(null)}
+      />
       <div className="glass-page" style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Header */}
         <header className="flex items-center glass-strong" style={{
@@ -466,8 +519,10 @@ export default function MembersPage() {
                 member={member}
                 isAdmin={isAdmin}
                 poolMode={poolMode}
-                orgId={convexOrg?._id}
+                orgId={convexOrg!._id}
+                currentUserClerkId={currentUserClerkId}
                 onAllocationSave={handleAllocationSave}
+                onRemove={setMemberToRemove}
                 tt={tt}
               />
             ))

@@ -8,6 +8,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useLocale } from '@/hooks/useLocale';
 import { useT } from '@/lib/i18n';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -60,17 +61,13 @@ const CreditCardIcon = () => (
 
 const TIER_LABELS: Record<string, string> = {
   free: 'Free',
-  small: 'Small',
-  medium: 'Medium',
-  large: 'Large',
+  active: 'Active',
   enterprise: 'Enterprise',
 };
 
 const TIER_COLORS: Record<string, string> = {
   free: 'var(--color-text-tertiary)',
-  small: 'var(--color-text-secondary)',
-  medium: 'var(--color-primary)',
-  large: '#8B5CF6',
+  active: 'var(--color-primary)',
   enterprise: '#F59E0B',
 };
 
@@ -131,7 +128,7 @@ function SubscriptionBanner({
   tt,
 }: {
   subscription: { status: string; tier: string; includedMinutes: number } | null | undefined;
-  org: { minutesUsedThisCycle: number; totalMinutesAvailable: number } | null | undefined;
+  org: { minutesUsedThisCycle: number; totalMinutesAvailable: number; rolloverMinutes?: number } | null | undefined;
   isAdmin: boolean;
   tt: (key: Parameters<ReturnType<typeof useT>>[0], params?: Record<string, string>) => string;
 }) {
@@ -180,8 +177,10 @@ function SubscriptionBanner({
     );
   }
 
-  const pct = org && org.totalMinutesAvailable > 0
-    ? (org.minutesUsedThisCycle / org.totalMinutesAvailable) * 100
+  // Use subscription.includedMinutes + rollover as the total budget (not totalMinutesAvailable which is the remaining pool)
+  const totalBudget = (subscription?.includedMinutes ?? 0) + (org?.rolloverMinutes ?? 0);
+  const pct = org && totalBudget > 0
+    ? (org.minutesUsedThisCycle / totalBudget) * 100
     : 0;
 
   if (pct >= 100) {
@@ -229,29 +228,36 @@ export default function OrganizationSettingsPage() {
 
   // Convex queries — cast to any since types regenerate on next `convex dev`
   const convexOrg = useQuery(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (api as any).organizations.getOrganizationByClerkId,
+
+    api.organizations.getOrganizationByClerkId,
     organization?.id ? { clerkOrgId: organization.id } : 'skip'
   );
   const subscription = useQuery(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (api as any).subscriptions.getSubscriptionByClerkOrgId,
+
+    api.subscriptions.getSubscriptionByClerkOrgId,
     organization?.id ? { clerkOrgId: organization.id } : 'skip'
   );
 
   const updatePoolMode = useMutation(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (api as any).organizations.updateCreditPoolMode
+
+    api.organizations.updateCreditPoolMode
   );
 
   const [isTogglingMode, setIsTogglingMode] = useState(false);
+  const [showPoolModeConfirm, setShowPoolModeConfirm] = useState(false);
 
   const isAdmin = membership?.role === 'org:admin' || membership?.role === 'org:owner';
   const poolMode = convexOrg?.creditPoolMode ?? 'shared';
 
-  const handlePoolModeToggle = async () => {
+  const handlePoolModeToggle = () => {
     if (!convexOrg || !isAdmin || isTogglingMode) return;
+    setShowPoolModeConfirm(true);
+  };
+
+  const confirmPoolModeToggle = async () => {
+    if (!convexOrg || isTogglingMode) return;
     setIsTogglingMode(true);
+    setShowPoolModeConfirm(false);
     try {
       await updatePoolMode({
         orgId: convexOrg._id,
@@ -340,13 +346,22 @@ export default function OrganizationSettingsPage() {
 
   const subData = subscription?.org;
   const usedMin = subData?.minutesUsedThisCycle ?? 0;
-  const totalMin = subData?.totalMinutesAvailable ?? 0;
+  // Total budget = included minutes from plan + rollover (not the remaining pool)
+  const totalMin = (subscription?.includedMinutes ?? 0) + (subData?.rolloverMinutes ?? 0);
   const dateLocale = locale === 'nb' ? 'nb-NO' : 'en-US';
   const cycleEnd = subData?.currentBillingCycleEnd
     ? new Date(subData.currentBillingCycleEnd).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' })
     : null;
 
   return (
+    <>
+    <ConfirmDialog
+      isOpen={showPoolModeConfirm}
+      title={tt('org.confirmPoolModeTitle')}
+      message={poolMode === 'shared' ? tt('org.confirmPoolModeIndividualMsg') : tt('org.confirmPoolModeSharedMsg')}
+      onConfirm={confirmPoolModeToggle}
+      onCancel={() => setShowPoolModeConfirm(false)}
+    />
     <div className="glass-page" style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Sticky header */}
       <header className="flex items-center glass-strong" style={{
@@ -590,5 +605,6 @@ export default function OrganizationSettingsPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

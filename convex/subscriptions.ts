@@ -1,12 +1,6 @@
 import { v } from "convex/values";
 import { query, internalMutation, internalQuery } from "./_generated/server";
-
-// Helper: verify caller is authenticated
-async function requireAuth(ctx: { auth: { getUserIdentity: () => Promise<any> } }) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) throw new Error("Unauthorized");
-  return identity;
-}
+import { requireAuth, requireOrgMember, getUserByClerkId } from "./lib/auth";
 
 // Shared tier validator
 const tierValidator = v.union(
@@ -201,7 +195,9 @@ export const processUserRollover = internalMutation({
       0,
       (user.totalMinutesAvailable ?? 0) - (user.minutesUsedThisCycle ?? 0)
     );
-    const rollover = (user.rolloverMinutes ?? 0) + unusedMinutes;
+    // Cap rollover at one cycle's worth of minutes (matches org rollover behavior)
+    const rawRollover = (user.rolloverMinutes ?? 0) + unusedMinutes;
+    const rollover = Math.min(rawRollover, args.newIncludedMinutes);
 
     await ctx.db.patch(args.userId, {
       totalMinutesAvailable: args.newIncludedMinutes + rollover,
@@ -240,15 +236,16 @@ export const resetUserRolloverOnCancellation = internalMutation({
 // ─── Client-callable queries ─────────────────────────────────────────────────
 
 // Get active subscription by Clerk user ID (user-level subscriptions)
+// Caller must be the same user (no reading other users' subscriptions).
 export const getSubscriptionByUserId = query({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
-    await requireAuth(ctx);
+    const identity = await requireAuth(ctx);
+    if (identity.subject !== args.clerkId) {
+      throw new Error("Forbidden: cannot read another user's subscription");
+    }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
+    const user = await getUserByClerkId(ctx, args.clerkId);
 
     if (!user) return null;
 
@@ -278,18 +275,18 @@ export const getSubscriptionByUserId = query({
   },
 });
 
-// Get org subscription by Clerk org ID (used by frontend components)
+// Get org subscription by Clerk org ID (caller must be a member)
 export const getSubscriptionByClerkOrgId = query({
   args: { clerkOrgId: v.string() },
   handler: async (ctx, args) => {
-    await requireAuth(ctx);
-
     const org = await ctx.db
       .query("organizations")
       .withIndex("by_clerk_org_id", (q) => q.eq("clerkOrgId", args.clerkOrgId))
       .first();
 
     if (!org) return null;
+
+    await requireOrgMember(ctx, org._id);
 
     const subscriptions = await ctx.db
       .query("subscriptions")
@@ -320,11 +317,11 @@ export const getSubscriptionByClerkOrgId = query({
   },
 });
 
-// Get the active subscription for an org
+// Get the active subscription for an org (caller must be a member)
 export const getActiveSubscription = query({
   args: { orgId: v.id("organizations") },
   handler: async (ctx, args) => {
-    await requireAuth(ctx);
+    await requireOrgMember(ctx, args.orgId);
 
     const subscriptions = await ctx.db
       .query("subscriptions")

@@ -27,6 +27,15 @@ export const useCurrentUser = () => {
             name: `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() ||
                   clerkUser.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'User',
           });
+
+          // Sync any pending org memberships that arrived before user existed in Convex
+          // (e.g. user accepted an org invite before their first sign-in)
+          try {
+            await fetch('/api/sync-memberships', { method: 'POST' });
+          } catch (e) {
+            console.warn('Membership sync skipped:', e);
+          }
+
           // Mark this user as synced to prevent redundant calls
           hasSyncedRef.current = clerkUser.id;
         } catch (error) {

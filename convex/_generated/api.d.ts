@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as crons from "../crons.js";
 import type * as memberships from "../memberships.js";
 import type * as organizations from "../organizations.js";
 import type * as payments from "../payments.js";
@@ -22,6 +23,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  crons: typeof crons;
   memberships: typeof memberships;
   organizations: typeof organizations;
   payments: typeof payments;
