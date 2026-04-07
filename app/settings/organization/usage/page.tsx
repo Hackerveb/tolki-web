@@ -229,7 +229,22 @@ export default function UsageDashboardPage() {
     convexOrg?._id ? { orgId: convexOrg._id } : 'skip'
   ) as MemberUsage[] | null | undefined;
 
-  const isLoading = organization && (convexOrg === undefined || subscription === undefined);
+  // Trigger sync if org exists in Clerk but not in Convex (webhook missed)
+  const [isSyncing, setIsSyncing] = React.useState(false);
+  const [syncAttempted, setSyncAttempted] = React.useState(false);
+  React.useEffect(() => {
+    if (organization && convexOrg === null && !isSyncing && !syncAttempted) {
+      setIsSyncing(true);
+      fetch('/api/sync-memberships', { method: 'POST' })
+        .catch(() => {})
+        .finally(() => {
+          setIsSyncing(false);
+          setSyncAttempted(true);
+        });
+    }
+  }, [organization, convexOrg, isSyncing, syncAttempted]);
+
+  const isLoading = isSyncing || (organization && (convexOrg === undefined || subscription === undefined));
 
   const subData = subscription?.org ?? convexOrg;
   const minutesUsed = subData?.minutesUsedThisCycle ?? 0;
