@@ -63,6 +63,9 @@ const translations = {
   'subscribe.justNeedMinutes': { nb: 'Trenger du bare ekstra minutter?', en: 'Just need extra minutes?' },
   'subscribe.buyMinutes': { nb: 'Kjøp minutter enkeltvis', en: 'Buy minutes individually' },
   'subscribe.checkoutFailed': { nb: 'Kunne ikke starte betaling. Prøv igjen.', en: 'Could not start payment. Please try again.' },
+  'subscribe.orgManagedTitle': { nb: 'Abonnement administrert av organisasjon', en: 'Subscription managed by organization' },
+  'subscribe.orgManagedMessage': { nb: 'Ditt abonnement administreres av organisasjonsadministratoren din. Kontakt dem for planendringer.', en: 'Your subscription is managed by your organization admin. Contact them for plan changes.' },
+  'subscribe.subscribeForOrg': { nb: 'Abonner for {orgName}', en: 'Subscribe for {orgName}' },
 
   // ── Common ─────────────────────────────────────────────────
   'common.minutes': { nb: 'minutter', en: 'minutes' },

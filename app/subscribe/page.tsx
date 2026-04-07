@@ -9,6 +9,7 @@ import { useQuery } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useLocale } from '@/hooks/useLocale';
 import { useT } from '@/lib/i18n';
+import { useUserTier } from '@/hooks/useUserTier';
 
 // ─── Pricing data ────────────────────────────────────────────────────────────
 
@@ -388,20 +389,100 @@ function CancelHandler() {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+// ─── Org member view ──────────────────────────────────────────────────────────
+
+function OrgMemberView({ onBack, tt }: { onBack: () => void; tt: ReturnType<typeof useT> }) {
+  return (
+    <div className="h-screen flex flex-col overflow-hidden glass-page">
+      <header
+        className="flex items-center glass-strong"
+        style={{
+          gap: '15px',
+          paddingTop: 'max(20px, env(safe-area-inset-top))',
+          paddingBottom: '20px',
+          paddingLeft: 'max(20px, env(safe-area-inset-left))',
+          paddingRight: 'max(20px, env(safe-area-inset-right))',
+          borderBottom: '1px solid var(--glass-border)',
+          borderRadius: 0,
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <button
+          onClick={onBack}
+          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
+          aria-label={tt('settings.goBack')}
+        >
+          <BackIcon />
+        </button>
+        <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
+          {tt('subscribe.title')}
+        </h1>
+      </header>
+
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{
+          paddingTop: '40px',
+          paddingLeft: 'max(24px, env(safe-area-inset-left))',
+          paddingRight: 'max(24px, env(safe-area-inset-right))',
+          paddingBottom: 'max(40px, env(safe-area-inset-bottom))',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div
+          className="glass"
+          style={{
+            padding: '32px 24px',
+            borderRadius: '24px',
+            textAlign: 'center',
+            maxWidth: '380px',
+            width: '100%',
+          }}
+        >
+          <div style={{ fontSize: '48px', marginBottom: '20px' }}>🏢</div>
+          <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '12px' }}>
+            {tt('subscribe.orgManagedTitle')}
+          </h2>
+          <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+            {tt('subscribe.orgManagedMessage')}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
+
 function SubscribePage() {
   const router = useRouter();
   const { user } = useUser();
   const { locale } = useLocale();
   const tt = useT(locale);
+  const { tier, orgId, orgName, isLoaded } = useUserTier();
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('active');
   const [interval, setInterval] = useState<BillingInterval>('monthly');
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
-  const subscription = useQuery(
+  // Private users: query by userId
+  const userSubscription = useQuery(
     api.subscriptions.getSubscriptionByUserId,
-    user?.id ? { clerkId: user.id } : 'skip'
+    tier === 'private' && user?.id ? { clerkId: user.id } : 'skip'
   );
 
+  // Org admins: query by orgId
+  const orgSubscription = useQuery(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (api as any).subscriptions.getSubscriptionByClerkOrgId,
+    tier === 'org_admin' && orgId ? { clerkOrgId: orgId } : 'skip'
+  );
+
+  const subscription = tier === 'org_admin' ? orgSubscription : userSubscription;
   const currentTier = subscription?.tier ?? null;
 
   const handleSubscribe = async () => {
@@ -412,10 +493,15 @@ function SubscribePage() {
 
     setIsCheckingOut(true);
     try {
+      const body =
+        tier === 'org_admin'
+          ? { tier: selectedPlan, billingInterval: interval, orgId }
+          : { tier: selectedPlan, billingInterval: interval };
+
       const res = await fetch('/api/stripe/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: selectedPlan, billingInterval: interval }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {
@@ -440,6 +526,20 @@ function SubscribePage() {
 
   const isCurrentPlan = currentTier === selectedPlan;
   const selectedDisplayName = locale === 'nb' ? selectedPlanData?.name : selectedPlanData?.nameEn;
+
+  // Show org member view — subscription is managed by org admin
+  if (isLoaded && tier === 'org_member') {
+    return <OrgMemberView onBack={() => router.back()} tt={tt} />;
+  }
+
+  const ctaLabel = () => {
+    if (isCheckingOut) return null;
+    if (isCurrentPlan) return tt('subscribe.alreadyOnPlan');
+    if (tier === 'org_admin' && orgName) {
+      return tt('subscribe.subscribeForOrg', { orgName }) + ` — ${selectedPrice?.toLocaleString('nb-NO')} ${locale === 'nb' ? 'kr/mnd' : 'NOK/mo'}`;
+    }
+    return `${tt('subscribe.subscribeTo')} ${selectedDisplayName} — ${selectedPrice?.toLocaleString('nb-NO')} ${locale === 'nb' ? 'kr/mnd' : 'NOK/mo'}`;
+  };
 
   return (
     <div className="h-screen flex flex-col overflow-hidden glass-page">
@@ -472,6 +572,11 @@ function SubscribePage() {
         </button>
         <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
           {tt('subscribe.title')}
+          {tier === 'org_admin' && orgName && (
+            <span style={{ fontSize: '14px', fontWeight: 400, color: 'var(--color-text-tertiary)', marginLeft: '8px' }}>
+              — {orgName}
+            </span>
+          )}
         </h1>
       </header>
 
@@ -568,26 +673,28 @@ function SubscribePage() {
         {/* Comparison table */}
         <PlanComparisonTable interval={interval} locale={locale} tt={tt} />
 
-        {/* Buy minutes individually */}
-        <Link href="/settings/credits">
-          <div
-            className="glass-subtle"
-            style={{
-              padding: '14px 16px',
-              borderRadius: '12px',
-              marginBottom: '20px',
-              textAlign: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>
-              {tt('subscribe.justNeedMinutes')}
-            </p>
-            <p style={{ fontSize: '14px', color: 'var(--color-primary)', fontWeight: 600 }}>
-              {tt('subscribe.buyMinutes')} &rarr;
-            </p>
-          </div>
-        </Link>
+        {/* Buy minutes individually (private users only) */}
+        {tier !== 'org_admin' && (
+          <Link href="/settings/credits">
+            <div
+              className="glass-subtle"
+              style={{
+                padding: '14px 16px',
+                borderRadius: '12px',
+                marginBottom: '20px',
+                textAlign: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>
+                {tt('subscribe.justNeedMinutes')}
+              </p>
+              <p style={{ fontSize: '14px', color: 'var(--color-primary)', fontWeight: 600 }}>
+                {tt('subscribe.buyMinutes')} &rarr;
+              </p>
+            </div>
+          </Link>
+        )}
 
         {/* Disclaimer */}
         <p
@@ -650,13 +757,9 @@ function SubscribePage() {
             <div className="flex items-center justify-center">
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : isCurrentPlan ? (
-            <span style={{ fontSize: '16px', fontWeight: 700, color: '#FFFFFF' }}>
-              {tt('subscribe.alreadyOnPlan')}
-            </span>
           ) : (
             <span style={{ fontSize: '16px', fontWeight: 700, color: '#FFFFFF' }}>
-              {tt('subscribe.subscribeTo')} {selectedDisplayName} — {selectedPrice?.toLocaleString('nb-NO')} {locale === 'nb' ? 'kr/mnd' : 'NOK/mo'}
+              {ctaLabel()}
             </span>
           )}
         </motion.button>

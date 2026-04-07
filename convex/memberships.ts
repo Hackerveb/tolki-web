@@ -223,11 +223,21 @@ export const getOrgMembers = query({
       .withIndex("by_org", (q) => q.eq("orgId", args.orgId))
       .collect();
 
-    // Enrich with user data
+    // Enrich with user data — return flat fields matching the MemberData interface
     const enriched = await Promise.all(
       memberships.map(async (m) => {
         const user = await ctx.db.get(m.userId);
-        return { ...m, user: user ? { name: user.name, email: user.email } : null };
+        return {
+          membershipId: m._id,
+          userId: m.userId,
+          role: m.role,
+          minutesUsedThisCycle: m.minutesUsedThisCycle,
+          minuteAllocation: m.minuteAllocation ?? null,
+          joinedAt: m.joinedAt,
+          userName: user?.name ?? '',
+          userEmail: user?.email ?? '',
+          userClerkId: user?.clerkId ?? '',
+        };
       })
     );
 

@@ -118,33 +118,53 @@ function UsageBar({ used, total }: { used: number; total: number }) {
 function SubscriptionBanner({
   subscription,
   org,
+  isAdmin,
 }: {
   subscription: { status: string; tier: string; includedMinutes: number } | null | undefined;
   org: { minutesUsedThisCycle: number; totalMinutesAvailable: number } | null | undefined;
+  isAdmin: boolean;
 }) {
   if (subscription === undefined || org === undefined) return null; // still loading
 
   if (!subscription) {
     return (
       <div className="glass" style={{
-        padding: '16px', borderRadius: '16px', marginBottom: '16px',
-        borderLeft: '3px solid var(--color-primary)',
+        padding: '20px', borderRadius: '20px', marginBottom: '16px',
+        border: '1px solid var(--color-primary)',
+        background: 'linear-gradient(135deg, rgba(37,99,235,0.08), rgba(79,70,229,0.05))',
       }}>
-        <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
-          No active subscription
-        </p>
-        <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '12px' }}>
-          Choose a plan to give your team access to TolKI interpretation minutes.
-        </p>
-        <Link href="/settings/organization/billing">
-          <button style={{
-            padding: '8px 16px', borderRadius: '8px', border: 'none',
-            backgroundColor: 'var(--color-primary)', color: '#fff',
-            fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+          <div style={{
+            width: '40px', height: '40px', borderRadius: '10px', flexShrink: 0,
+            backgroundColor: 'var(--color-primary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            View plans
-          </button>
-        </Link>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"
+                stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
+              No active subscription
+            </p>
+            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '16px', lineHeight: 1.5 }}>
+              Choose a plan to give your team access to TolKI interpretation minutes.
+            </p>
+            {isAdmin && (
+              <Link href="/subscribe">
+                <button style={{
+                  padding: '10px 20px', borderRadius: '10px', border: 'none',
+                  background: 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
+                  color: '#fff', fontSize: '14px', fontWeight: 700,
+                  cursor: 'pointer', boxShadow: 'var(--glass-glow-primary)',
+                }}>
+                  Subscribe now →
+                </button>
+              </Link>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -393,6 +413,7 @@ export default function OrganizationSettingsPage() {
         <SubscriptionBanner
           subscription={subscription ?? null}
           org={subData ?? null}
+          isAdmin={isAdmin}
         />
 
         {/* Subscription card */}

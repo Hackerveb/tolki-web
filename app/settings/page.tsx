@@ -9,6 +9,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useLocale, Locale } from '@/hooks/useLocale';
 import { useT } from '@/lib/i18n';
 import { useToast } from '@/hooks/useToast';
+import { useUserTier } from '@/hooks/useUserTier';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -113,6 +114,7 @@ function SettingsScreenInner() {
   const { isDark, setTheme } = useTheme();
   const { locale, setLocale } = useLocale();
   const tt = useT(locale);
+  const { tier } = useUserTier();
   const { toast } = useToast();
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -332,72 +334,74 @@ function SettingsScreenInner() {
           </div>
         )}
 
-        {/* Management Section */}
-        <div
-          className="glass"
-          style={{
-            padding: '20px',
-            borderRadius: '20px',
-            marginBottom: '16px',
-          }}
-        >
-          <div style={{ marginBottom: '20px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
-              {tt('settings.manage')}
-            </h3>
-          </div>
+        {/* Management Section — hidden for org members (billing is handled by org admin) */}
+        {tier !== 'org_member' && (
+          <div
+            className="glass"
+            style={{
+              padding: '20px',
+              borderRadius: '20px',
+              marginBottom: '16px',
+            }}
+          >
+            <div style={{ marginBottom: '20px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', letterSpacing: '-0.01em' }}>
+                {tt('settings.manage')}
+              </h3>
+            </div>
 
-          <Link href="/subscribe" prefetch={true} className="w-full">
-            <button
-              className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
-              style={{
-                padding: '14px 16px',
-                borderRadius: '12px',
-                marginBottom: '10px',
-                cursor: 'pointer',
-              }}
-            >
-              <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
-                <UpgradeIcon />
-                {tt('settings.upgrade')}
-              </span>
-              <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
-            </button>
-          </Link>
-          <Link href="/settings/billing" prefetch={true} className="w-full">
-            <button
-              className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
-              style={{
-                padding: '14px 16px',
-                borderRadius: '12px',
-                marginBottom: '10px',
-                cursor: 'pointer',
-              }}
-            >
-              <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
-                <BillingIcon />
-                {tt('settings.billing')}
-              </span>
-              <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
-            </button>
-          </Link>
-          <Link href="/settings/credits" prefetch={true} className="w-full">
-            <button
-              className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
-              style={{
-                padding: '14px 16px',
-                borderRadius: '12px',
-                cursor: 'pointer',
-              }}
-            >
-              <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                {tt('settings.buyCredits')}
-              </span>
-              <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
-            </button>
-          </Link>
-        </div>
+            <Link href="/subscribe" prefetch={true} className="w-full">
+              <button
+                className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  marginBottom: '10px',
+                  cursor: 'pointer',
+                }}
+              >
+                <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                  <UpgradeIcon />
+                  {tt('settings.upgrade')}
+                </span>
+                <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
+              </button>
+            </Link>
+            <Link href="/settings/billing" prefetch={true} className="w-full">
+              <button
+                className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  marginBottom: '10px',
+                  cursor: 'pointer',
+                }}
+              >
+                <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                  <BillingIcon />
+                  {tt('settings.billing')}
+                </span>
+                <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
+              </button>
+            </Link>
+            <Link href="/settings/credits" prefetch={true} className="w-full">
+              <button
+                className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  {tt('settings.buyCredits')}
+                </span>
+                <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
+              </button>
+            </Link>
+          </div>
+        )}
 
         {/* Appearance Section */}
         <div
