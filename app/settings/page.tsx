@@ -114,7 +114,7 @@ function SettingsScreenInner() {
   const { isDark, setTheme } = useTheme();
   const { locale, setLocale } = useLocale();
   const tt = useT(locale);
-  const { tier } = useUserTier();
+  const { tier, isLoaded: tierLoaded } = useUserTier();
   const { toast } = useToast();
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
@@ -334,8 +334,8 @@ function SettingsScreenInner() {
           </div>
         )}
 
-        {/* Create Organisation CTA — shown to private users with no org */}
-        {!organization && tier === 'private' && (
+        {/* Create Organisation CTA — shown to private users with no org (only after loaded) */}
+        {tierLoaded && !organization && tier === 'private' && (
           <div
             className="glass"
             style={{ padding: '20px', borderRadius: '20px', marginBottom: '16px' }}
@@ -390,7 +390,7 @@ function SettingsScreenInner() {
         )}
 
         {/* Management Section — hidden for org members (billing is handled by org admin) */}
-        {tier !== 'org_member' && (
+        {tierLoaded && tier !== 'org_member' && (
           <div
             className="glass"
             style={{

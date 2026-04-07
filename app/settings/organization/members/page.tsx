@@ -324,7 +324,7 @@ function InviteModal({ onClose, onInvite, tt }: {
 
 export default function MembersPage() {
   const router = useRouter();
-  const { organization, membership } = useOrganization();
+  const { organization, membership, isLoaded } = useOrganization();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const { locale } = useLocale();
   const tt = useT(locale);
@@ -359,7 +359,7 @@ export default function MembersPage() {
     await setMemberAllocation({ orgId: convexOrg._id, targetUserId: userId, minuteAllocation: minutes });
   };
 
-  const isLoading = organization && convexOrg === undefined;
+  const isLoading = !isLoaded || (organization && convexOrg === undefined);
 
   return (
     <>

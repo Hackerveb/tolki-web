@@ -280,12 +280,13 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
   }
 
   return (
-    <div ref={pageRef} className="glass-page h-screen flex flex-col overflow-hidden">
+    <div ref={pageRef} className="glass-page flex flex-col" style={{ height: '100dvh', overflow: 'hidden' }}>
       {/* ── Glass header ─────────────────────────────────────────── */}
       <header
         className="glass flex-shrink-0"
         style={{
-          position: 'relative',
+          position: 'sticky',
+          top: 0,
           zIndex: 40,
           paddingTop: 'max(16px, env(safe-area-inset-top))',
           paddingBottom: '14px',

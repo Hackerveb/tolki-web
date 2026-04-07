@@ -223,7 +223,7 @@ function SubscriptionBanner({
 
 export default function OrganizationSettingsPage() {
   const router = useRouter();
-  const { organization, membership } = useOrganization();
+  const { organization, membership, isLoaded } = useOrganization();
   const { locale } = useLocale();
   const tt = useT(locale);
 
@@ -264,7 +264,20 @@ export default function OrganizationSettingsPage() {
     }
   };
 
-  // No org selected state
+  // Still loading org context from Clerk — show nothing to avoid flash of "create org" button
+  if (!isLoaded) {
+    return (
+      <div className="glass-page" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="animate-spin" style={{
+          width: '32px', height: '32px', borderRadius: '50%',
+          border: '3px solid var(--glass-border)',
+          borderTopColor: 'var(--color-primary)',
+        }} />
+      </div>
+    );
+  }
+
+  // No org selected state — only shown to private users after loading completes
   if (!organization) {
     return (
       <div className="glass-page" style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -351,32 +364,9 @@ export default function OrganizationSettingsPage() {
           aria-label={tt('settings.goBack')}>
           <BackIcon />
         </button>
-        <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)' }}>
-          {tt('settings.organization')}
+        <h1 className="text-xl font-semibold flex-1" style={{ color: 'var(--color-text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {organization.name}
         </h1>
-        {/* Org switcher (compact) */}
-        <div style={{ flexShrink: 0 }}>
-          <OrganizationSwitcher
-            hidePersonal
-            appearance={{
-              elements: {
-                rootBox: { display: 'flex', alignItems: 'center' },
-                organizationSwitcherTrigger: {
-                  padding: '6px 10px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  color: 'var(--color-text-primary)',
-                  backgroundColor: 'var(--glass-bg-subtle)',
-                  border: '1px solid var(--glass-border)',
-                  backdropFilter: 'blur(8px)',
-                  gap: '6px',
-                },
-                organizationSwitcherTriggerIcon: { color: 'var(--color-text-tertiary)' },
-              },
-            }}
-          />
-        </div>
       </header>
 
       {/* Scrollable content */}
