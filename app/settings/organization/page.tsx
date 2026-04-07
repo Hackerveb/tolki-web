@@ -549,9 +549,21 @@ export default function OrganizationSettingsPage() {
 
           {isAdmin && (
             <button
-              onClick={() => {
+              onClick={async () => {
                 // Redirect to Stripe billing portal via API route
-                window.location.href = '/api/billing/portal?orgId=' + (convexOrg?._id ?? '');
+                try {
+                  const res = await fetch('/api/stripe/portal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                  });
+                  const data = await res.json();
+                  if (data.url) {
+                    window.location.href = data.url;
+                  }
+                } catch (e) {
+                  console.error('Failed to open billing portal:', e);
+                }
               }}
               className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
               style={{ padding: '14px 16px', borderRadius: '12px', cursor: 'pointer' }}

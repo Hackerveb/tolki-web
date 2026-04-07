@@ -352,7 +352,7 @@ export default function MembersPage() {
     await setMemberAllocation({ orgId: convexOrg._id, targetUserId: userId, minuteAllocation: minutes });
   };
 
-  const isLoading = organization && members === undefined;
+  const isLoading = organization && convexOrg === undefined;
 
   return (
     <>
@@ -427,7 +427,7 @@ export default function MembersPage() {
             {members ? `${members.length} member${members.length !== 1 ? 's' : ''}` : 'Members'}
           </p>
 
-          {isLoading ? (
+          {isLoading || (convexOrg && members === undefined) ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
               <div className="animate-spin" style={{
                 width: '32px', height: '32px', borderRadius: '50%',
@@ -435,7 +435,7 @@ export default function MembersPage() {
                 borderTopColor: 'var(--color-primary)',
               }} />
             </div>
-          ) : !organization ? (
+          ) : !organization || (organization && !convexOrg) ? (
             <div className="glass" style={{ padding: '32px 24px', borderRadius: '20px', textAlign: 'center' }}>
               <p style={{ fontSize: '15px', color: 'var(--color-text-secondary)' }}>
                 No organization selected.
