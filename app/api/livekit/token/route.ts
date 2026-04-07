@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         language2,
       }),
       agents: [{
-        agentName: 'Translator', // Must match your LiveKit agent name
+        agentName: 'Realtime', // Must match your LiveKit agent name
       }],
     });
 

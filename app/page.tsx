@@ -28,7 +28,7 @@ type ConnectionStatus = 'idle' | 'connecting' | 'connected';
 const AGENT_ACTIVE_STATES = new Set(['listening', 'thinking', 'speaking']);
 
 // Inner component — needs to live inside RoomContext.Provider
-function MainScreenContent() {
+function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitRoom> }) {
   const router = useRouter();
   const { credits, isLoaded, isSignedIn } = useCurrentUser();
   const [sourceLanguage, setSourceLanguage] = useState<Language>(defaultSourceLanguage);
@@ -46,7 +46,7 @@ function MainScreenContent() {
   const { locale } = useLocale();
   const { resolvedTheme } = useTheme();
   const tt = useT(locale);
-  const { room, connect, disconnect, isConnected, error } = useLiveKitRoom();
+  const { room, connect, disconnect, isConnected, error } = liveKit;
   const { state: agentState, audioTrack } = useVoiceAssistant();
 
   const { secondsUsed, reset: resetUsage } = useTrackUsage({
@@ -558,13 +558,13 @@ function MainScreenContent() {
 }
 
 function MainScreenInner() {
-  const { room } = useLiveKitRoom();
+  const liveKit = useLiveKitRoom();
 
   return (
-    <RoomContext.Provider value={room || undefined}>
+    <RoomContext.Provider value={liveKit.room || undefined}>
       <RoomAudioRenderer />
       <StartAudio label="Start Audio" />
-      <MainScreenContent />
+      <MainScreenContent liveKit={liveKit} />
     </RoomContext.Provider>
   );
 }

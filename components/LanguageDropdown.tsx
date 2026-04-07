@@ -108,15 +108,6 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, focusedIndex, allItems]);
 
-  const DeepgramBadge = () => (
-    <span
-      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
-      style={{ background: 'var(--color-primary-alpha)', color: 'var(--color-primary)' }}
-    >
-      HD
-    </span>
-  );
-
   return (
     <div ref={dropdownRef} className={`relative ${className}`} style={{ zIndex: 9999 }} onKeyDown={handleKeyDown}>
       {/* ── Trigger button ────────────────────────────────────────── */}
@@ -268,7 +259,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                       >
                         <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)' }}>
                           {displayName(language)}
-                          {language.deepgramSupport && <DeepgramBadge />}
+
                         </span>
                       </button>
                     );
@@ -310,7 +301,6 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                     >
                       <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)' }}>
                         {displayName(language)}
-                        {language.deepgramSupport && <DeepgramBadge />}
                       </span>
                     </button>
                   );
