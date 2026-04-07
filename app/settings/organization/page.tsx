@@ -270,23 +270,8 @@ export default function OrganizationSettingsPage() {
     }
   };
 
-  // Trigger sync if org exists in Clerk but not in Convex (webhook missed)
-  const [isSyncing, setIsSyncing] = React.useState(false);
-  const [syncAttempted, setSyncAttempted] = React.useState(false);
-  React.useEffect(() => {
-    if (organization && convexOrg === null && !isSyncing && !syncAttempted) {
-      setIsSyncing(true);
-      fetch('/api/sync-memberships', { method: 'POST' })
-        .catch(() => {})
-        .finally(() => {
-          setIsSyncing(false);
-          setSyncAttempted(true);
-        });
-    }
-  }, [organization, convexOrg, isSyncing, syncAttempted]);
-
   // Still loading org context from Clerk — show nothing to avoid flash of "create org" button
-  if (!isLoaded || isSyncing) {
+  if (!isLoaded) {
     return (
       <div className="glass-page" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="animate-spin" style={{

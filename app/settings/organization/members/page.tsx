@@ -399,22 +399,7 @@ export default function MembersPage() {
     }
   };
 
-  // Trigger sync if org exists in Clerk but not in Convex (webhook missed)
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncAttempted, setSyncAttempted] = useState(false);
-  React.useEffect(() => {
-    if (organization && convexOrg === null && !isSyncing && !syncAttempted) {
-      setIsSyncing(true);
-      fetch('/api/sync-memberships', { method: 'POST' })
-        .catch(() => {})
-        .finally(() => {
-          setIsSyncing(false);
-          setSyncAttempted(true);
-        });
-    }
-  }, [organization, convexOrg, isSyncing, syncAttempted]);
-
-  const isLoading = !isLoaded || (organization && convexOrg === undefined) || isSyncing;
+  const isLoading = !isLoaded || (organization && convexOrg === undefined);
 
   // Get current user's clerkId for self-removal prevention
   const currentUserClerkId = membership?.publicUserData?.userId;

@@ -56,18 +56,11 @@ export async function POST() {
     for (const membership of memberships.data) {
       const clerkOrgId = membership.organization.id;
 
-      // Resolve or create the Convex org
-      let org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId });
+      // Resolve the Convex org
+      const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId });
       if (!org) {
-        // Org not in Convex yet — create it from Clerk data
-        const clerkOrg = membership.organization;
-        const orgId = await fetchMutation(internalOrgs.syncOrganization, {
-          clerkOrgId: clerkOrg.id,
-          name: clerkOrg.name,
-          slug: clerkOrg.slug || clerkOrg.id,
-        });
-        org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId });
-        if (!org) continue; // shouldn't happen, but guard
+        // Org not synced to Convex yet — skip
+        continue;
       }
 
       // Upsert membership (addMember is idempotent)
