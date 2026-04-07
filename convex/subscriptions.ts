@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { query, internalMutation, internalQuery } from "./_generated/server";
-import { requireAuth, requireOrgMember, getUserByClerkId } from "./lib/auth";
+import { requireAuth, requireOrgMember, checkOrgMember, getUserByClerkId } from "./lib/auth";
 
 // Shared tier validator
 const tierValidator = v.union(
@@ -275,7 +275,7 @@ export const getSubscriptionByUserId = query({
   },
 });
 
-// Get org subscription by Clerk org ID (caller must be a member)
+// Get org subscription by Clerk org ID. Returns null if caller's membership not synced.
 export const getSubscriptionByClerkOrgId = query({
   args: { clerkOrgId: v.string() },
   handler: async (ctx, args) => {
@@ -286,7 +286,8 @@ export const getSubscriptionByClerkOrgId = query({
 
     if (!org) return null;
 
-    await requireOrgMember(ctx, org._id);
+    const member = await checkOrgMember(ctx, org._id);
+    if (!member) return null;
 
     const subscriptions = await ctx.db
       .query("subscriptions")
@@ -317,11 +318,12 @@ export const getSubscriptionByClerkOrgId = query({
   },
 });
 
-// Get the active subscription for an org (caller must be a member)
+// Get the active subscription for an org. Returns null if caller's membership not synced.
 export const getActiveSubscription = query({
   args: { orgId: v.id("organizations") },
   handler: async (ctx, args) => {
-    await requireOrgMember(ctx, args.orgId);
+    const member = await checkOrgMember(ctx, args.orgId);
+    if (!member) return null;
 
     const subscriptions = await ctx.db
       .query("subscriptions")

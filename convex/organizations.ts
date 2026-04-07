@@ -205,18 +205,19 @@ export const resetRolloverOnDowngrade = internalMutation({
 
 // ─── Client-callable queries ────────────────────────────────────────────────
 
-// Get org by Clerk org ID (caller must be a member)
+// Get org by Clerk org ID.
+// Uses requireAuth only (not requireOrgMember) because this is the gateway
+// query for all org pages. The Convex membership may not be synced yet when
+// a user first joins via Clerk invite — strict membership checks on sensitive
+// queries (getOrgMembers, getSubscriptionByClerkOrgId) still enforce isolation.
 export const getOrganizationByClerkId = query({
   args: { clerkOrgId: v.string() },
   handler: async (ctx, args) => {
-    const org = await ctx.db
+    await requireAuth(ctx);
+    return ctx.db
       .query("organizations")
       .withIndex("by_clerk_org_id", (q) => q.eq("clerkOrgId", args.clerkOrgId))
       .first();
-    if (!org) return null;
-
-    await requireOrgMember(ctx, org._id);
-    return org;
   },
 });
 

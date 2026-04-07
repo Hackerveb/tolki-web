@@ -35,7 +35,7 @@ export async function requireOrgAdminOrOwner(ctx: any, orgId: Id<"organizations"
 }
 
 // Verify caller is a member of the given org (any role: owner, admin, or member).
-// Returns { identity, user, membership }.
+// Returns { identity, user, membership }. Throws if not a member.
 export async function requireOrgMember(ctx: any, orgId: Id<"organizations">) {
   const identity = await requireAuth(ctx);
   const user = await getUserByClerkId(ctx, identity.subject);
@@ -51,4 +51,20 @@ export async function requireOrgMember(ctx: any, orgId: Id<"organizations">) {
   }
 
   return { identity, user, membership };
+}
+
+// Check if caller is a member of the given org. Returns the membership or null.
+// Unlike requireOrgMember, this does NOT throw — use when the membership may not
+// be synced yet (e.g. user just accepted a Clerk invite but webhook hasn't fired).
+export async function checkOrgMember(ctx: any, orgId: Id<"organizations">) {
+  const identity = await requireAuth(ctx);
+  const user = await getUserByClerkId(ctx, identity.subject);
+  if (!user) return null;
+
+  const membership = await ctx.db
+    .query("memberships")
+    .withIndex("by_org_and_user", (q: any) => q.eq("orgId", orgId).eq("userId", user._id))
+    .first();
+
+  return membership ? { identity, user, membership } : null;
 }

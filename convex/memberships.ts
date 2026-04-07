@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "./_generated/server";
-import { requireAuth, requireOrgAdminOrOwner, requireOrgMember } from "./lib/auth";
+import { requireAuth, requireOrgAdminOrOwner, requireOrgMember, checkOrgMember } from "./lib/auth";
 
 // ─── Internal mutations (called from Clerk webhooks) ────────────────────────
 
@@ -146,11 +146,12 @@ export const setMemberAllocation = mutation({
 
 // ─── Client-callable queries ─────────────────────────────────────────────────
 
-// List all members of an org (caller must be a member)
+// List all members of an org. Returns empty if caller's membership isn't synced yet.
 export const getOrgMembers = query({
   args: { orgId: v.id("organizations") },
   handler: async (ctx, args) => {
-    await requireOrgMember(ctx, args.orgId);
+    const member = await checkOrgMember(ctx, args.orgId);
+    if (!member) return [];
 
     const memberships = await ctx.db
       .query("memberships")
@@ -179,11 +180,12 @@ export const getOrgMembers = query({
   },
 });
 
-// Get per-member minutes usage for the current cycle (caller must be a member)
+// Get per-member minutes usage for the current cycle. Returns empty if not a member.
 export const getMemberUsage = query({
   args: { orgId: v.id("organizations") },
   handler: async (ctx, args) => {
-    await requireOrgMember(ctx, args.orgId);
+    const member = await checkOrgMember(ctx, args.orgId);
+    if (!member) return [];
 
     const memberships = await ctx.db
       .query("memberships")
