@@ -5,7 +5,7 @@ export const MIN_SESSION_CREDITS = 0.05;
 export const CREDIT_DEDUCTION_INTERVAL_SEC = 10;
 
 // Free credits awarded to new users on signup
-export const FREE_SIGNUP_CREDITS = 10;
+export const FREE_SIGNUP_CREDITS = 20;
 
 // Minimum session duration charged in seconds
 export const MIN_SESSION_DURATION_SEC = 3;

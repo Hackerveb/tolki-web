@@ -70,8 +70,9 @@ export const startSession = mutation({
     }
 
     if (!orgId) {
-      // Fallback: personal credits
-      if (user.credits < MIN_SESSION_CREDITS) {
+      // Fallback: free minutes first, then purchased credits
+      const freeBalance = user.freeMinutesBalance ?? 0;
+      if (freeBalance + user.credits < MIN_SESSION_CREDITS) {
         throw new Error("Insufficient credits. Minimum credits required to start a session");
       }
     }
@@ -117,9 +118,13 @@ export const startSession = mutation({
         }
       }
     } else {
-      // Deduct minimum charge from personal credits
+      // Deduct minimum charge: free minutes first, then purchased credits
+      const freeBalance = user.freeMinutesBalance ?? 0;
+      const fromFree = Math.min(freeBalance, MIN_SESSION_CREDITS);
+      const fromPurchased = MIN_SESSION_CREDITS - fromFree;
       await ctx.db.patch(user._id, {
-        credits: Math.round((user.credits - MIN_SESSION_CREDITS) * 100) / 100,
+        freeMinutesBalance: Math.round((freeBalance - fromFree) * 100) / 100,
+        credits: Math.round((user.credits - fromPurchased) * 100) / 100,
         lastActive: Date.now(),
       });
     }
@@ -333,29 +338,33 @@ export const updateFractionalCredits = mutation({
         inOverage: newAvailable === 0,
       };
     } else {
-      // ── Personal credits (legacy / no-org path) ──────────────────────────
-      if (user.credits < creditsToDeduct) {
-        // End session if insufficient credits
-        const finalCreditsUsed = Math.round((newSecondsUsed / 60) * 1 * 100) / 100;
+      // ── Personal credits: free minutes first, then purchased ─────────────
+      const freeBalance = user.freeMinutesBalance ?? 0;
+      const fromFree = Math.min(freeBalance, creditsToDeduct);
+      const fromPurchased = creditsToDeduct - fromFree;
 
+      if (user.credits < fromPurchased) {
+        // End session - insufficient total balance
+        const finalCreditsUsed = Math.round((newSecondsUsed / 60) * 1 * 100) / 100;
         await ctx.db.patch(activeSession._id, {
           isActive: false,
           endedAt: Date.now(),
           secondsUsed: newSecondsUsed,
           creditsUsed: finalCreditsUsed,
         });
-
         await ctx.db.patch(user._id, {
+          freeMinutesBalance: 0,
           credits: 0,
           lastActive: Date.now(),
         });
-
         throw new Error("Insufficient credits - session ended");
       }
 
-      const newBalance = Math.round((user.credits - creditsToDeduct) * 100) / 100;
+      const newFreeBalance = Math.round((freeBalance - fromFree) * 100) / 100;
+      const newCredits = Math.round((user.credits - fromPurchased) * 100) / 100;
       await ctx.db.patch(user._id, {
-        credits: newBalance,
+        freeMinutesBalance: newFreeBalance,
+        credits: newCredits,
         lastActive: Date.now(),
       });
 
@@ -365,7 +374,7 @@ export const updateFractionalCredits = mutation({
       });
 
       return {
-        creditsRemaining: newBalance,
+        creditsRemaining: newFreeBalance + newCredits,
         sessionCreditsUsed: newCreditsUsed,
         secondsUsed: newSecondsUsed,
         billedToOrg: false,

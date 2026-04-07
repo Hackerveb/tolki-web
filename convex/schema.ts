@@ -22,6 +22,9 @@ export default defineSchema({
     overageMinutesThisCycle: v.optional(v.number()),
     currentBillingCycleStart: v.optional(v.number()),
     currentBillingCycleEnd: v.optional(v.number()),
+    // Free tier minute tracking (separate from purchased credits)
+    freeMinutesBalance: v.optional(v.number()),
+    lastFreeMinutesReset: v.optional(v.number()),
   })
     .index("by_clerk_id", ["clerkId"]),
 

@@ -35,13 +35,15 @@ export const createOrUpdateUser = mutation({
       });
       return existingUser._id;
     } else {
-      // Create new user with free credits
+      // Create new user with free credits and initial free minute balance
       const userId = await ctx.db.insert("users", {
         clerkId: args.clerkId,
         email: args.email,
         name: args.name,
         credits: FREE_SIGNUP_CREDITS,
         totalCreditsEverPurchased: 0,
+        freeMinutesBalance: 20,
+        lastFreeMinutesReset: Date.now(),
         createdAt: Date.now(),
         lastActive: Date.now(),
       });
@@ -332,6 +334,48 @@ export const list = internalQuery({
 export const getById = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => ctx.db.get(args.userId),
+});
+
+// Reset free minutes for eligible users (INTERNAL ONLY — called by daily cron)
+// Resets freeMinutesBalance to 20 for private users who haven't been reset in 30 days.
+// Skips users with an active subscription or org membership.
+export const resetFreeMinutes = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const users = await ctx.db.query("users").collect();
+
+    let resetCount = 0;
+    for (const user of users) {
+      // Skip if user has an active (non-canceled) subscription
+      const subscription = await ctx.db
+        .query("subscriptions")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .filter((q) => q.neq(q.field("status"), "canceled"))
+        .first();
+      if (subscription) continue;
+
+      // Skip if user belongs to an org
+      const membership = await ctx.db
+        .query("memberships")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .first();
+      if (membership) continue;
+
+      // Reset if never reset or last reset was > 30 days ago
+      const lastReset = user.lastFreeMinutesReset;
+      if (lastReset === undefined || now - lastReset > THIRTY_DAYS_MS) {
+        await ctx.db.patch(user._id, {
+          freeMinutesBalance: 20,
+          lastFreeMinutesReset: now,
+        });
+        resetCount++;
+      }
+    }
+
+    return { resetCount };
+  },
 });
 
 // Save Stripe customer ID on user record (INTERNAL ONLY — webhook handler)
