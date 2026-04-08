@@ -49,13 +49,13 @@ export const Header: React.FC<HeaderProps> = ({
         ${className}
       `}
     >
-      <div className="flex items-center justify-between h-14 px-4">
+      <div className="flex items-center justify-between h-14 px-4" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
         {/* Left Section */}
         <div className="flex-1 flex items-center justify-start">
           {showBack && (
             <button
               onClick={handleBack}
-              className="p-2 -ml-2 transition-opacity hover:opacity-70 active:opacity-50"
+              className="w-11 h-11 -ml-2 flex items-center justify-center rounded-xl transition-opacity hover:opacity-70 active:opacity-50"
               style={{ color: 'var(--color-text-primary)' }}
               aria-label="Go back"
             >

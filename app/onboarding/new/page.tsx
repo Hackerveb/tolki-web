@@ -72,13 +72,13 @@ function PrimaryButton({
       style={{
         background: disabled || loading
           ? 'var(--color-neutral-300)'
-          : `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
+          : 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
         color: disabled || loading ? 'var(--color-text-tertiary)' : '#FFFFFF',
         opacity: disabled || loading ? 0.6 : 1,
         minHeight: 52,
         borderRadius: 14,
         fontSize: 16,
-        boxShadow: !disabled && !loading ? '0 4px 20px rgba(37,99,235,0.3)' : 'none',
+        boxShadow: !disabled && !loading ? 'var(--glass-glow-primary)' : 'none',
         cursor: disabled || loading ? 'not-allowed' : 'pointer',
         border: 'none',
       }}
@@ -213,7 +213,7 @@ function LanguagePicker({
                     <span style={{ fontSize: 15, color: 'var(--color-text-primary)', flex: 1 }}>{displayName(lang)}</span>
                     {lang.code === selected.code && (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <path d="M5 13l4 4L19 7" stroke={colors.primary} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M5 13l4 4L19 7" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
                   </button>
@@ -258,7 +258,7 @@ function StepAccountType({ onSelect, onBack }: {
               width: 56,
               height: 56,
               borderRadius: 16,
-              background: `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
+              background: 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -279,9 +279,9 @@ function StepAccountType({ onSelect, onBack }: {
             <span
               style={{
                 fontSize: 12,
-                color: colors.primary,
+                color: 'var(--color-primary)',
                 fontWeight: 500,
-                background: `${colors.primary}18`,
+                background: 'var(--color-primary-alpha)',
                 padding: '3px 10px',
                 borderRadius: 99,
                 display: 'inline-block',
@@ -307,7 +307,7 @@ function StepAccountType({ onSelect, onBack }: {
               width: 56,
               height: 56,
               borderRadius: 16,
-              background: `linear-gradient(135deg, ${colors.success}, #059669)`,
+              background: 'linear-gradient(135deg, var(--color-success), #059669)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -328,9 +328,9 @@ function StepAccountType({ onSelect, onBack }: {
             <span
               style={{
                 fontSize: 12,
-                color: colors.success,
+                color: 'var(--color-success)',
                 fontWeight: 500,
-                background: `${colors.success}18`,
+                background: 'rgba(5, 150, 105, 0.1)',
                 padding: '3px 10px',
                 borderRadius: 99,
                 display: 'inline-block',
@@ -510,8 +510,8 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
             width: 88,
             height: 88,
             borderRadius: 24,
-            background: `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
-            boxShadow: `0 16px 40px ${colors.primary}50`,
+            background: 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
+            boxShadow: 'var(--glass-glow-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -644,7 +644,7 @@ function StepLanguages({
       </div>
 
       {!canContinue && (
-        <p className="text-xs text-center mb-4" style={{ color: colors.error }}>
+        <p className="text-xs text-center mb-4" style={{ color: 'var(--color-error)' }}>
           Source and target languages must be different.
         </p>
       )}
@@ -826,7 +826,7 @@ function StepMicTest({ onNext, onBack }: { onNext: () => void; onBack: () => voi
         )}
         {permissionState === 'denied' && (
           <div className="text-center">
-            <p className="text-sm font-medium mb-1" style={{ color: colors.error }}>
+            <p className="text-sm font-medium mb-1" style={{ color: 'var(--color-error)' }}>
               Microphone access denied
             </p>
             <p className="text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
@@ -845,7 +845,7 @@ function StepMicTest({ onNext, onBack }: { onNext: () => void; onBack: () => voi
             borderRadius: 12,
             fontSize: 15,
             cursor: 'pointer',
-            color: colors.primary,
+            color: 'var(--color-primary)',
           }}
         >
           Allow Microphone Access
@@ -882,19 +882,19 @@ const HOW_IT_WORKS_PANELS = [
     icon: '🎙️',
     title: 'Speak',
     description: 'Talk naturally in your language. TolKI listens in real-time.',
-    color: colors.success,
+    color: '#059669',
   },
   {
     icon: '⚡',
     title: 'AI Translates',
     description: 'Our AI model processes your speech and translates it instantly.',
-    color: colors.primary,
+    color: '#2563EB',
   },
   {
     icon: '🔊',
     title: 'Hear It Back',
     description: 'The translation is spoken aloud in the target language.',
-    color: colors.warning,
+    color: '#D97706',
   },
 ];
 
@@ -1044,12 +1044,12 @@ function StepFreeCredits({
               width: 96,
               height: 96,
               borderRadius: 24,
-              background: `linear-gradient(135deg, ${colors.primary}, ${colors.info})`,
+              background: 'linear-gradient(135deg, var(--color-primary), var(--color-info))',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: `0 16px 40px ${colors.primary}50`,
+              boxShadow: 'var(--glass-glow-primary)',
               margin: '0 auto',
             }}
           >
@@ -1223,8 +1223,8 @@ export default function OnboardingNewPage() {
             width: 40,
             height: 40,
             borderRadius: '50%',
-            background: `linear-gradient(135deg, ${colors.primary}, #4F46E5)`,
-            boxShadow: '0 4px 20px rgba(37,99,235,0.3)',
+            background: 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
+            boxShadow: 'var(--glass-glow-primary)',
           }}
         />
       </div>

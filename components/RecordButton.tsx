@@ -201,8 +201,8 @@ const RecordButtonComponent: React.FC<RecordButtonProps> = ({
                 className="relative w-[100px] h-[100px] rounded-full flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed touch-none select-none"
                 style={{
                     backgroundColor: 'var(--color-surface)',
-                    boxShadow: 'var(--shadow-sm)',
-                    border: '1px solid var(--color-border)',
+                    boxShadow: 'var(--glass-shadow)',
+                    border: '1px solid var(--glass-border)',
                 }}
                 whileHover={{ boxShadow: 'var(--shadow-md)' }}
                 whileTap={{ scale: disabled ? 1 : 0.97 }}

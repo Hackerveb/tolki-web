@@ -19,15 +19,25 @@ export default function SSOCallback() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center"
-      style={{ backgroundColor: 'var(--color-background)' }}
+      className="min-h-screen flex items-center justify-center glass-page"
+      style={{
+        paddingLeft: 'max(24px, env(safe-area-inset-left))',
+        paddingRight: 'max(24px, env(safe-area-inset-right))',
+      }}
     >
-      <div className="flex flex-col items-center gap-3">
+      <div className="flex flex-col items-center gap-4">
         <div
-          className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin"
-          style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }}
-        />
-        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+          className="w-14 h-14 rounded-full flex items-center justify-center"
+          style={{
+            background: 'linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)',
+            boxShadow: 'var(--glass-glow-primary)',
+          }}
+        >
+          <div
+            className="w-6 h-6 border-[2.5px] border-white border-t-transparent rounded-full animate-spin"
+          />
+        </div>
+        <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
           Completing sign in...
         </p>
       </div>

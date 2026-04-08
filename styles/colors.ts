@@ -86,7 +86,7 @@ export const darkColors = {
   // Text — Apple HIG label hierarchy
   textPrimary: '#FFFFFF',
   textSecondary: 'rgba(235, 235, 245, 0.60)',  // ~7:1 on black, WCAG AA ✓
-  textTertiary: 'rgba(235, 235, 245, 0.30)',   // decorative/disabled only
+  textTertiary: 'rgba(235, 235, 245, 0.50)',   // WCAG AA 4.5:1 on black
 
   // System colors — iOS dark mode adaptive variants
   primary: '#0A84FF',              // systemBlue (dark)

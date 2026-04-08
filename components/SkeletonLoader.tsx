@@ -18,8 +18,8 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
 }) => {
   const getStyles = (): React.CSSProperties => {
     const baseStyles: React.CSSProperties = {
-      backgroundColor: 'var(--color-neutral-200)',
-      boxShadow: 'var(--shadow-inner)',
+      backgroundColor: 'var(--glass-bg-subtle)',
+      border: '1px solid var(--glass-border-subtle)',
     };
 
     switch (variant) {

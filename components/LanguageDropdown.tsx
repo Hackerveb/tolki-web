@@ -125,10 +125,11 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
           WebkitBackdropFilter: 'var(--glass-blur)',
           border: `1px solid ${isOpen ? 'var(--glass-border-strong)' : 'var(--glass-border)'}`,
           boxShadow: isOpen ? 'var(--glass-shadow)' : 'var(--glass-shadow-sm)',
-          paddingTop: '12px',
-          paddingBottom: '12px',
+          paddingTop: '14px',
+          paddingBottom: '14px',
           paddingLeft: '20px',
           paddingRight: '16px',
+          minHeight: '48px',
           transition: 'all 0.15s ease-out',
         }}
       >
@@ -193,7 +194,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                     color: 'var(--color-text-primary)',
                     borderRadius: '12px',
                     padding: '9px 12px 9px 36px',
-                    minHeight: '40px',
+                    minHeight: '44px',
                     fontSize: '14px',
                   }}
                 />
@@ -206,7 +207,8 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                 {searchQuery.length > 0 && (
                   <button
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center"
+                    aria-label="Clear search"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center"
                     style={{ background: 'var(--color-neutral-200)', border: 'none', cursor: 'pointer' }}
                   >
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
@@ -248,7 +250,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                         className="w-full flex items-center gap-3 transition-colors duration-100"
                         style={{
                           background: isFocused || hoveredItem === itemKey ? 'var(--color-primary-alpha)' : 'transparent',
-                          paddingTop: '11px', paddingBottom: '11px', paddingLeft: '20px', paddingRight: '16px',
+                          paddingTop: '12px', paddingBottom: '12px', paddingLeft: '20px', paddingRight: '16px', minHeight: '44px',
                           borderBottom: index < displayRecentLanguages.length - 1 ? '1px solid var(--glass-border-subtle)' : 'none',
                           outline: isFocused ? '2px solid var(--color-primary)' : 'none',
                           outlineOffset: '-2px',
@@ -290,7 +292,7 @@ const LanguageDropdownComponent: React.FC<LanguageDropdownProps> = ({
                       className="w-full flex items-center gap-3 transition-colors duration-100"
                       style={{
                         background: isFocused || hoveredItem === language.code ? 'var(--color-primary-alpha)' : 'transparent',
-                        paddingTop: '11px', paddingBottom: '11px', paddingLeft: '20px', paddingRight: '16px',
+                        paddingTop: '12px', paddingBottom: '12px', paddingLeft: '20px', paddingRight: '16px', minHeight: '44px',
                         borderBottom: index < filteredLanguages.length - 1 ? '1px solid var(--glass-border-subtle)' : 'none',
                         outline: isFocused ? '2px solid var(--color-primary)' : 'none',
                         outlineOffset: '-2px',

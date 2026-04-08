@@ -358,7 +358,7 @@ export default function UsageDashboardPage() {
         borderRadius: 0, position: 'sticky', top: 0, zIndex: 10,
       }}>
         <button onClick={() => router.back()}
-          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
+          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
           aria-label={tt('settings.goBack')}>
           <BackIcon />
         </button>

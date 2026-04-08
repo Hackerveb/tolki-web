@@ -56,25 +56,29 @@ export const SocialAuthButton: React.FC<SocialAuthButtonProps> = ({
       onClick={onPress}
       disabled={disabled || loading}
       whileTap={{ scale: disabled || loading ? 1 : 0.98 }}
-      className={`flex items-center justify-center gap-3 rounded-xl font-semibold transition-all disabled:opacity-50 ${
-        iconOnly ? 'w-14 h-14' : 'w-full py-3 px-4'
+      className={`flex items-center justify-center gap-3 font-medium transition-all disabled:opacity-50 glass ${
+        iconOnly ? 'w-14 h-14' : 'w-full'
       }`}
       style={{
-        backgroundColor: 'var(--color-surface)',
         color: 'var(--color-text-primary)',
-        boxShadow: 'var(--shadow-sm)',
-        border: '1px solid var(--color-border)',
+        borderRadius: '16px',
+        minHeight: iconOnly ? '56px' : '52px',
+        padding: iconOnly ? undefined : '12px 16px',
+        cursor: disabled || loading ? 'not-allowed' : 'pointer',
       }}
+      aria-label={`Continue with ${label}`}
     >
       {loading ? (
         <div
           className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin"
-          style={{ borderColor: 'var(--color-primary)' }}
+          style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }}
         />
       ) : (
         <>
           {icon}
-          {!iconOnly && <span>{label}</span>}
+          {!iconOnly && (
+            <span style={{ fontSize: '15px' }}>{label}</span>
+          )}
         </>
       )}
     </motion.button>

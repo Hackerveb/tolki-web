@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { useMutation } from 'convex/react';
@@ -12,7 +12,7 @@ import { languages } from '@/lib/languages';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/useToast';
 
-const BackIcon = () => (
+const BackIcon = memo(() => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
     <polyline
       points="15 18 9 12 15 6"
@@ -22,11 +22,12 @@ const BackIcon = () => (
       strokeLinejoin="round"
     />
   </svg>
-);
+));
+BackIcon.displayName = 'BackIcon';
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isLoaded: isUserLoaded } = useUser();
   const { email: userEmail, initials, convexUser } = useCurrentUser();
   const updateDefaultLanguage = useMutation(api.users.updateDefaultLanguage);
   const { toast } = useToast();
@@ -79,6 +80,43 @@ export default function EditProfileScreen() {
     }
   };
 
+  if (!isUserLoaded) {
+    return (
+      <div className="h-screen flex flex-col overflow-hidden glass-page">
+        <header
+          className="flex items-center glass-strong"
+          style={{
+            gap: '15px',
+            paddingTop: 'max(20px, env(safe-area-inset-top))',
+            paddingBottom: '20px',
+            paddingLeft: 'max(20px, env(safe-area-inset-left))',
+            paddingRight: 'max(20px, env(safe-area-inset-right))',
+            borderBottom: '1px solid var(--glass-border)',
+            borderRadius: 0,
+          }}
+        >
+          <div className="w-11 h-11 rounded-full animate-pulse" style={{ backgroundColor: 'var(--glass-bg-subtle)' }} />
+          <div className="h-6 rounded-lg animate-pulse" style={{ width: '120px', backgroundColor: 'var(--glass-bg-subtle)' }} />
+        </header>
+        <div className="flex-1 overflow-y-auto" style={{ padding: '20px' }}>
+          {/* Avatar skeleton */}
+          <div className="flex flex-col items-center glass animate-pulse" style={{ padding: '28px 24px', borderRadius: '20px', marginBottom: '16px' }}>
+            <div className="rounded-full" style={{ width: '100px', height: '100px', backgroundColor: 'var(--glass-bg-subtle)' }} />
+          </div>
+          {/* Form skeleton */}
+          <div className="glass animate-pulse" style={{ padding: '24px', borderRadius: '20px', marginBottom: '16px' }}>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} style={{ marginBottom: i < 4 ? '20px' : 0 }}>
+                <div style={{ width: '80px', height: '12px', borderRadius: '6px', backgroundColor: 'var(--glass-bg-subtle)', marginBottom: '8px' }} />
+                <div style={{ height: '48px', borderRadius: '12px', backgroundColor: 'var(--glass-bg-subtle)' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="h-screen flex flex-col overflow-hidden glass-page"
@@ -98,7 +136,7 @@ export default function EditProfileScreen() {
       >
         <button
           onClick={() => router.back()}
-          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
+          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
           aria-label="Go back"
         >
           <BackIcon />
@@ -172,9 +210,10 @@ export default function EditProfileScreen() {
           {/* First Name */}
           <div style={{ marginBottom: '20px' }}>
             <label
+              htmlFor="profile-first-name"
               className="block uppercase"
               style={{
-                fontSize: '11px',
+                fontSize: '12px',
                 fontWeight: '700',
                 color: 'var(--color-text-tertiary)',
                 letterSpacing: '0.6px',
@@ -184,6 +223,7 @@ export default function EditProfileScreen() {
               First Name
             </label>
             <input
+              id="profile-first-name"
               type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
@@ -193,8 +233,9 @@ export default function EditProfileScreen() {
               style={{
                 fontSize: '16px',
                 color: 'var(--color-text-primary)',
-                padding: '12px 16px',
-                borderRadius: '10px',
+                padding: '14px 16px',
+                minHeight: '48px',
+                borderRadius: '12px',
                 outline: 'none',
               }}
             />
@@ -205,9 +246,10 @@ export default function EditProfileScreen() {
           {/* Last Name */}
           <div style={{ marginBottom: '20px' }}>
             <label
+              htmlFor="profile-last-name"
               className="block uppercase"
               style={{
-                fontSize: '11px',
+                fontSize: '12px',
                 fontWeight: '700',
                 color: 'var(--color-text-tertiary)',
                 letterSpacing: '0.6px',
@@ -217,6 +259,7 @@ export default function EditProfileScreen() {
               Last Name
             </label>
             <input
+              id="profile-last-name"
               type="text"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
@@ -226,8 +269,9 @@ export default function EditProfileScreen() {
               style={{
                 fontSize: '16px',
                 color: 'var(--color-text-primary)',
-                padding: '12px 16px',
-                borderRadius: '10px',
+                padding: '14px 16px',
+                minHeight: '48px',
+                borderRadius: '12px',
                 outline: 'none',
               }}
             />
@@ -238,9 +282,10 @@ export default function EditProfileScreen() {
           {/* Email (Read-only) */}
           <div style={{ marginBottom: '20px' }}>
             <label
+              htmlFor="profile-email"
               className="block uppercase"
               style={{
-                fontSize: '11px',
+                fontSize: '12px',
                 fontWeight: '700',
                 color: 'var(--color-text-tertiary)',
                 letterSpacing: '0.6px',
@@ -250,6 +295,7 @@ export default function EditProfileScreen() {
               Email
             </label>
             <input
+              id="profile-email"
               type="email"
               value={email}
               disabled
@@ -257,9 +303,10 @@ export default function EditProfileScreen() {
               style={{
                 fontSize: '16px',
                 color: 'var(--color-text-tertiary)',
-                padding: '12px 16px',
+                padding: '14px 16px',
+                minHeight: '48px',
                 backgroundColor: 'var(--glass-bg-subtle)',
-                borderRadius: '10px',
+                borderRadius: '12px',
                 border: '1px solid var(--glass-border)',
                 cursor: 'not-allowed',
                 outline: 'none',
@@ -272,9 +319,10 @@ export default function EditProfileScreen() {
           {/* Phone Number (Read-only) */}
           <div style={{ marginBottom: '20px' }}>
             <label
+              htmlFor="profile-phone"
               className="block uppercase"
               style={{
-                fontSize: '11px',
+                fontSize: '12px',
                 fontWeight: '700',
                 color: 'var(--color-text-tertiary)',
                 letterSpacing: '0.6px',
@@ -284,6 +332,7 @@ export default function EditProfileScreen() {
               Phone Number
             </label>
             <input
+              id="profile-phone"
               type="tel"
               value={phone}
               disabled
@@ -292,9 +341,10 @@ export default function EditProfileScreen() {
               style={{
                 fontSize: '16px',
                 color: 'var(--color-text-tertiary)',
-                padding: '12px 16px',
+                padding: '14px 16px',
+                minHeight: '48px',
                 backgroundColor: 'var(--glass-bg-subtle)',
-                borderRadius: '10px',
+                borderRadius: '12px',
                 border: '1px solid var(--glass-border)',
                 cursor: 'not-allowed',
                 outline: 'none',
@@ -344,7 +394,7 @@ export default function EditProfileScreen() {
           <button
             onClick={handleSave}
             disabled={loading}
-            className="w-full transition-all hover:opacity-90 active:scale-98 disabled:opacity-60"
+            className="w-full transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
             style={{
               padding: '16px',
               background: loading
@@ -365,7 +415,7 @@ export default function EditProfileScreen() {
           <button
             onClick={() => router.push('/settings')}
             disabled={loading}
-            className="w-full transition-all hover:opacity-90 active:scale-98 disabled:opacity-60 glass"
+            className="w-full transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60 glass"
             style={{
               padding: '16px',
               borderRadius: '14px',

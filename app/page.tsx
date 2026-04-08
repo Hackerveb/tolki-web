@@ -27,6 +27,34 @@ type ConnectionStatus = 'idle' | 'connecting' | 'connected';
 // Agent states that indicate the agent has truly joined and is ready/active
 const AGENT_ACTIVE_STATES = new Set(['listening', 'thinking', 'speaking']);
 
+// Stable style objects — extracted to module level to avoid per-render allocation
+const HEADER_STYLE: React.CSSProperties = {
+  position: 'sticky',
+  top: 0,
+  zIndex: 40,
+  paddingTop: 'max(16px, env(safe-area-inset-top))',
+  paddingBottom: '16px',
+  paddingLeft: 'max(16px, env(safe-area-inset-left))',
+  paddingRight: 'max(16px, env(safe-area-inset-right))',
+  borderRadius: '0 0 24px 24px',
+  margin: '0 8px',
+  marginTop: '8px',
+};
+
+const MAIN_STYLE: React.CSSProperties = {
+  paddingLeft: 'max(20px, env(safe-area-inset-left))',
+  paddingRight: 'max(20px, env(safe-area-inset-right))',
+  paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+};
+
+const SETTINGS_BUTTON_STYLE: React.CSSProperties = {
+  background: 'var(--glass-bg-subtle)',
+  backdropFilter: 'var(--glass-blur-sm)',
+  WebkitBackdropFilter: 'var(--glass-blur-sm)',
+  border: '1px solid var(--glass-border-subtle)',
+  color: 'var(--color-text-secondary)',
+};
+
 // Inner component — needs to live inside RoomContext.Provider
 function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitRoom> }) {
   const router = useRouter();
@@ -269,11 +297,11 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
 
   if (!isLoaded || !isSignedIn) {
     return (
-      <div className="glass-page h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4 w-full max-w-xs px-6">
-          <SkeletonLoader variant="rectangle" width="100%" height="60px" />
-          <SkeletonLoader variant="circle" width="100px" height="100px" />
-          <SkeletonLoader variant="text" width="150px" height="20px" />
+      <div className="glass-page flex items-center justify-center" style={{ height: '100dvh' }}>
+        <div className="flex flex-col items-center gap-6 w-full max-w-xs px-6">
+          <SkeletonLoader variant="rectangle" width="100%" height="56px" className="rounded-2xl" />
+          <SkeletonLoader variant="circle" width="120px" height="120px" />
+          <SkeletonLoader variant="text" width="160px" height="20px" />
         </div>
       </div>
     );
@@ -282,21 +310,7 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
   return (
     <div ref={pageRef} className="glass-page flex flex-col" style={{ height: '100dvh', overflow: 'hidden' }}>
       {/* ── Glass header ─────────────────────────────────────────── */}
-      <header
-        className="glass flex-shrink-0"
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 40,
-          paddingTop: 'max(16px, env(safe-area-inset-top))',
-          paddingBottom: '14px',
-          paddingLeft: 'max(16px, env(safe-area-inset-left))',
-          paddingRight: 'max(16px, env(safe-area-inset-right))',
-          borderRadius: '0 0 24px 24px',
-          margin: '0 8px',
-          marginTop: 'max(8px, env(safe-area-inset-top))',
-        }}
-      >
+      <header className="glass flex-shrink-0" style={HEADER_STYLE}>
         <div className="flex items-center gap-3">
           <LanguageDropdown
             selectedLanguage={sourceLanguage}
@@ -304,7 +318,7 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
             dropDirection="down"
             className="flex-1"
           />
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
             <path d="M5 12h14M19 12l-4-4M19 12l-4 4M5 12l4-4M5 12l4 4" stroke="var(--color-text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           <LanguageDropdown
@@ -318,14 +332,8 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
             prefetch={true}
             aria-label="Settings"
             onClick={handleSettingsClick}
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{
-              background: 'var(--glass-bg-subtle)',
-              backdropFilter: 'var(--glass-blur-sm)',
-              WebkitBackdropFilter: 'var(--glass-blur-sm)',
-              border: '1px solid var(--glass-border-subtle)',
-              color: 'var(--color-text-secondary)',
-            }}
+            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={SETTINGS_BUTTON_STYLE}
           >
             <motion.svg
               width="20"
@@ -349,11 +357,7 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
       {/* ── Main content ─────────────────────────────────────────── */}
       <main
         className="flex-1 flex flex-col items-center overflow-hidden"
-        style={{
-          paddingLeft: 'max(20px, env(safe-area-inset-left))',
-          paddingRight: 'max(20px, env(safe-area-inset-right))',
-          paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
-        }}
+        style={MAIN_STYLE}
       >
         {/* Top spacer — pushes credits to ~25% from top */}
         <div style={{ flex: '1 1 0' }} />
@@ -386,7 +390,7 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
                 href="/subscribe"
                 prefetch
                 className="text-xs font-semibold flex items-center gap-1"
-                style={{ color: 'var(--color-primary)' }}
+                style={{ color: 'var(--color-primary)', padding: '8px 4px', minHeight: '44px' }}
               >
                 {/* Upward arrow icon for upgrade */}
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -450,7 +454,7 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
           </motion.div>
 
           {/* CTA text — animated, clickable when relevant */}
-          <div className="mt-5 relative flex items-center justify-center" style={{ minHeight: '44px' }}>
+          <div className="mt-5 relative flex items-center justify-center" style={{ minHeight: '44px' }} aria-live="polite">
             <AnimatePresence mode="wait">
               <motion.button
                 key={ctaText}
@@ -459,7 +463,6 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.22, ease: 'easeOut' }}
                 onClick={ctaClickable ? (connectionStatus === 'connected' ? handleRecordingStop : handleStartSession) : undefined}
-                aria-live="polite"
                 className="text-[14px] font-medium tracking-wide text-center"
                 style={{
                   color: getStatusColor(),
@@ -467,9 +470,13 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
                   cursor: ctaClickable ? 'pointer' : 'default',
                   background: 'none',
                   border: 'none',
-                  padding: '0 4px',
-                  maxWidth: '260px',
+                  padding: '10px 16px',
+                  maxWidth: '280px',
                   lineHeight: '1.5',
+                  minHeight: '44px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
                 {ctaText}
@@ -519,8 +526,11 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
                   {tt('main.needCredits')}
                 </p>
                 <span
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold"
+                  className="inline-flex items-center gap-2 px-6 rounded-xl text-sm font-semibold"
                   style={{
+                    minHeight: '48px',
+                    paddingTop: '12px',
+                    paddingBottom: '12px',
                     background: 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
                     color: '#fff',
                     boxShadow: 'var(--glass-glow-primary)',

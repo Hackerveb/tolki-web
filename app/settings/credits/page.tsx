@@ -80,7 +80,7 @@ function OrgMemberCreditsView({ onBack, tt }: { onBack: () => void; tt: ReturnTy
       >
         <button
           onClick={onBack}
-          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
+          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
           aria-label={tt('settings.goBack')}
         >
           <BackIcon />
@@ -113,7 +113,17 @@ function OrgMemberCreditsView({ onBack, tt }: { onBack: () => void; tt: ReturnTy
             width: '100%',
           }}
         >
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>🏢</div>
+          <div style={{ marginBottom: '20px' }} aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="7" height="18" rx="1" stroke="var(--color-text-secondary)" strokeWidth="1.5" />
+              <rect x="14" y="8" width="7" height="13" rx="1" stroke="var(--color-text-secondary)" strokeWidth="1.5" />
+              <line x1="6" y1="7" x2="7" y2="7" stroke="var(--color-text-secondary)" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="6" y1="11" x2="7" y2="11" stroke="var(--color-text-secondary)" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="6" y1="15" x2="7" y2="15" stroke="var(--color-text-secondary)" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="17" y1="12" x2="18" y2="12" stroke="var(--color-text-secondary)" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="17" y1="16" x2="18" y2="16" stroke="var(--color-text-secondary)" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
           <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '12px' }}>
             {tt('credits.orgManagedTitle')}
           </h2>
@@ -248,7 +258,7 @@ function AddOnContent() {
       >
         <button
           onClick={() => router.back()}
-          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
+          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
           aria-label={tt('settings.goBack')}
         >
           <BackIcon />
@@ -451,8 +461,9 @@ function AddOnContent() {
                 key={qty}
                 onClick={() => { setMinutes(qty); setInputValue(String(qty)); }}
                 style={{
-                  padding: '6px 14px',
-                  borderRadius: '8px',
+                  padding: '10px 16px',
+                  minHeight: '44px',
+                  borderRadius: '10px',
                   fontSize: '13px',
                   fontWeight: 600,
                   border: minutes === qty ? '2px solid var(--color-primary)' : '1px solid var(--glass-border)',
@@ -526,7 +537,7 @@ function AddOnContent() {
           paddingRight: 'max(20px, env(safe-area-inset-right))',
           borderTop: '1px solid var(--glass-border)',
           borderRadius: 0,
-          maxWidth: '430px',
+          maxWidth: '600px',
           margin: '0 auto',
         }}
       >
@@ -541,6 +552,8 @@ function AddOnContent() {
               : 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
             paddingTop: '18px',
             paddingBottom: '18px',
+            paddingLeft: '16px',
+            paddingRight: '16px',
             borderRadius: '14px',
             border: 'none',
             boxShadow: isPurchasing ? 'none' : 'var(--glass-glow-primary)',
@@ -554,7 +567,15 @@ function AddOnContent() {
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
-            <span style={{ fontSize: '16px', fontWeight: 700, color: '#FFFFFF' }}>
+            <span style={{
+              fontSize: '15px',
+              fontWeight: 700,
+              color: '#FFFFFF',
+              display: 'block',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
               {isOrgAdmin && orgName
                 ? locale === 'nb'
                   ? `Kjøp ${minutes} minutter for ${orgName} — ${totalNok.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr`

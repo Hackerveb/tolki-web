@@ -25,6 +25,14 @@
   --color-error: #DC2626;
   --color-info: #0891B2;
 
+  /* Password Strength (WCAG AA on white) */
+  --color-strength-weak: #EB0000;
+  --color-strength-weak-alpha: rgba(235, 0, 0, 0.12);
+  --color-strength-medium: #A76400;
+  --color-strength-medium-alpha: rgba(167, 100, 0, 0.12);
+  --color-strength-strong: #3B843F;
+  --color-strength-strong-alpha: rgba(59, 132, 63, 0.12);
+
   /* Recording States */
   --color-listening: #059669;
   --color-thinking: #D97706;
@@ -75,8 +83,8 @@
      ============================================ */
   --color-on-primary: #FFFFFF;
   --color-on-error: #FFFFFF;
-  --color-on-warning: #FFFFFF;
-  --color-on-success: #FFFFFF;
+  --color-on-warning: #000000;
+  --color-on-success: #000000;
   --color-on-info: #FFFFFF;
 
   /* Primary with alpha for hover states */
@@ -219,8 +227,8 @@
   --color-text-primary: #FFFFFF;
   /* Secondary: #EBEBF5 @ 60% — ~7:1 on black, WCAG AA ✓ */
   --color-text-secondary: rgba(235, 235, 245, 0.60);
-  /* Tertiary: #EBEBF5 @ 40% — improved from 30% for readability */
-  --color-text-tertiary: rgba(235, 235, 245, 0.40);
+  /* Tertiary: #EBEBF5 @ 50% — meets WCAG AA 4.5:1 on black backgrounds */
+  --color-text-tertiary: rgba(235, 235, 245, 0.50);
 
   /* Legacy aliases */
   --color-onyx: #FFFFFF;
@@ -235,6 +243,14 @@
   --color-warning: #FF9F0A;            /* systemOrange (dark) */
   --color-error: #FF453A;             /* systemRed (dark) */
   --color-info: #64D2FF;               /* systemTeal (dark) */
+
+  /* Password Strength (vibrant on dark bg — all pass WCAG AA) */
+  --color-strength-weak: #FF6B6B;
+  --color-strength-weak-alpha: rgba(255, 107, 107, 0.15);
+  --color-strength-medium: #FFA726;
+  --color-strength-medium-alpha: rgba(255, 167, 38, 0.15);
+  --color-strength-strong: #66BB6A;
+  --color-strength-strong-alpha: rgba(102, 187, 106, 0.15);
 
   /* Recording States — iOS dark mode colors */
   --color-listening: #30D158;
@@ -360,6 +376,14 @@
     --color-warning: #FF9F0A;
     --color-error: #FF453A;
     --color-info: #64D2FF;
+
+    /* Password Strength */
+    --color-strength-weak: #FF6B6B;
+    --color-strength-weak-alpha: rgba(255, 107, 107, 0.15);
+    --color-strength-medium: #FFA726;
+    --color-strength-medium-alpha: rgba(255, 167, 38, 0.15);
+    --color-strength-strong: #66BB6A;
+    --color-strength-strong-alpha: rgba(102, 187, 106, 0.15);
 
     /* Recording States */
     --color-listening: #30D158;
@@ -630,7 +654,7 @@ select {
 button,
 a,
 .interactive {
-  transition: all 0.15s ease-out;
+  transition: color 0.15s ease-out, background-color 0.15s ease-out, border-color 0.15s ease-out, box-shadow 0.15s ease-out, opacity 0.15s ease-out, transform 0.15s ease-out;
 }
 
 /* ============================================
@@ -716,6 +740,11 @@ a,
   -webkit-backdrop-filter: var(--glass-blur-sm);
   border: 1px solid var(--glass-input-border);
   transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.glass-input::placeholder {
+  color: var(--color-text-tertiary);
+  opacity: 1;
 }
 
 .glass-input:focus {

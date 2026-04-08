@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
@@ -115,7 +115,7 @@ interface PlanCardProps {
   tt: ReturnType<typeof useT>;
 }
 
-function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect, locale, tt }: PlanCardProps) {
+const PlanCard = memo(function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect, locale, tt }: PlanCardProps) {
   const price = interval === 'monthly' ? plan.monthlyNok : plan.annualMonthlyNok;
   const annualSavings = Math.round(
     ((plan.monthlyNok - plan.annualMonthlyNok) / plan.monthlyNok) * 100
@@ -127,6 +127,8 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect, locale,
     <motion.button
       onClick={onSelect}
       whileTap={{ scale: 0.98 }}
+      role="radio"
+      aria-checked={isSelected}
       className="relative w-full text-left"
       style={{
         borderRadius: '20px',
@@ -152,7 +154,7 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect, locale,
             position: 'absolute',
             top: '-1px',
             right: '16px',
-            fontSize: '10px',
+            fontSize: '11px',
             fontWeight: 700,
             background: 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
             color: '#FFFFFF',
@@ -174,7 +176,7 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect, locale,
             position: 'absolute',
             top: '-1px',
             left: '16px',
-            fontSize: '10px',
+            fontSize: '11px',
             fontWeight: 700,
             backgroundColor: 'var(--color-success)',
             color: '#FFFFFF',
@@ -201,7 +203,7 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect, locale,
           >
             {displayName}
           </h3>
-          <p style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>
             {plan.minutes} min/{locale === 'nb' ? 'mnd' : 'mo'} · {plan.overageNok.toFixed(2).replace('.', ',')} kr/min {locale === 'nb' ? 'ekstra' : 'overage'}
           </p>
         </div>
@@ -269,7 +271,7 @@ function PlanCard({ plan, interval, isSelected, isCurrentPlan, onSelect, locale,
       )}
     </motion.button>
   );
-}
+});
 
 // ─── Plan Comparison Table ────────────────────────────────────────────────────
 
@@ -307,6 +309,7 @@ function PlanComparisonTable({ interval, locale, tt }: { interval: BillingInterv
         marginBottom: '32px',
       }}
     >
+    <div style={{ overflowX: 'auto', minWidth: 0 }}>
       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--glass-border)' }}>
         <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
           {tt('subscribe.comparison')}
@@ -352,7 +355,7 @@ function PlanComparisonTable({ interval, locale, tt }: { interval: BillingInterv
             borderBottom: i < rows.length - 1 ? '1px solid var(--glass-border)' : 'none',
           }}
         >
-          <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>{row.label}</span>
+          <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>{row.label}</span>
           {row.values.map((val, j) => (
             <div key={j} style={{ textAlign: 'center' }}>
               {typeof val === 'boolean' ? (
@@ -364,7 +367,7 @@ function PlanComparisonTable({ interval, locale, tt }: { interval: BillingInterv
                   <span style={{ fontSize: '13px', color: 'var(--color-text-tertiary)' }}>–</span>
                 )
               ) : (
-                <span style={{ fontSize: '13px', color: 'var(--color-text-primary)', fontWeight: 500 }}>
+                <span style={{ fontSize: '13px', color: 'var(--color-text-primary)', fontWeight: 500, whiteSpace: 'nowrap' }}>
                   {val}
                 </span>
               )}
@@ -372,6 +375,7 @@ function PlanComparisonTable({ interval, locale, tt }: { interval: BillingInterv
           ))}
         </div>
       ))}
+    </div>
     </div>
   );
 }
@@ -515,8 +519,37 @@ function SubscribePage() {
   const isCurrentPlan = currentTier === selectedPlan;
   const selectedDisplayName = locale === 'nb' ? selectedPlanData?.name : selectedPlanData?.nameEn;
 
+  // Loading state
+  if (!isLoaded) {
+    return (
+      <div className="h-screen flex flex-col overflow-hidden glass-page">
+        <header
+          className="flex items-center glass-strong"
+          style={{
+            gap: '15px',
+            paddingTop: 'max(20px, env(safe-area-inset-top))',
+            paddingBottom: '20px',
+            paddingLeft: 'max(20px, env(safe-area-inset-left))',
+            paddingRight: 'max(20px, env(safe-area-inset-right))',
+            borderBottom: '1px solid var(--glass-border)',
+            borderRadius: 0,
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+          }}
+        >
+          <div className="w-10 h-10 rounded-full glass animate-pulse" />
+          <div className="h-6 w-32 rounded glass animate-pulse" />
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
+        </div>
+      </div>
+    );
+  }
+
   // Show org member view — subscription is managed by org admin
-  if (isLoaded && tier === 'org_member') {
+  if (tier === 'org_member') {
     return <OrgMemberView onBack={() => router.back()} tt={tt} />;
   }
 
@@ -623,7 +656,7 @@ function SubscribePage() {
         </div>
 
         {/* Plan cards */}
-        <div style={{ marginBottom: '24px' }}>
+        <div role="radiogroup" aria-label="Select plan" style={{ marginBottom: '24px' }}>
           {PLANS.map((plan) => (
             <PlanCard
               key={plan.id}
@@ -659,24 +692,23 @@ function SubscribePage() {
 
         {/* Buy minutes individually (private users only) */}
         {tier !== 'org_admin' && (
-          <Link href="/settings/credits">
-            <div
-              className="glass-subtle"
-              style={{
-                padding: '14px 16px',
-                borderRadius: '12px',
-                marginBottom: '20px',
-                textAlign: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>
-                {tt('subscribe.justNeedMinutes')}
-              </p>
-              <p style={{ fontSize: '14px', color: 'var(--color-primary)', fontWeight: 600 }}>
-                {tt('subscribe.buyMinutes')} &rarr;
-              </p>
-            </div>
+          <Link
+            href="/settings/credits"
+            className="block glass-subtle"
+            style={{
+              padding: '14px 16px',
+              borderRadius: '12px',
+              marginBottom: '20px',
+              textAlign: 'center',
+              textDecoration: 'none',
+            }}
+          >
+            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>
+              {tt('subscribe.justNeedMinutes')}
+            </p>
+            <p style={{ fontSize: '14px', color: 'var(--color-primary)', fontWeight: 600 }}>
+              {tt('subscribe.buyMinutes')} &rarr;
+            </p>
           </Link>
         )}
 
@@ -742,7 +774,7 @@ function SubscribePage() {
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
-            <span style={{ fontSize: '16px', fontWeight: 700, color: '#FFFFFF' }}>
+            <span style={{ fontSize: '16px', fontWeight: 700, color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', padding: '0 16px' }}>
               {ctaLabel()}
             </span>
           )}

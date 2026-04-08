@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, type ComponentProps } from 'react';
+import { useMemo, useState, useEffect, type ComponentProps } from 'react';
 import { type VariantProps, cva } from 'class-variance-authority';
 import { type AgentState, type TrackReferenceOrPlaceholder } from '@livekit/components-react';
 
@@ -346,14 +346,22 @@ export function AgentAudioVisualizerWave({
     audioTrack,
   });
 
+  // Pause shader when page is backgrounded to save battery/GPU
+  const [isVisible, setIsVisible] = useState(true);
+  useEffect(() => {
+    const onChange = () => setIsVisible(document.visibilityState === 'visible');
+    document.addEventListener('visibilitychange', onChange);
+    return () => document.removeEventListener('visibilitychange', onChange);
+  }, []);
+
   return (
     <WaveShader
       ref={ref}
       data-lk-state={state}
-      speed={speed}
+      speed={isVisible ? speed : 0}
       color={color}
       colorShift={colorShift}
-      mix={opacity}
+      mix={isVisible ? opacity : 0}
       amplitude={amplitude}
       frequency={frequency}
       lineWidth={_lineWidth}

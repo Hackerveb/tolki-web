@@ -112,14 +112,14 @@ export const isPasswordValid = (password: string): boolean => {
  * Get password strength color for UI
  */
 export const getPasswordStrengthColor = (strength: 'weak' | 'medium' | 'strong'): string => {
-  switch (strength) {
-    case 'weak':
-      return '#FF6B6B'; // Red
-    case 'medium':
-      return '#FFA726'; // Orange
-    case 'strong':
-      return '#66BB6A'; // Green
-  }
+  return `var(--color-strength-${strength})`;
+};
+
+/**
+ * Get password strength alpha background (for badge backgrounds)
+ */
+export const getPasswordStrengthAlpha = (strength: 'weak' | 'medium' | 'strong'): string => {
+  return `var(--color-strength-${strength}-alpha)`;
 };
 
 /**

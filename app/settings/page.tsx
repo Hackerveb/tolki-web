@@ -204,7 +204,7 @@ function SettingsScreenInner() {
       >
         <button
           onClick={() => router.back()}
-          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
+          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
           aria-label={tt('settings.goBack')}
         >
           <BackIcon />
@@ -296,8 +296,13 @@ function SettingsScreenInner() {
                   borderRadius: '99px',
                 }}
               >
-                <span style={{ fontSize: '11px', color: 'var(--color-on-warning)', fontWeight: '600' }}>
-                  ⚠️ {tt('settings.lowCredits')}
+                <span className="flex items-center gap-1" style={{ fontSize: '11px', color: 'var(--color-on-warning)', fontWeight: '600' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                  {tt('settings.lowCredits')}
                 </span>
               </div>
             )}
@@ -320,16 +325,16 @@ function SettingsScreenInner() {
                 {organization.name}
               </span>
             </div>
-            <Link href="/settings/organization" prefetch={true} className="w-full">
-              <button
-                className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
-                style={{ padding: '14px 16px', borderRadius: '12px', cursor: 'pointer' }}
-              >
-                <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
-                  {tt('settings.manageOrg')}
-                </span>
-                <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
-              </button>
+            <Link
+              href="/settings/organization"
+              prefetch={true}
+              className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
+              style={{ padding: '14px 16px', borderRadius: '12px' }}
+            >
+              <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                {tt('settings.manageOrg')}
+              </span>
+              <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
             </Link>
           </div>
         )}
@@ -350,12 +355,19 @@ function SettingsScreenInner() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: 22,
                   flexShrink: 0,
                 }}
                 aria-hidden="true"
               >
-                🏢
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="3" width="7" height="18" rx="1" stroke="#fff" strokeWidth="1.5" />
+                  <rect x="14" y="8" width="7" height="13" rx="1" stroke="#fff" strokeWidth="1.5" />
+                  <line x1="6" y1="7" x2="7" y2="7" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="6" y1="11" x2="7" y2="11" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="6" y1="15" x2="7" y2="15" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="17" y1="12" x2="18" y2="12" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+                  <line x1="17" y1="16" x2="18" y2="16" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
               </div>
               <div>
                 <p style={{ fontSize: '15px', fontWeight: '700', color: 'var(--color-text-primary)', marginBottom: '4px' }}>
@@ -366,25 +378,23 @@ function SettingsScreenInner() {
                 </p>
               </div>
             </div>
-            <Link href="/settings/organization" prefetch={true} className="w-full">
-              <button
-                className="flex items-center justify-between transition-all active:scale-[0.98] w-full"
-                style={{
-                  padding: '13px 16px',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #059669, #10B981)',
-                  border: 'none',
-                  color: '#fff',
-                }}
-              >
-                <span style={{ fontSize: '14px', fontWeight: '600' }}>
-                  Create Organisation
-                </span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <polyline points="9 18 15 12 9 6" stroke="rgba(255,255,255,0.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
+            <Link
+              href="/settings/organization"
+              prefetch={true}
+              className="flex items-center justify-between transition-all active:scale-[0.98] w-full"
+              style={{
+                padding: '13px 16px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #059669, #10B981)',
+                color: '#fff',
+              }}
+            >
+              <span style={{ fontSize: '14px', fontWeight: '600' }}>
+                Create Organisation
+              </span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6" stroke="rgba(255,255,255,0.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </Link>
           </div>
         )}
@@ -405,55 +415,52 @@ function SettingsScreenInner() {
               </h3>
             </div>
 
-            <Link href="/subscribe" prefetch={true} className="w-full">
-              <button
-                className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
-                style={{
-                  padding: '14px 16px',
-                  borderRadius: '12px',
-                  marginBottom: '10px',
-                  cursor: 'pointer',
-                }}
-              >
-                <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
-                  <UpgradeIcon />
-                  {tt('settings.upgrade')}
-                </span>
-                <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
-              </button>
+            <Link
+              href="/subscribe"
+              prefetch={true}
+              className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
+              style={{
+                padding: '14px 16px',
+                borderRadius: '12px',
+                marginBottom: '10px',
+              }}
+            >
+              <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                <UpgradeIcon />
+                {tt('settings.upgrade')}
+              </span>
+              <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
             </Link>
-            <Link href="/settings/billing" prefetch={true} className="w-full">
-              <button
-                className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
-                style={{
-                  padding: '14px 16px',
-                  borderRadius: '12px',
-                  marginBottom: '10px',
-                  cursor: 'pointer',
-                }}
-              >
-                <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
-                  <BillingIcon />
-                  {tt('settings.billing')}
-                </span>
-                <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
-              </button>
+            <Link
+              href="/settings/billing"
+              prefetch={true}
+              className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
+              style={{
+                padding: '14px 16px',
+                borderRadius: '12px',
+                marginBottom: '10px',
+              }}
+            >
+              <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                <BillingIcon />
+                {tt('settings.billing')}
+              </span>
+              <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
             </Link>
-            <Link href="/settings/credits" prefetch={true} className="w-full">
-              <button
-                className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
-                style={{
-                  padding: '14px 16px',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                }}
-              >
-                <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  {tt('settings.buyCredits')}
-                </span>
-                <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
-              </button>
+            <Link
+              href="/settings/credits"
+              prefetch={true}
+              className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
+              style={{
+                padding: '14px 16px',
+                borderRadius: '12px',
+              }}
+            >
+              <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {tt('settings.buyCredits')}
+              </span>
+              <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
             </Link>
           </div>
         )}
@@ -534,12 +541,14 @@ function SettingsScreenInner() {
             <div className="flex gap-2">
               <button
                 onClick={() => setLocale('nb')}
-                className="flex items-center gap-1.5 transition-all"
+                className="flex items-center justify-center gap-1.5 transition-all"
                 style={{
                   background: locale === 'nb' ? 'var(--color-primary-alpha)' : 'var(--glass-bg)',
                   border: locale === 'nb' ? '2px solid var(--color-primary)' : '1px solid var(--glass-border)',
                   borderRadius: '10px',
-                  padding: '6px 12px',
+                  padding: '8px 14px',
+                  minHeight: '44px',
+                  minWidth: '44px',
                   cursor: 'pointer',
                   fontSize: '14px',
                   fontWeight: locale === 'nb' ? '600' : '500',
@@ -551,12 +560,14 @@ function SettingsScreenInner() {
               </button>
               <button
                 onClick={() => setLocale('en')}
-                className="flex items-center gap-1.5 transition-all"
+                className="flex items-center justify-center gap-1.5 transition-all"
                 style={{
                   background: locale === 'en' ? 'var(--color-primary-alpha)' : 'var(--glass-bg)',
                   border: locale === 'en' ? '2px solid var(--color-primary)' : '1px solid var(--glass-border)',
                   borderRadius: '10px',
-                  padding: '6px 12px',
+                  padding: '8px 14px',
+                  minHeight: '44px',
+                  minWidth: '44px',
                   cursor: 'pointer',
                   fontSize: '14px',
                   fontWeight: locale === 'en' ? '600' : '500',
@@ -585,22 +596,21 @@ function SettingsScreenInner() {
             </h3>
           </div>
 
-          <Link href="/settings/profile" prefetch={true} className="w-full">
-            <button
-              className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
-              style={{
-                padding: '14px 16px',
-                borderRadius: '12px',
-                marginBottom: '24px',
-                cursor: 'pointer',
-              }}
-            >
-              <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
-                <ProfileIcon />
-                {tt('settings.editProfile')}
-              </span>
-              <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
-            </button>
+          <Link
+            href="/settings/profile"
+            prefetch={true}
+            className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
+            style={{
+              padding: '14px 16px',
+              borderRadius: '12px',
+              marginBottom: '24px',
+            }}
+          >
+            <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>
+              <ProfileIcon />
+              {tt('settings.editProfile')}
+            </span>
+            <div style={{ opacity: 0.6 }}><ArrowIcon /></div>
           </Link>
 
           {/* Sign Out & Delete Account */}
@@ -630,7 +640,7 @@ function SettingsScreenInner() {
             <button
               onClick={handleDeleteAccount}
               disabled={isDeletingAccount}
-              className="flex items-center justify-center transition-all hover:opacity-90 active:scale-98 disabled:opacity-60"
+              className="flex items-center justify-center transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
               style={{
                 width: '100%',
                 gap: '8px',

@@ -3,41 +3,15 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSignUp } from '@clerk/nextjs';
-import { SocialAuthButton } from '@/components/auth/SocialAuthButton';
 import { AuthDivider } from '@/components/auth/AuthDivider';
 import { useToast } from '@/hooks/useToast';
 import {
   validateEmail,
   validatePassword,
   getPasswordStrengthColor,
+  getPasswordStrengthAlpha,
   getPasswordRequirementsList,
 } from '@/utils/validation';
-
-// Glass panel style shared across verification and signup forms
-const glassPanelStyle: React.CSSProperties = {
-  background: 'var(--glass-bg)',
-  backdropFilter: 'var(--glass-blur)',
-  WebkitBackdropFilter: 'var(--glass-blur)',
-  border: '1px solid var(--glass-border)',
-  boxShadow: 'var(--glass-shadow-lg)',
-  borderRadius: '28px',
-  padding: '40px 28px',
-};
-
-const glassInputStyle: React.CSSProperties = {
-  backgroundColor: 'var(--glass-input-bg)',
-  backdropFilter: 'blur(8px)',
-  WebkitBackdropFilter: 'blur(8px)',
-  color: 'var(--color-text-primary)',
-  border: '1px solid var(--glass-input-border)',
-  borderRadius: '14px',
-  padding: '12px 14px',
-  minHeight: '48px',
-  fontSize: '15px',
-  width: '100%',
-  outline: 'none',
-  transition: 'border-color 0.2s, box-shadow 0.2s',
-};
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -167,9 +141,8 @@ export default function SignUpPage() {
   // ─── Page layout shared wrapper ──────────────────────────────────────────
   const pageWrapper = (children: React.ReactNode) => (
     <div
-      className="min-h-screen flex items-center justify-center overflow-y-auto"
+      className="min-h-screen flex items-center justify-center overflow-y-auto glass-page"
       style={{
-        background: 'var(--glass-page-bg)',
         paddingLeft: 'max(24px, env(safe-area-inset-left))',
         paddingRight: 'max(24px, env(safe-area-inset-right))',
         paddingTop: 'max(40px, env(safe-area-inset-top))',
@@ -194,19 +167,28 @@ export default function SignUpPage() {
     </div>
   );
 
+  // ─── Loading guard ─────────────────────────────────────────────────────────
+  if (!isLoaded) {
+    return pageWrapper(
+      <div className="flex items-center justify-center py-16">
+        <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
+      </div>
+    );
+  }
+
   // ─── Email Verification Screen ────────────────────────────────────────────
   if (pendingVerification) {
     return pageWrapper(
-      <div style={glassPanelStyle}>
+      <div className="glass-lg" style={{ borderRadius: '24px', padding: '40px 28px' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <div
             className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
             style={{
               background: 'linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)',
-              boxShadow: '0 8px 24px rgba(37, 99, 235, 0.3)',
+              boxShadow: 'var(--glass-glow-primary)',
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
@@ -222,22 +204,29 @@ export default function SignUpPage() {
         </div>
 
         <div style={{ marginBottom: '16px' }}>
-          <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <label htmlFor="verify-code" className="block text-xs font-semibold mb-2" style={{ color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Verification Code
           </label>
           <input
+            id="verify-code"
             type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="Enter 6-digit code"
             disabled={loading}
             maxLength={6}
+            className="w-full glass-input"
             style={{
-              ...glassInputStyle,
               textAlign: 'center',
               fontSize: '22px',
               letterSpacing: '0.2em',
               fontWeight: '600',
+              borderRadius: '12px',
+              padding: '12px 14px',
+              minHeight: '48px',
+              color: 'var(--color-text-primary)',
             }}
           />
         </div>
@@ -245,17 +234,17 @@ export default function SignUpPage() {
         <button
           onClick={onVerifyPress}
           disabled={loading}
-          className="w-full font-semibold transition-all"
+          className="w-full font-semibold transition-all active:scale-[0.98]"
           style={{
             background: loading ? 'var(--color-neutral-300)' : 'linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)',
             color: 'white',
             opacity: loading ? 0.6 : 1,
-            minHeight: '52px',
-            borderRadius: '16px',
+            minHeight: '48px',
+            borderRadius: '14px',
             fontSize: '16px',
             border: 'none',
             cursor: loading ? 'not-allowed' : 'pointer',
-            boxShadow: !loading ? '0 8px 24px rgba(37, 99, 235, 0.3)' : 'none',
+            boxShadow: !loading ? 'var(--glass-glow-primary)' : 'none',
             marginBottom: '16px',
           }}
         >
@@ -270,7 +259,7 @@ export default function SignUpPage() {
             onClick={onResendCode}
             disabled={loading}
             className="font-semibold hover:underline"
-            style={{ color: 'var(--color-primary)', fontSize: '14px' }}
+            style={{ color: 'var(--color-primary)', fontSize: '14px', minHeight: '44px', background: 'none', border: 'none', cursor: 'pointer' }}
           >
             Resend
           </button>
@@ -281,7 +270,7 @@ export default function SignUpPage() {
 
   // ─── Sign Up Form ─────────────────────────────────────────────────────────
   return pageWrapper(
-    <div style={glassPanelStyle}>
+    <div className="glass-lg" style={{ borderRadius: '24px', padding: '40px 28px' }}>
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: '24px' }}>
         <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)', marginBottom: '4px' }}>
@@ -297,21 +286,20 @@ export default function SignUpPage() {
         <button
           onClick={handleGoogleSignUp}
           disabled={loading || oauthLoading !== null}
-          className="flex-1 flex items-center justify-center gap-2 font-medium transition-all hover:opacity-90 active:scale-[0.98]"
+          className="flex-1 flex items-center justify-center gap-2 font-medium transition-all hover:opacity-90 active:scale-[0.98] glass"
           style={{
-            ...glassInputStyle,
-            minHeight: '52px',
-            borderRadius: '16px',
+            minHeight: '48px',
+            borderRadius: '14px',
             opacity: oauthLoading !== null && oauthLoading !== 'google' ? 0.5 : 1,
             cursor: loading || oauthLoading !== null ? 'not-allowed' : 'pointer',
           }}
           aria-label="Continue with Google"
         >
           {oauthLoading === 'google' ? (
-            <div className="w-5 h-5 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
           ) : (
             <>
-              <svg width="20" height="20" viewBox="0 0 24 24">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -325,21 +313,20 @@ export default function SignUpPage() {
         <button
           onClick={handleAppleSignUp}
           disabled={loading || oauthLoading !== null}
-          className="flex-1 flex items-center justify-center gap-2 font-medium transition-all hover:opacity-90 active:scale-[0.98]"
+          className="flex-1 flex items-center justify-center gap-2 font-medium transition-all hover:opacity-90 active:scale-[0.98] glass"
           style={{
-            ...glassInputStyle,
-            minHeight: '52px',
-            borderRadius: '16px',
+            minHeight: '48px',
+            borderRadius: '14px',
             opacity: oauthLoading !== null && oauthLoading !== 'apple' ? 0.5 : 1,
             cursor: loading || oauthLoading !== null ? 'not-allowed' : 'pointer',
           }}
           aria-label="Continue with Apple"
         >
           {oauthLoading === 'apple' ? (
-            <div className="w-5 h-5 border-2 border-[var(--color-text-primary)] border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-text-primary)', borderTopColor: 'transparent' }} />
           ) : (
             <>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--color-text-primary)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--color-text-primary)" aria-hidden="true">
                 <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
               </svg>
               <span style={{ fontSize: '15px', color: 'var(--color-text-primary)' }}>Apple</span>
@@ -353,39 +340,58 @@ export default function SignUpPage() {
       {/* Name Fields */}
       <div className="flex gap-3 mt-8 mb-6">
         <div className="flex-1">
-          <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <label htmlFor="signup-first" className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             First
           </label>
           <input
+            id="signup-first"
             type="text"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             placeholder="John"
             disabled={loading}
-            style={glassInputStyle}
+            autoComplete="given-name"
+            className="w-full glass-input"
+            style={{
+              borderRadius: '12px',
+              padding: '12px 14px',
+              minHeight: '48px',
+              fontSize: '15px',
+              color: 'var(--color-text-primary)',
+            }}
           />
         </div>
         <div className="flex-1">
-          <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <label htmlFor="signup-last" className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Last
           </label>
           <input
+            id="signup-last"
             type="text"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
             placeholder="Doe"
             disabled={loading}
-            style={glassInputStyle}
+            autoComplete="family-name"
+            className="w-full glass-input"
+            style={{
+              borderRadius: '12px',
+              padding: '12px 14px',
+              minHeight: '48px',
+              fontSize: '15px',
+              color: 'var(--color-text-primary)',
+            }}
           />
         </div>
       </div>
 
       {/* Email */}
       <div className="mb-7">
-        <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <label htmlFor="signup-email" className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           Email
         </label>
         <input
+          id="signup-email"
           type="email"
           value={emailAddress}
           onChange={(e) => setEmailAddress(e.target.value)}
@@ -393,27 +399,33 @@ export default function SignUpPage() {
           onFocus={handleEmailFocus}
           placeholder="you@example.com"
           disabled={loading}
+          autoComplete="email"
+          className="w-full glass-input"
           style={{
-            ...glassInputStyle,
+            borderRadius: '12px',
+            padding: '12px 14px',
+            minHeight: '48px',
+            fontSize: '15px',
+            color: 'var(--color-text-primary)',
             borderColor: emailError ? 'var(--color-error)' : undefined,
           }}
         />
         {emailError && (
-          <p className="text-xs mt-1 ml-1" style={{ color: 'var(--color-error)' }}>{emailError}</p>
+          <p className="text-xs mt-1 ml-1" role="alert" style={{ color: 'var(--color-error)' }}>{emailError}</p>
         )}
       </div>
 
       {/* Password */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-xs font-semibold" style={{ color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <label htmlFor="signup-password" className="text-xs font-semibold" style={{ color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Password
           </label>
           {password.length > 0 && (
             <div
               className="px-2 py-0.5 rounded-full"
               style={{
-                background: `${getPasswordStrengthColor(passwordValidation.strength)}20`,
+                background: getPasswordStrengthAlpha(passwordValidation.strength),
                 border: `1px solid ${getPasswordStrengthColor(passwordValidation.strength)}`,
               }}
             >
@@ -425,6 +437,7 @@ export default function SignUpPage() {
         </div>
         <div className="relative">
           <input
+            id="signup-password"
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -432,21 +445,29 @@ export default function SignUpPage() {
             onBlur={handlePasswordBlur}
             placeholder="Create a strong password"
             disabled={loading}
-            style={{ ...glassInputStyle, paddingRight: '48px' }}
+            autoComplete="new-password"
+            className="w-full glass-input"
+            style={{
+              borderRadius: '12px',
+              padding: '12px 48px 12px 14px',
+              minHeight: '48px',
+              fontSize: '15px',
+              color: 'var(--color-text-primary)',
+            }}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <line x1="1" y1="1" x2="23" y2="23" stroke="var(--color-text-secondary)" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="var(--color-text-secondary)" strokeWidth="2"/>
                 <circle cx="12" cy="12" r="3" stroke="var(--color-text-secondary)" strokeWidth="2"/>
               </svg>
@@ -455,14 +476,7 @@ export default function SignUpPage() {
         </div>
 
         {(showPasswordRequirements || (password.length > 0 && !passwordValidation.isValid)) && (
-          <div
-            className="mt-2 p-3 rounded-xl"
-            style={{
-              background: 'var(--glass-input-bg)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid var(--glass-border-subtle)',
-            }}
-          >
+          <div className="mt-2 p-3 glass-subtle" style={{ borderRadius: '12px' }}>
             <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--color-text-secondary)' }}>
               Password must contain:
             </p>
@@ -492,13 +506,13 @@ export default function SignUpPage() {
             : 'linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)',
           color: isButtonDisabled ? 'var(--color-text-tertiary)' : 'white',
           opacity: isButtonDisabled ? 0.6 : 1,
-          minHeight: '52px',
-          borderRadius: '16px',
+          minHeight: '48px',
+          borderRadius: '14px',
           fontSize: '16px',
           fontWeight: '600',
           border: 'none',
           cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
-          boxShadow: !isButtonDisabled ? '0 8px 24px rgba(37, 99, 235, 0.3)' : 'none',
+          boxShadow: !isButtonDisabled ? 'var(--glass-glow-primary)' : 'none',
           marginBottom: '20px',
         }}
       >
@@ -514,7 +528,7 @@ export default function SignUpPage() {
           onClick={() => router.push('/onboarding')}
           disabled={loading}
           className="font-semibold hover:underline"
-          style={{ color: 'var(--color-primary)', fontSize: '14px' }}
+          style={{ color: 'var(--color-primary)', fontSize: '14px', minHeight: '44px', background: 'none', border: 'none', cursor: 'pointer' }}
         >
           Sign In
         </button>

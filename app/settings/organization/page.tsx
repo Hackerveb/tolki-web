@@ -69,7 +69,7 @@ const TIER_LABELS: Record<string, string> = {
 const TIER_COLORS: Record<string, string> = {
   free: 'var(--color-text-tertiary)',
   active: 'var(--color-primary)',
-  enterprise: '#F59E0B',
+  enterprise: 'var(--color-warning)',
 };
 
 const STATUS_COLORS: Record<string, string> = {
@@ -93,7 +93,7 @@ function UsageBar({ used, total, tt }: { used: number; total: number; tt: (key: 
   const color =
     pct >= 100 ? 'var(--color-error)' :
     pct >= 80  ? 'var(--color-warning)' :
-    pct >= 60  ? '#F59E0B' :
+    pct >= 60  ? 'var(--color-warning)' :
     'var(--color-success)';
 
   return (
@@ -300,7 +300,7 @@ export default function OrganizationSettingsPage() {
           position: 'sticky', top: 0, zIndex: 10,
         }}>
           <button onClick={() => router.back()}
-            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
+            className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
             aria-label={tt('settings.goBack')}>
             <BackIcon />
           </button>
@@ -313,7 +313,17 @@ export default function OrganizationSettingsPage() {
           justifyContent: 'center', padding: '40px 24px',
         }}>
           <div className="glass" style={{ padding: '32px 24px', borderRadius: '20px', textAlign: 'center', maxWidth: '340px' }}>
-            <div style={{ fontSize: '40px', marginBottom: '16px' }}>🏢</div>
+            <div style={{ marginBottom: '16px' }} aria-hidden="true">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="3" width="7" height="18" rx="1" stroke="var(--color-text-secondary)" strokeWidth="1.5" />
+                <rect x="14" y="8" width="7" height="13" rx="1" stroke="var(--color-text-secondary)" strokeWidth="1.5" />
+                <line x1="6" y1="7" x2="7" y2="7" stroke="var(--color-text-secondary)" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="6" y1="11" x2="7" y2="11" stroke="var(--color-text-secondary)" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="6" y1="15" x2="7" y2="15" stroke="var(--color-text-secondary)" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="17" y1="12" x2="18" y2="12" stroke="var(--color-text-secondary)" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="17" y1="16" x2="18" y2="16" stroke="var(--color-text-secondary)" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </div>
             <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
               {tt('org.noOrgSelected')}
             </p>
@@ -377,7 +387,7 @@ export default function OrganizationSettingsPage() {
         position: 'sticky', top: 0, zIndex: 10,
       }}>
         <button onClick={() => router.back()}
-          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
+          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
           aria-label={tt('settings.goBack')}>
           <BackIcon />
         </button>
@@ -541,30 +551,32 @@ export default function OrganizationSettingsPage() {
             </h3>
           </div>
 
-          <Link href="/settings/organization/members" className="w-full">
-            <button className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
-              style={{ padding: '14px 16px', borderRadius: '12px', marginBottom: '10px', cursor: 'pointer' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <UsersIcon />
-                <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                  {tt('org.members')}
-                </span>
-              </div>
-              <ArrowIcon />
-            </button>
+          <Link
+            href="/settings/organization/members"
+            className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
+            style={{ padding: '14px 16px', borderRadius: '12px', marginBottom: '10px' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <UsersIcon />
+              <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>
+                {tt('org.members')}
+              </span>
+            </div>
+            <ArrowIcon />
           </Link>
 
-          <Link href="/settings/organization/usage" className="w-full">
-            <button className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
-              style={{ padding: '14px 16px', borderRadius: '12px', marginBottom: '10px', cursor: 'pointer' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <BarChartIcon />
-                <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>
-                  {tt('org.usageDashboard')}
-                </span>
-              </div>
-              <ArrowIcon />
-            </button>
+          <Link
+            href="/settings/organization/usage"
+            className="flex items-center justify-between transition-all active:scale-[0.98] w-full glass-subtle"
+            style={{ padding: '14px 16px', borderRadius: '12px', marginBottom: '10px' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <BarChartIcon />
+              <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)' }}>
+                {tt('org.usageDashboard')}
+              </span>
+            </div>
+            <ArrowIcon />
           </Link>
 
           {isAdmin && (

@@ -2,22 +2,26 @@
 
 import React from 'react';
 
-export const AuthDivider: React.FC = () => {
+interface AuthDividerProps {
+  label?: string;
+}
+
+export const AuthDivider: React.FC<AuthDividerProps> = ({ label = 'or continue with' }) => {
   return (
-    <div className="flex items-center gap-4 my-6">
+    <div className="flex items-center gap-4 my-6" role="separator">
       <div
         className="flex-1 h-px"
-        style={{ backgroundColor: 'var(--color-border)' }}
+        style={{ backgroundColor: 'var(--glass-border)' }}
       />
       <span
-        className="text-xs font-medium"
+        className="text-xs font-medium select-none"
         style={{ color: 'var(--color-text-tertiary)' }}
       >
-        or continue with
+        {label}
       </span>
       <div
         className="flex-1 h-px"
-        style={{ backgroundColor: 'var(--color-border)' }}
+        style={{ backgroundColor: 'var(--glass-border)' }}
       />
     </div>
   );

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, PanInfo } from 'motion/react';
-import { colors } from '@/styles/colors';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -18,7 +17,7 @@ const getToastConfig = (type: ToastType) => {
   switch (type) {
     case 'success':
       return {
-        backgroundColor: colors.success,
+        backgroundColor: 'var(--color-success)',
         textColor: 'var(--color-on-success)',
         icon: (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -34,7 +33,7 @@ const getToastConfig = (type: ToastType) => {
       };
     case 'error':
       return {
-        backgroundColor: colors.error,
+        backgroundColor: 'var(--color-error)',
         textColor: 'var(--color-on-error)',
         icon: (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -45,7 +44,7 @@ const getToastConfig = (type: ToastType) => {
       };
     case 'warning':
       return {
-        backgroundColor: colors.warning,
+        backgroundColor: 'var(--color-warning)',
         textColor: 'var(--color-on-warning)',
         icon: (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -60,7 +59,7 @@ const getToastConfig = (type: ToastType) => {
       };
     case 'info':
       return {
-        backgroundColor: colors.info,
+        backgroundColor: 'var(--color-info)',
         textColor: 'var(--color-on-info)',
         icon: (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -133,7 +132,7 @@ export const Toast: React.FC<ToastProps> = ({
         style={{
           backgroundColor: config.backgroundColor,
           boxShadow: 'var(--shadow-md)',
-          padding: '14px 16px',
+          padding: '16px',
           minHeight: '56px',
         }}
       >
@@ -154,7 +153,8 @@ export const Toast: React.FC<ToastProps> = ({
             e.stopPropagation();
             handleDismiss();
           }}
-          className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+          aria-label="Dismiss notification"
+          className="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
           style={{
             backgroundColor: 'rgba(255, 255, 255, 0.2)',
           }}

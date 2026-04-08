@@ -6,35 +6,8 @@ import { useSignIn } from '@clerk/nextjs';
 import { motion } from 'motion/react';
 import { AuthDivider } from '@/components/auth/AuthDivider';
 import { useToast } from '@/hooks/useToast';
-import { useLocale, Locale } from '@/hooks/useLocale';
+import { useLocale } from '@/hooks/useLocale';
 import { useT } from '@/lib/i18n';
-
-// ─── Shared styles ────────────────────────────────────────────────────────────
-
-const glassPanelStyle: React.CSSProperties = {
-  background: 'var(--glass-bg)',
-  backdropFilter: 'var(--glass-blur)',
-  WebkitBackdropFilter: 'var(--glass-blur)',
-  border: '1px solid var(--glass-border)',
-  boxShadow: 'var(--glass-shadow-lg)',
-  borderRadius: '28px',
-  padding: '40px 28px',
-};
-
-const glassInputStyle: React.CSSProperties = {
-  backgroundColor: 'var(--glass-input-bg)',
-  backdropFilter: 'blur(8px)',
-  WebkitBackdropFilter: 'blur(8px)',
-  color: 'var(--color-text-primary)',
-  border: '1px solid var(--glass-input-border)',
-  borderRadius: '14px',
-  padding: '12px 14px',
-  minHeight: '48px',
-  fontSize: '15px',
-  width: '100%',
-  outline: 'none',
-  transition: 'border-color 0.2s, box-shadow 0.2s',
-};
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -135,11 +108,26 @@ const OnboardingPage = () => {
     if (e.key === 'Enter' && !isButtonDisabled) handleSignIn();
   };
 
+  if (!isLoaded) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center glass-page"
+        style={{
+          paddingLeft: 'max(24px, env(safe-area-inset-left))',
+          paddingRight: 'max(24px, env(safe-area-inset-right))',
+          paddingTop: 'max(40px, env(safe-area-inset-top))',
+          paddingBottom: 'max(40px, env(safe-area-inset-bottom))',
+        }}
+      >
+        <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
+      </div>
+    );
+  }
+
   return (
     <div
-      className="min-h-screen flex items-center justify-center overflow-y-auto"
+      className="min-h-screen flex items-center justify-center overflow-y-auto glass-page"
       style={{
-        background: 'var(--glass-page-bg)',
         paddingLeft: 'max(24px, env(safe-area-inset-left))',
         paddingRight: 'max(24px, env(safe-area-inset-right))',
         paddingTop: 'max(40px, env(safe-area-inset-top))',
@@ -157,7 +145,8 @@ const OnboardingPage = () => {
               background: locale === 'nb' ? 'var(--color-primary-alpha, rgba(37,99,235,0.1))' : 'var(--glass-bg)',
               border: locale === 'nb' ? '2px solid var(--color-primary)' : '1px solid var(--glass-border)',
               borderRadius: '10px',
-              padding: '5px 10px',
+              padding: '8px 12px',
+              minHeight: '44px',
               cursor: 'pointer',
               fontSize: '13px',
               fontWeight: locale === 'nb' ? '600' : '400',
@@ -174,7 +163,8 @@ const OnboardingPage = () => {
               background: locale === 'en' ? 'var(--color-primary-alpha, rgba(37,99,235,0.1))' : 'var(--glass-bg)',
               border: locale === 'en' ? '2px solid var(--color-primary)' : '1px solid var(--glass-border)',
               borderRadius: '10px',
-              padding: '5px 10px',
+              padding: '8px 12px',
+              minHeight: '44px',
               cursor: 'pointer',
               fontSize: '13px',
               fontWeight: locale === 'en' ? '600' : '400',
@@ -204,7 +194,8 @@ const OnboardingPage = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-          style={glassPanelStyle}
+          className="glass-lg"
+          style={{ borderRadius: '24px', padding: '40px 28px' }}
         >
           {/* Card header */}
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
@@ -221,18 +212,17 @@ const OnboardingPage = () => {
             <button
               onClick={handleGoogleSignIn}
               disabled={loading || oauthLoading !== null}
-              className="flex-1 flex items-center justify-center gap-2 font-medium transition-all hover:opacity-90 active:scale-[0.98]"
+              className="flex-1 flex items-center justify-center gap-2 font-medium transition-all hover:opacity-90 active:scale-[0.98] glass"
               style={{
-                ...glassInputStyle,
-                minHeight: '52px',
-                borderRadius: '16px',
+                minHeight: '48px',
+                borderRadius: '14px',
                 opacity: oauthLoading !== null && oauthLoading !== 'google' ? 0.5 : 1,
                 cursor: loading || oauthLoading !== null ? 'not-allowed' : 'pointer',
               }}
               aria-label="Continue with Google"
             >
               {oauthLoading === 'google' ? (
-                <div className="w-5 h-5 border-2 border-[var(--color-primary)] border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-primary)', borderTopColor: 'transparent' }} />
               ) : (
                 <>
                   <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
@@ -249,18 +239,17 @@ const OnboardingPage = () => {
             <button
               onClick={handleAppleSignIn}
               disabled={loading || oauthLoading !== null}
-              className="flex-1 flex items-center justify-center gap-2 font-medium transition-all hover:opacity-90 active:scale-[0.98]"
+              className="flex-1 flex items-center justify-center gap-2 font-medium transition-all hover:opacity-90 active:scale-[0.98] glass"
               style={{
-                ...glassInputStyle,
-                minHeight: '52px',
-                borderRadius: '16px',
+                minHeight: '48px',
+                borderRadius: '14px',
                 opacity: oauthLoading !== null && oauthLoading !== 'apple' ? 0.5 : 1,
                 cursor: loading || oauthLoading !== null ? 'not-allowed' : 'pointer',
               }}
               aria-label="Continue with Apple"
             >
               {oauthLoading === 'apple' ? (
-                <div className="w-5 h-5 border-2 border-[var(--color-text-primary)] border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--color-text-primary)', borderTopColor: 'transparent' }} />
               ) : (
                 <>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--color-text-primary)" aria-hidden="true">
@@ -293,13 +282,18 @@ const OnboardingPage = () => {
               placeholder="you@example.com"
               disabled={loading}
               autoComplete="email"
+              className="w-full glass-input"
               style={{
-                ...glassInputStyle,
+                borderRadius: '12px',
+                padding: '12px 14px',
+                minHeight: '48px',
+                fontSize: '15px',
+                color: 'var(--color-text-primary)',
                 borderColor: emailError ? 'var(--color-error)' : undefined,
               }}
             />
             {emailError && (
-              <p className="text-xs mt-1 ml-1" style={{ color: 'var(--color-error)' }}>{emailError}</p>
+              <p className="text-xs mt-1 ml-1" role="alert" style={{ color: 'var(--color-error)' }}>{emailError}</p>
             )}
           </div>
 
@@ -317,7 +311,7 @@ const OnboardingPage = () => {
                 onClick={() => router.push('/forgot-password')}
                 disabled={loading}
                 className="text-xs font-medium hover:underline"
-                style={{ color: 'var(--color-primary)' }}
+                style={{ color: 'var(--color-primary)', background: 'none', border: 'none', cursor: 'pointer' }}
               >
                 Forgot password?
               </button>
@@ -332,12 +326,19 @@ const OnboardingPage = () => {
                 placeholder="Enter your password"
                 disabled={loading}
                 autoComplete="current-password"
-                style={{ ...glassInputStyle, paddingRight: '48px' }}
+                className="w-full glass-input"
+                style={{
+                  borderRadius: '12px',
+                  padding: '12px 48px 12px 14px',
+                  minHeight: '48px',
+                  fontSize: '15px',
+                  color: 'var(--color-text-primary)',
+                }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeClosedIcon /> : <EyeOpenIcon />}
@@ -357,13 +358,13 @@ const OnboardingPage = () => {
                 : 'linear-gradient(135deg, var(--color-primary) 0%, #6366f1 100%)',
               color: isButtonDisabled ? 'var(--color-text-tertiary)' : 'white',
               opacity: isButtonDisabled ? 0.6 : 1,
-              minHeight: '52px',
-              borderRadius: '16px',
+              minHeight: '48px',
+              borderRadius: '14px',
               fontSize: '16px',
               fontWeight: '600',
               border: 'none',
               cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
-              boxShadow: !isButtonDisabled ? '0 8px 24px rgba(37, 99, 235, 0.3)' : 'none',
+              boxShadow: !isButtonDisabled ? 'var(--glass-glow-primary)' : 'none',
               marginBottom: '20px',
             }}
           >
@@ -379,7 +380,7 @@ const OnboardingPage = () => {
               onClick={() => router.push('/sign-up')}
               disabled={loading}
               className="font-semibold hover:underline"
-              style={{ color: 'var(--color-primary)', fontSize: '14px' }}
+              style={{ color: 'var(--color-primary)', fontSize: '14px', minHeight: '44px', background: 'none', border: 'none', cursor: 'pointer' }}
             >
               {locale === 'nb' ? 'Opprett konto' : 'Create an account'}
             </button>
@@ -387,12 +388,6 @@ const OnboardingPage = () => {
         </motion.div>
       </div>
 
-      <style jsx>{`
-        input::placeholder {
-          color: var(--color-text-tertiary);
-          opacity: 1;
-        }
-      `}</style>
     </div>
   );
 };

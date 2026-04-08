@@ -185,7 +185,7 @@ function TransactionItem({
     <div className="glass" style={{ marginBottom: '12px', padding: '16px', borderRadius: '16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ flex: 1 }}>
-          <p style={{ fontSize: '11px', color: 'var(--color-text-tertiary)', marginBottom: '4px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginBottom: '4px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
             {dateStr}
           </p>
           <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
@@ -291,7 +291,7 @@ export default function BillingPage() {
       >
         <button
           onClick={() => router.back()}
-          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
+          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
           aria-label={tt('settings.goBack')}
         >
           <BackIcon />
@@ -314,12 +314,26 @@ export default function BillingPage() {
         }}
       >
         {isLoading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '60px 20px', gap: '16px' }}>
-            <div
-              className="animate-spin"
-              style={{ width: '36px', height: '36px', border: '3px solid var(--glass-border)', borderTopColor: 'var(--color-primary)', borderRadius: '50%' }}
-            />
-            <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>{tt('billing.loading')}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Skeleton: plan card */}
+            <div className="glass animate-pulse" style={{ padding: '20px', borderRadius: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div>
+                  <div style={{ width: '80px', height: '12px', borderRadius: '6px', backgroundColor: 'var(--glass-bg-subtle)', marginBottom: '8px' }} />
+                  <div style={{ width: '120px', height: '22px', borderRadius: '8px', backgroundColor: 'var(--glass-bg-subtle)', marginBottom: '6px' }} />
+                  <div style={{ width: '100px', height: '12px', borderRadius: '6px', backgroundColor: 'var(--glass-bg-subtle)' }} />
+                </div>
+                <div style={{ width: '64px', height: '24px', borderRadius: '99px', backgroundColor: 'var(--glass-bg-subtle)' }} />
+              </div>
+              <div style={{ height: '8px', borderRadius: '4px', backgroundColor: 'var(--glass-bg-subtle)', marginBottom: '8px' }} />
+              <div style={{ width: '160px', height: '12px', borderRadius: '6px', backgroundColor: 'var(--glass-bg-subtle)' }} />
+            </div>
+            {/* Skeleton: action buttons */}
+            <div className="glass animate-pulse" style={{ padding: '16px', borderRadius: '16px', height: '52px' }} />
+            <div className="glass-subtle animate-pulse" style={{ padding: '16px', borderRadius: '16px', height: '52px' }} />
+            {/* Skeleton: transaction history */}
+            <div style={{ width: '140px', height: '14px', borderRadius: '6px', backgroundColor: 'var(--glass-bg-subtle)', marginTop: '8px' }} />
+            <div className="glass animate-pulse" style={{ padding: '16px', borderRadius: '16px', height: '80px' }} />
           </div>
         ) : (
           <>
@@ -333,7 +347,7 @@ export default function BillingPage() {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                     <div>
-                      <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '4px' }}>
+                      <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '4px' }}>
                         {tt('billing.currentPlan')}
                       </p>
                       <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--color-text-primary)' }}>
@@ -404,18 +418,17 @@ export default function BillingPage() {
                 )}
 
                 {/* Upgrade / change plan */}
-                <Link href="/subscribe" className="block">
-                  <button
-                    className="glass-subtle w-full flex items-center justify-between transition-all active:scale-[0.98]"
-                    style={{ padding: '16px', borderRadius: '16px', marginBottom: '24px', cursor: 'pointer' }}
-                  >
-                    <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-primary)' }}>
-                      {tt('billing.changePlan')}
-                    </span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                      <polyline points="9 18 15 12 9 6" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
+                <Link
+                  href="/subscribe"
+                  className="glass-subtle w-full flex items-center justify-between transition-all active:scale-[0.98]"
+                  style={{ padding: '16px', borderRadius: '16px', marginBottom: '24px' }}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-primary)' }}>
+                    {tt('billing.changePlan')}
+                  </span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <polyline points="9 18 15 12 9 6" stroke="var(--color-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </Link>
               </>
             ) : (
@@ -433,11 +446,14 @@ export default function BillingPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '28px',
                     margin: '0 auto 16px',
                   }}
+                  aria-hidden="true"
                 >
-                  📋
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <rect x="1" y="4" width="22" height="16" rx="2" stroke="var(--color-primary)" strokeWidth="1.5" />
+                    <line x1="1" y1="10" x2="23" y2="10" stroke="var(--color-primary)" strokeWidth="1.5" />
+                  </svg>
                 </div>
                 <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
                   {tt('billing.noPlan')}
@@ -445,22 +461,21 @@ export default function BillingPage() {
                 <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: '20px' }}>
                   {tt('billing.startingFrom')}
                 </p>
-                <Link href="/subscribe">
-                  <button
-                    style={{
-                      background: 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
-                      color: '#FFFFFF',
-                      fontWeight: 700,
-                      fontSize: '15px',
-                      padding: '14px 28px',
-                      borderRadius: '12px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      boxShadow: 'var(--glass-glow-primary)',
-                    }}
-                  >
-                    {tt('billing.viewPlans')}
-                  </button>
+                <Link
+                  href="/subscribe"
+                  style={{
+                    display: 'inline-block',
+                    background: 'linear-gradient(135deg, var(--color-primary), #4F46E5)',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
+                    fontSize: '15px',
+                    padding: '14px 28px',
+                    borderRadius: '12px',
+                    boxShadow: 'var(--glass-glow-primary)',
+                    textAlign: 'center',
+                  }}
+                >
+                  {tt('billing.viewPlans')}
                 </Link>
               </div>
             )}
@@ -477,8 +492,12 @@ export default function BillingPage() {
                 className="glass"
                 style={{ padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', borderRadius: '20px', gap: '12px' }}
               >
-                <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: 'var(--color-primary-alpha)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
-                  💳
+                <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: 'var(--color-primary-alpha)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <rect x="1" y="4" width="22" height="16" rx="2" stroke="var(--color-primary)" strokeWidth="1.5" />
+                    <line x1="1" y1="10" x2="23" y2="10" stroke="var(--color-primary)" strokeWidth="1.5" />
+                    <rect x="5" y="14" width="6" height="2" rx="0.5" fill="var(--color-primary)" opacity="0.5" />
+                  </svg>
                 </div>
                 <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
                   {tt('billing.noTransactions')}

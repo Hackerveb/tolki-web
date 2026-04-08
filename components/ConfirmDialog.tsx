@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ConfirmDialogProps {
@@ -24,15 +24,38 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   onConfirm,
   onCancel,
 }) => {
-  // Close on Escape key
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Focus trap + Escape key
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') { onCancel(); return; }
+    if (e.key !== 'Tab' || !dialogRef.current) return;
+
+    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusable.length === 0) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+    } else {
+      if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  }, [onCancel]);
+
   useEffect(() => {
     if (!isOpen) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel();
-    };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [isOpen, onCancel]);
+    document.addEventListener('keydown', handleKeyDown);
+    // Auto-focus the cancel button when dialog opens
+    const timer = setTimeout(() => {
+      const firstBtn = dialogRef.current?.querySelector<HTMLElement>('button');
+      firstBtn?.focus();
+    }, 50);
+    return () => { document.removeEventListener('keydown', handleKeyDown); clearTimeout(timer); };
+  }, [isOpen, handleKeyDown]);
 
   return (
     <AnimatePresence>
@@ -64,14 +87,13 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             style={{
               paddingLeft: 'max(20px, env(safe-area-inset-left))',
               paddingRight: 'max(20px, env(safe-area-inset-right))',
+              paddingBottom: 'max(20px, env(safe-area-inset-bottom))',
             }}
           >
             <div
-              className="w-full max-w-sm rounded-2xl pointer-events-auto"
+              ref={dialogRef}
+              className="w-full max-w-sm rounded-2xl pointer-events-auto glass-strong"
               style={{
-                backgroundColor: 'var(--color-surface)',
-                boxShadow: 'var(--shadow-lg)',
-                border: '1px solid var(--color-border)',
                 padding: '24px',
               }}
             >

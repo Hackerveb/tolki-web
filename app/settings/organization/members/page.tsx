@@ -30,7 +30,7 @@ const PlusIcon = () => (
 // ─── Role badge ───────────────────────────────────────────────────────────────
 
 const ROLE_STYLES: Record<string, { bg: string; color: string }> = {
-  owner: { bg: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B' },
+  owner: { bg: 'rgba(245, 158, 11, 0.15)', color: 'var(--color-warning)' },
   admin: { bg: 'var(--color-primary-alpha)', color: 'var(--color-primary)' },
   member: { bg: 'rgba(100, 116, 139, 0.12)', color: 'var(--color-text-secondary)' },
 };
@@ -214,9 +214,9 @@ function MemberCard({
               onClick={() => onRemove(member)}
               aria-label={tt('org.removeMember')}
               style={{
-                padding: '4px 8px', borderRadius: '6px', border: 'none',
+                padding: '8px 12px', minHeight: '36px', borderRadius: '8px', border: 'none',
                 backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-error)',
-                fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
               }}
             >
               {tt('org.removeMember')}
@@ -371,11 +371,11 @@ function InviteModal({ onClose, onInvite, tt }: {
           <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
             {tt('org.inviteMember')}
           </h3>
-          <button onClick={onClose} style={{
-            width: '28px', height: '28px', borderRadius: '50%', border: 'none',
+          <button onClick={onClose} aria-label="Close" style={{
+            width: '44px', height: '44px', borderRadius: '50%', border: 'none',
             backgroundColor: 'var(--glass-bg-subtle)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--color-text-tertiary)', fontSize: '16px',
+            color: 'var(--color-text-tertiary)', fontSize: '18px',
           }}>×</button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -563,9 +563,9 @@ function PendingInvitations({
                 onClick={() => setConfirmId(inv.id)}
                 disabled={revoking === inv.id}
                 style={{
-                  padding: '4px 10px', borderRadius: '6px', border: 'none',
+                  padding: '8px 12px', minHeight: '36px', borderRadius: '8px', border: 'none',
                   backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-error)',
-                  fontSize: '11px', fontWeight: 600,
+                  fontSize: '12px', fontWeight: 600,
                   cursor: revoking === inv.id ? 'not-allowed' : 'pointer',
                   opacity: revoking === inv.id ? 0.5 : 1,
                 }}
@@ -764,7 +764,7 @@ export default function MembersPage() {
           borderRadius: 0, position: 'sticky', top: 0, zIndex: 10,
         }}>
           <button onClick={() => router.back()}
-            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
+            className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all hover:scale-105 active:scale-95 glass"
             aria-label={tt('settings.goBack')}>
             <BackIcon />
           </button>
@@ -930,9 +930,9 @@ export default function MembersPage() {
               <button
                 onClick={() => { setBulkAllocation(''); setBulkAction('allocation'); }}
                 style={{
-                  padding: '6px 12px', borderRadius: '8px', border: 'none',
+                  padding: '8px 14px', minHeight: '40px', borderRadius: '10px', border: 'none',
                   backgroundColor: 'var(--color-primary-alpha)', color: 'var(--color-primary)',
-                  fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                  fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                 }}
               >
                 {nb ? 'Tildeling' : 'Allocation'}
@@ -941,9 +941,9 @@ export default function MembersPage() {
             <button
               onClick={() => setBulkAction('role')}
               style={{
-                padding: '6px 12px', borderRadius: '8px', border: 'none',
+                padding: '8px 14px', minHeight: '40px', borderRadius: '10px', border: 'none',
                 backgroundColor: 'var(--color-primary-alpha)', color: 'var(--color-primary)',
-                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                fontSize: '13px', fontWeight: 600, cursor: 'pointer',
               }}
             >
               {nb ? 'Sett rolle' : 'Set role'}
@@ -951,9 +951,9 @@ export default function MembersPage() {
             <button
               onClick={() => setBulkAction('remove')}
               style={{
-                padding: '6px 12px', borderRadius: '8px', border: 'none',
+                padding: '8px 14px', minHeight: '40px', borderRadius: '10px', border: 'none',
                 backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-error)',
-                fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                fontSize: '13px', fontWeight: 600, cursor: 'pointer',
               }}
             >
               {tt('org.removeMember')}

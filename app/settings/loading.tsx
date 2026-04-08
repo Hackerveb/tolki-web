@@ -1,8 +1,7 @@
 export default function SettingsLoading() {
   return (
     <div
-      className="min-h-screen flex flex-col"
-      style={{ backgroundColor: 'var(--color-background)' }}
+      className="min-h-screen flex flex-col glass-page"
     >
       {/* Header Skeleton */}
       <header
@@ -26,7 +25,7 @@ export default function SettingsLoading() {
         <div
           className="h-6 flex-1 rounded-lg animate-pulse"
           style={{
-            backgroundColor: 'var(--color-neutral-200)',
+            backgroundColor: 'var(--glass-bg-subtle)',
             maxWidth: '150px',
           }}
         />
@@ -59,7 +58,7 @@ export default function SettingsLoading() {
             style={{
               width: '80px',
               height: '80px',
-              backgroundColor: 'var(--color-neutral-200)',
+              backgroundColor: 'var(--glass-bg-subtle)',
               marginBottom: '15px',
             }}
           />
@@ -67,7 +66,7 @@ export default function SettingsLoading() {
             className="h-5 rounded-lg"
             style={{
               width: '120px',
-              backgroundColor: 'var(--color-neutral-200)',
+              backgroundColor: 'var(--glass-bg-subtle)',
               marginBottom: '8px',
             }}
           />
@@ -75,7 +74,7 @@ export default function SettingsLoading() {
             className="h-4 rounded-lg"
             style={{
               width: '160px',
-              backgroundColor: 'var(--color-neutral-200)',
+              backgroundColor: 'var(--glass-bg-subtle)',
               marginBottom: '20px',
             }}
           />
@@ -97,21 +96,21 @@ export default function SettingsLoading() {
             className="h-5 rounded-lg"
             style={{
               width: '100px',
-              backgroundColor: 'var(--color-neutral-200)',
+              backgroundColor: 'var(--glass-bg-subtle)',
               marginBottom: '20px',
             }}
           />
           <div
             className="h-12 rounded-xl"
             style={{
-              backgroundColor: 'var(--color-neutral-200)',
+              backgroundColor: 'var(--glass-bg-subtle)',
               marginBottom: '12px',
             }}
           />
           <div
             className="h-12 rounded-xl"
             style={{
-              backgroundColor: 'var(--color-neutral-200)',
+              backgroundColor: 'var(--glass-bg-subtle)',
             }}
           />
         </div>
