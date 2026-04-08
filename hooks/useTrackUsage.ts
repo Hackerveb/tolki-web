@@ -18,10 +18,6 @@ interface UseTrackUsageReturn {
   reset: () => void;
 }
 
-// Credit deduction rate: 1 credit per minute of usage
-const CREDITS_PER_MINUTE = 1;
-const CREDITS_PER_SECOND = CREDITS_PER_MINUTE / 60;
-
 export const useTrackUsage = ({
   isActive,
   onInsufficientCredits,
@@ -31,7 +27,7 @@ export const useTrackUsage = ({
   const [creditsDeducted, setCreditsDeducted] = useState(0);
   const [isTracking, setIsTracking] = useState(false);
 
-  const deductCredits = useMutation(api.users.deductCredits);
+  const updateFractionalCredits = useMutation(api.usageSessions.updateFractionalCredits);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastDeductionRef = useRef<number>(0);
@@ -60,16 +56,13 @@ export const useTrackUsage = ({
         // Deduct credits every DEDUCTION_INTERVAL_SECONDS
         if (newSeconds - lastDeductionRef.current >= CREDIT_DEDUCTION_INTERVAL_SEC) {
           const secondsSinceLastDeduction = newSeconds - lastDeductionRef.current;
-          const creditsToDeduct = secondsSinceLastDeduction * CREDITS_PER_SECOND;
 
-          // Deduct credits from Convex
-          deductCredits({
+          updateFractionalCredits({
             clerkId: user.id,
-            credits: creditsToDeduct,
+            secondsToAdd: secondsSinceLastDeduction,
           })
-            .then(() => {
-              // Success - mutation returns new balance
-              setCreditsDeducted((prev) => prev + creditsToDeduct);
+            .then((result) => {
+              setCreditsDeducted((prev) => prev + (result?.sessionCreditsUsed ?? 0) - prev);
               lastDeductionRef.current = newSeconds;
             })
             .catch((error) => {
@@ -96,14 +89,12 @@ export const useTrackUsage = ({
       if (isTrackingRef.current && user?.id) {
         const remainingSeconds = secondsUsedRef.current - lastDeductionRef.current;
         if (remainingSeconds > 0) {
-          const finalCredits = remainingSeconds * CREDITS_PER_SECOND;
-          deductCredits({
+          updateFractionalCredits({
             clerkId: user.id,
-            credits: finalCredits,
+            secondsToAdd: remainingSeconds,
           })
-            .then(() => {
-              // Success - mutation returns new balance
-              setCreditsDeducted((prev) => prev + finalCredits);
+            .then((result) => {
+              setCreditsDeducted(result?.sessionCreditsUsed ?? 0);
             })
             .catch((error) => {
               console.error('Error deducting final credits:', error);
@@ -120,7 +111,7 @@ export const useTrackUsage = ({
         clearInterval(intervalRef.current);
       }
     };
-  }, [isActive, user?.id, deductCredits]);
+  }, [isActive, user?.id, updateFractionalCredits]);
 
   const reset = useCallback(() => {
     setSecondsUsed(0);

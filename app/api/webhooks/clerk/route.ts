@@ -4,6 +4,12 @@ import { Webhook } from 'svix';
 import { fetchMutation, fetchQuery } from 'convex/nextjs';
 import { internal } from '@/convex/_generated/api';
 
+// ─── Admin auth for server-side Convex calls ────────────────────────────────
+// fetchQuery/fetchMutation do NOT auto-read CONVEX_DEPLOY_KEY; we must pass it
+// explicitly as adminToken so internal functions are authorized.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const convexAdminOpts = { adminToken: process.env.CONVEX_DEPLOY_KEY! } as any;
+
 // ─── Internal function references ────────────────────────────────────────────
 // fetchQuery/fetchMutation require `as any` for internal function references
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,8 +28,13 @@ interface ClerkOrganizationData {
 
 interface ClerkMembershipData {
   id: string;
-  organization: { id: string };
-  public_user_data: { user_id: string };
+  organization: { id: string; name: string; slug: string };
+  public_user_data: {
+    user_id: string;
+    identifier: string;
+    first_name: string | null;
+    last_name: string | null;
+  };
   role: string;
 }
 
@@ -91,7 +102,7 @@ export async function POST(request: NextRequest) {
           clerkOrgId: org.id,
           name: org.name,
           slug: org.slug,
-        });
+        }, convexAdminOpts);
         console.log(`✅ Org synced: ${org.id}`);
         break;
       }
@@ -101,7 +112,7 @@ export async function POST(request: NextRequest) {
         console.log(`🗑️ organization.deleted: ${org.id}`);
         await fetchMutation(internalOrgs.archiveOrganization, {
           clerkOrgId: org.id,
-        });
+        }, convexAdminOpts);
         console.log(`✅ Org archived: ${org.id}`);
         break;
       }
@@ -114,19 +125,41 @@ export async function POST(request: NextRequest) {
         const clerkUserId = membership.public_user_data.user_id;
         console.log(`👤 ${event.type}: user=${clerkUserId} org=${clerkOrgId} role=${membership.role}`);
 
-        // Resolve Convex IDs
-        const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId });
+        // Resolve org — create from event data if missing
+        let org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId }, convexAdminOpts);
         if (!org) {
-          console.error(`❌ Org not found for clerkOrgId: ${clerkOrgId}. Triggering org sync first.`);
-          // Org may not be synced yet; skip and let retry handle it
-          return NextResponse.json({ error: 'Org not synced yet' }, { status: 404 });
+          console.log(`🔄 Org not in Convex, creating from event data: ${clerkOrgId}`);
+          await fetchMutation(internalOrgs.syncOrganization, {
+            clerkOrgId: membership.organization.id,
+            name: membership.organization.name,
+            slug: membership.organization.slug,
+          }, convexAdminOpts);
+          org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId }, convexAdminOpts);
+          if (!org) {
+            console.error(`❌ Failed to create org: ${clerkOrgId}`);
+            return NextResponse.json({ error: 'Failed to create org' }, { status: 500 });
+          }
+          console.log(`✅ Org created from event data: ${clerkOrgId}`);
         }
 
-        const user = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId });
+        // Resolve user — create from event data if missing
+        let user = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId }, convexAdminOpts);
         if (!user) {
-          console.warn(`⚠️ User not found for clerkId: ${clerkUserId} — skipping membership sync`);
-          // User hasn't signed in yet; Clerk may fire before first login. Skip silently.
-          break;
+          console.log(`🔄 User not in Convex, creating from event data: ${clerkUserId}`);
+          const userData = membership.public_user_data;
+          const name = [userData.first_name, userData.last_name].filter(Boolean).join(' ') ||
+            userData.identifier?.split('@')[0] || 'User';
+          await fetchMutation(internalUsers.upsertUser, {
+            clerkId: clerkUserId,
+            email: userData.identifier || '',
+            name,
+          }, convexAdminOpts);
+          user = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId }, convexAdminOpts);
+          if (!user) {
+            console.error(`❌ Failed to create user: ${clerkUserId}`);
+            return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
+          }
+          console.log(`✅ User created from event data: ${clerkUserId}`);
         }
 
         await fetchMutation(internalMembers.addMember, {
@@ -134,7 +167,7 @@ export async function POST(request: NextRequest) {
           userId: user._id,
           clerkMembershipId: membership.id,
           role: mapRole(membership.role),
-        });
+        }, convexAdminOpts);
         console.log(`✅ Membership synced: user=${clerkUserId} org=${clerkOrgId} role=${membership.role}`);
         break;
       }
@@ -145,13 +178,13 @@ export async function POST(request: NextRequest) {
         const clerkUserId = membership.public_user_data.user_id;
         console.log(`❌ organizationMembership.deleted: user=${clerkUserId} org=${clerkOrgId}`);
 
-        const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId });
+        const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId }, convexAdminOpts);
         if (!org) {
           console.warn(`⚠️ Org not found for clerkOrgId: ${clerkOrgId} — skipping membership removal`);
           break;
         }
 
-        const user = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId });
+        const user = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId }, convexAdminOpts);
         if (!user) {
           console.warn(`⚠️ User not found for clerkId: ${clerkUserId} — skipping membership removal`);
           break;
@@ -160,7 +193,7 @@ export async function POST(request: NextRequest) {
         await fetchMutation(internalMembers.removeMember, {
           orgId: org._id,
           userId: user._id,
-        });
+        }, convexAdminOpts);
         console.log(`✅ Membership removed: user=${clerkUserId} org=${clerkOrgId}`);
         break;
       }
@@ -171,7 +204,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('❌ Error processing Clerk webhook:', error instanceof Error ? error.stack : error);
-    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
+    const errMsg = error instanceof Error ? error.message : String(error);
+    const errStack = error instanceof Error ? error.stack : undefined;
+    console.error('❌ Error processing Clerk webhook:', errStack ?? errMsg);
+    console.error('❌ Env check — CONVEX_DEPLOY_KEY set:', !!process.env.CONVEX_DEPLOY_KEY);
+    console.error('❌ Env check — CONVEX_DEPLOYMENT set:', !!process.env.CONVEX_DEPLOYMENT);
+    console.error('❌ Env check — NEXT_PUBLIC_CONVEX_URL set:', !!process.env.NEXT_PUBLIC_CONVEX_URL);
+    return NextResponse.json({ error: 'Webhook handler failed', detail: errMsg }, { status: 500 });
   }
 }

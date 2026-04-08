@@ -4,6 +4,9 @@ import { stripe } from '@/lib/stripe';
 import { fetchQuery } from 'convex/nextjs';
 import { internal } from '@/convex/_generated/api';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const convexAdminOpts = { adminToken: process.env.CONVEX_DEPLOY_KEY! } as any;
+
 // Stripe Price IDs per tier and billing interval.
 // Set via env vars so they can be configured per environment without code changes.
 const PRICE_IDS: Record<string, Record<string, string>> = {
@@ -64,7 +67,7 @@ export async function POST(request: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const org = await fetchQuery((internal as any).organizations.getByClerkOrgId, {
           clerkOrgId: effectiveOrgId,
-        });
+        }, convexAdminOpts);
         if (org?.stripeCustomerId) {
           stripeCustomerId = org.stripeCustomerId;
         }
@@ -77,7 +80,7 @@ export async function POST(request: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const user = await fetchQuery((internal as any).users.getByClerkId, {
           clerkId: userId,
-        });
+        }, convexAdminOpts);
         if (user?.stripeCustomerId) {
           stripeCustomerId = user.stripeCustomerId;
         }

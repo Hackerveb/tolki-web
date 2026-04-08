@@ -8,6 +8,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import { useLocale } from '@/hooks/useLocale';
 import { useT } from '@/lib/i18n';
+import { useAutoSelectOrg } from '@/hooks/useAutoSelectOrg';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -222,6 +223,7 @@ function SubscriptionBanner({
 
 export default function OrganizationSettingsPage() {
   const router = useRouter();
+  const { isReady, hasOrg, organization: autoOrg } = useAutoSelectOrg();
   const { organization, membership, isLoaded } = useOrganization();
   const { locale } = useLocale();
   const tt = useT(locale);
@@ -270,8 +272,8 @@ export default function OrganizationSettingsPage() {
     }
   };
 
-  // Still loading org context from Clerk — show nothing to avoid flash of "create org" button
-  if (!isLoaded) {
+  // Still loading org context from Clerk / auto-select — show nothing to avoid flash
+  if (!isLoaded || !isReady) {
     return (
       <div className="glass-page" style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="animate-spin" style={{

@@ -294,6 +294,21 @@ export const getByClerkOrgId = internalQuery({
       .first(),
 });
 
+// Add purchased credits (minutes) to org pool (called from Stripe webhook for org admin purchases)
+export const addOrgCredits = internalMutation({
+  args: {
+    orgId: v.id("organizations"),
+    minutes: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const org = await ctx.db.get(args.orgId);
+    if (!org) throw new Error("Organization not found");
+    await ctx.db.patch(args.orgId, {
+      totalMinutesAvailable: (org.totalMinutesAvailable ?? 0) + args.minutes,
+    });
+  },
+});
+
 // Persist the Stripe customer ID on an org after first successful checkout
 export const updateStripeCustomerId = internalMutation({
   args: {

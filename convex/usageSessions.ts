@@ -59,26 +59,43 @@ export const startSession = mutation({
           Date.now() <= org.currentBillingCycleEnd;
 
         if (!hasActiveBillingCycle && org.totalMinutesAvailable < MIN_MINUTES) {
-          throw new Error("Organization has insufficient minutes. Please renew your subscription.");
-        }
-
-        // For individual mode, also check member allocation (blocks even in overage)
-        if (org.creditPoolMode === "individual" && membership.minuteAllocation !== undefined) {
-          const remainingAllocation = membership.minuteAllocation - membership.minutesUsedThisCycle;
-          if (remainingAllocation < MIN_MINUTES) {
-            throw new Error("Your individual minute allocation is exhausted for this billing cycle.");
+          // Org has no minutes and no active billing cycle.
+          // Admins/owners fall through to personal free minutes; members are blocked.
+          if (membership.role === "member") {
+            throw new Error("Your organization has no available minutes. Contact your admin.");
           }
-        }
+          // Admin/owner: don't set orgId — fall through to personal credits path below
+        } else {
+          // For individual mode, also check member allocation (blocks even in overage)
+          if (org.creditPoolMode === "individual" && membership.minuteAllocation !== undefined) {
+            const remainingAllocation = membership.minuteAllocation - membership.minutesUsedThisCycle;
+            if (remainingAllocation < MIN_MINUTES) {
+              throw new Error("Your individual minute allocation is exhausted for this billing cycle.");
+            }
+          }
 
-        orgId = org._id;
+          orgId = org._id;
+        }
       }
     }
 
     if (!orgId) {
-      // Fallback: free minutes first, then purchased credits
-      const freeBalance = user.freeMinutesBalance ?? 0;
-      if (freeBalance + user.credits < MIN_SESSION_CREDITS) {
-        throw new Error("Insufficient credits. Minimum credits required to start a session");
+      // Personal path: subscription minutes → purchased credits → free minutes (no-sub only)
+      const hasPersonalSub =
+        user.currentBillingCycleEnd !== undefined &&
+        Date.now() <= user.currentBillingCycleEnd;
+
+      if (hasPersonalSub) {
+        const available = user.totalMinutesAvailable ?? 0;
+        if (available + user.credits < MIN_SESSION_CREDITS) {
+          throw new Error("Insufficient minutes. Please renew your subscription or purchase credits.");
+        }
+      } else {
+        // No subscription: purchased credits → free minutes
+        const freeBalance = user.freeMinutesBalance ?? 0;
+        if (user.credits + freeBalance < MIN_SESSION_CREDITS) {
+          throw new Error("Insufficient credits. Minimum credits required to start a session");
+        }
       }
     }
 
@@ -123,15 +140,38 @@ export const startSession = mutation({
         }
       }
     } else {
-      // Deduct minimum charge: free minutes first, then purchased credits
-      const freeBalance = user.freeMinutesBalance ?? 0;
-      const fromFree = Math.min(freeBalance, MIN_SESSION_CREDITS);
-      const fromPurchased = MIN_SESSION_CREDITS - fromFree;
-      await ctx.db.patch(user._id, {
-        freeMinutesBalance: Math.round((freeBalance - fromFree) * 100) / 100,
-        credits: Math.round((user.credits - fromPurchased) * 100) / 100,
-        lastActive: Date.now(),
-      });
+      // Deduct minimum charge from personal balance
+      const hasPersonalSub =
+        user.currentBillingCycleEnd !== undefined &&
+        Date.now() <= user.currentBillingCycleEnd;
+
+      if (hasPersonalSub) {
+        // Subscription minutes first, then purchased credits (no free minutes)
+        const subMinutes = user.totalMinutesAvailable ?? 0;
+        const fromSub = Math.min(subMinutes, MIN_SESSION_CREDITS);
+        const fromPurchased = MIN_SESSION_CREDITS - fromSub;
+        const patch: Record<string, any> = {
+          lastActive: Date.now(),
+        };
+        if (fromSub > 0) {
+          patch.totalMinutesAvailable = Math.round((subMinutes - fromSub) * 100) / 100;
+          patch.minutesUsedThisCycle = Math.round(((user.minutesUsedThisCycle ?? 0) + fromSub) * 100) / 100;
+        }
+        if (fromPurchased > 0) {
+          patch.credits = Math.round((user.credits - fromPurchased) * 100) / 100;
+        }
+        await ctx.db.patch(user._id, patch);
+      } else {
+        // No subscription: purchased credits first, then free minutes
+        const freeBalance = user.freeMinutesBalance ?? 0;
+        const fromPurchased = Math.min(user.credits, MIN_SESSION_CREDITS);
+        const fromFree = MIN_SESSION_CREDITS - fromPurchased;
+        await ctx.db.patch(user._id, {
+          credits: Math.round((user.credits - fromPurchased) * 100) / 100,
+          freeMinutesBalance: Math.round((freeBalance - fromFree) * 100) / 100,
+          lastActive: Date.now(),
+        });
+      }
     }
 
     // Create new session with minimum charge already applied
@@ -343,47 +383,100 @@ export const updateFractionalCredits = mutation({
         inOverage: newAvailable === 0,
       };
     } else {
-      // ── Personal credits: free minutes first, then purchased ─────────────
-      const freeBalance = user.freeMinutesBalance ?? 0;
-      const fromFree = Math.min(freeBalance, creditsToDeduct);
-      const fromPurchased = creditsToDeduct - fromFree;
+      // ── Personal credits path ──────────────────────────────────────────────
+      const hasPersonalSub =
+        user.currentBillingCycleEnd !== undefined &&
+        Date.now() <= user.currentBillingCycleEnd;
 
-      if (user.credits < fromPurchased) {
-        // End session - insufficient total balance
-        const finalCreditsUsed = Math.round((newSecondsUsed / 60) * 1 * 100) / 100;
+      if (hasPersonalSub) {
+        // Subscription minutes → purchased credits (no free minutes)
+        const subMinutes = user.totalMinutesAvailable ?? 0;
+        const fromSub = Math.min(subMinutes, creditsToDeduct);
+        const fromPurchased = creditsToDeduct - fromSub;
+
+        if (user.credits < fromPurchased) {
+          const finalCreditsUsed = Math.round((newSecondsUsed / 60) * 100) / 100;
+          await ctx.db.patch(activeSession._id, {
+            isActive: false,
+            endedAt: Date.now(),
+            secondsUsed: newSecondsUsed,
+            creditsUsed: finalCreditsUsed,
+          });
+          await ctx.db.patch(user._id, {
+            totalMinutesAvailable: 0,
+            credits: 0,
+            lastActive: Date.now(),
+          });
+          throw new Error("Insufficient minutes - session ended");
+        }
+
+        const newSubMinutes = Math.round((subMinutes - fromSub) * 100) / 100;
+        const newCredits = Math.round((user.credits - fromPurchased) * 100) / 100;
+        const patch: Record<string, any> = {
+          lastActive: Date.now(),
+        };
+        if (fromSub > 0) {
+          patch.totalMinutesAvailable = newSubMinutes;
+          patch.minutesUsedThisCycle = Math.round(((user.minutesUsedThisCycle ?? 0) + fromSub) * 100) / 100;
+        }
+        if (fromPurchased > 0) {
+          patch.credits = newCredits;
+        }
+        await ctx.db.patch(user._id, patch);
+
         await ctx.db.patch(activeSession._id, {
-          isActive: false,
-          endedAt: Date.now(),
           secondsUsed: newSecondsUsed,
-          creditsUsed: finalCreditsUsed,
+          creditsUsed: newCreditsUsed,
         });
+
+        return {
+          creditsRemaining: newSubMinutes + newCredits,
+          sessionCreditsUsed: newCreditsUsed,
+          secondsUsed: newSecondsUsed,
+          billedToOrg: false,
+        };
+      } else {
+        // No subscription: purchased credits → free minutes
+        const freeBalance = user.freeMinutesBalance ?? 0;
+        const fromPurchased = Math.min(user.credits, creditsToDeduct);
+        const fromFree = creditsToDeduct - fromPurchased;
+
+        if (freeBalance < fromFree) {
+          const finalCreditsUsed = Math.round((newSecondsUsed / 60) * 100) / 100;
+          await ctx.db.patch(activeSession._id, {
+            isActive: false,
+            endedAt: Date.now(),
+            secondsUsed: newSecondsUsed,
+            creditsUsed: finalCreditsUsed,
+          });
+          await ctx.db.patch(user._id, {
+            freeMinutesBalance: 0,
+            credits: 0,
+            lastActive: Date.now(),
+          });
+          throw new Error("Insufficient credits - session ended");
+        }
+
+        const newCredits = Math.round((user.credits - fromPurchased) * 100) / 100;
+        const newFreeBalance = Math.round((freeBalance - fromFree) * 100) / 100;
         await ctx.db.patch(user._id, {
-          freeMinutesBalance: 0,
-          credits: 0,
+          credits: newCredits,
+          freeMinutesBalance: newFreeBalance,
           lastActive: Date.now(),
         });
-        throw new Error("Insufficient credits - session ended");
+
+        await ctx.db.patch(activeSession._id, {
+          secondsUsed: newSecondsUsed,
+          creditsUsed: newCreditsUsed,
+        });
+
+        return {
+          creditsRemaining: newCredits + newFreeBalance,
+          sessionCreditsUsed: newCreditsUsed,
+          secondsUsed: newSecondsUsed,
+          billedToOrg: false,
+        };
       }
-
-      const newFreeBalance = Math.round((freeBalance - fromFree) * 100) / 100;
-      const newCredits = Math.round((user.credits - fromPurchased) * 100) / 100;
-      await ctx.db.patch(user._id, {
-        freeMinutesBalance: newFreeBalance,
-        credits: newCredits,
-        lastActive: Date.now(),
-      });
-
-      await ctx.db.patch(activeSession._id, {
-        secondsUsed: newSecondsUsed,
-        creditsUsed: newCreditsUsed,
-      });
-
-      return {
-        creditsRemaining: newFreeBalance + newCredits,
-        sessionCreditsUsed: newCreditsUsed,
-        secondsUsed: newSecondsUsed,
-        billedToOrg: false,
-      };
     }
   },
 });

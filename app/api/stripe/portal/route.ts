@@ -4,6 +4,9 @@ import { stripe } from '@/lib/stripe';
 import { fetchQuery } from 'convex/nextjs';
 import { internal } from '@/convex/_generated/api';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const convexAdminOpts = { adminToken: process.env.CONVEX_DEPLOY_KEY! } as any;
+
 export async function POST(request: NextRequest) {
   try {
     const { userId, orgId } = await auth();
@@ -31,7 +34,7 @@ export async function POST(request: NextRequest) {
       if (orgId) {
         // Try org record first when user has an active org session
         try {
-          const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId: orgId });
+          const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId: orgId }, convexAdminOpts);
           if (org?.stripeCustomerId) {
             stripeCustomerId = org.stripeCustomerId;
           }
@@ -43,7 +46,7 @@ export async function POST(request: NextRequest) {
       if (!stripeCustomerId) {
         // Fall back to user record
         try {
-          const user = await fetchQuery(internalUsers.getByClerkId, { clerkId: userId });
+          const user = await fetchQuery(internalUsers.getByClerkId, { clerkId: userId }, convexAdminOpts);
           if (user?.stripeCustomerId) {
             stripeCustomerId = user.stripeCustomerId;
           }

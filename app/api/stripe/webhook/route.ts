@@ -6,6 +6,11 @@ import Stripe from 'stripe';
 import { fetchMutation, fetchQuery } from 'convex/nextjs';
 import { internal } from '@/convex/_generated/api';
 
+// fetchQuery/fetchMutation do NOT auto-read CONVEX_DEPLOY_KEY; we must pass it
+// explicitly as adminToken so internal functions are authorized.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const convexAdminOpts = { adminToken: process.env.CONVEX_DEPLOY_KEY! } as any;
+
 // ─── Internal function references ────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const internalOrgs = (internal as any).organizations;
@@ -68,7 +73,7 @@ export async function POST(request: NextRequest) {
               amount: 0,
               stripeSessionId: session.id,
               status: 'failed',
-            });
+            }, convexAdminOpts);
             console.log('📝 Recorded expired session for user:', clerkId);
           }
         }
@@ -135,25 +140,57 @@ async function handleCreditCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Support both new `minutes` metadata and legacy `credits` metadata
   const minutes = parseInt(session.metadata?.minutes || session.metadata?.credits || '0', 10);
   const amount = session.amount_total ? session.amount_total / 100 : 0;
+  const orgId = session.metadata?.orgId;
 
   if (!clerkId || !minutes) {
     console.error('❌ Missing required metadata in credit checkout session:', session.id);
     throw new Error('Missing metadata in credit checkout session');
   }
 
-  // @ts-expect-error internal reference not in generated types
-  const result = await fetchMutation(internal.payments.recordPurchase, {
-    clerkId,
-    credits: minutes,
-    amount,
-    stripeSessionId: session.id,
-    status: 'completed',
-  });
+  if (orgId) {
+    // Org admin purchase — add credits to org pool instead of user's personal balance
+    const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId: orgId }, convexAdminOpts);
+    if (!org) {
+      console.error('❌ Org not found for orgId:', orgId, 'in credit checkout session:', session.id);
+      throw new Error('Organization not found for credit purchase');
+    }
 
-  if ('duplicate' in result && result.duplicate) {
-    console.log('⚠️ Duplicate credit webhook – already processed. Balance:', result.newBalance);
+    await fetchMutation(internalOrgs.addOrgCredits, {
+      orgId: org._id,
+      minutes,
+    }, convexAdminOpts);
+
+    // Still record the purchase on the user for audit trail (credits go to org, not user balance)
+    // @ts-expect-error internal reference not in generated types
+    const result = await fetchMutation(internal.payments.recordPurchase, {
+      clerkId,
+      credits: 0, // Don't add to user's personal balance
+      amount,
+      stripeSessionId: session.id,
+      status: 'completed',
+    }, convexAdminOpts);
+
+    if ('duplicate' in result && result.duplicate) {
+      console.log('⚠️ Duplicate credit webhook – already processed for org:', orgId);
+    } else {
+      console.log(`🎉 ${minutes} minutes added to org ${orgId} pool (purchased by ${clerkId})`);
+    }
   } else {
-    console.log(`🎉 ${result.creditsAdded} minutes added to ${clerkId}. Balance: ${result.newBalance}`);
+    // Personal purchase — add credits to user's balance (as-is)
+    // @ts-expect-error internal reference not in generated types
+    const result = await fetchMutation(internal.payments.recordPurchase, {
+      clerkId,
+      credits: minutes,
+      amount,
+      stripeSessionId: session.id,
+      status: 'completed',
+    }, convexAdminOpts);
+
+    if ('duplicate' in result && result.duplicate) {
+      console.log('⚠️ Duplicate credit webhook – already processed. Balance:', result.newBalance);
+    } else {
+      console.log(`🎉 ${result.creditsAdded} minutes added to ${clerkId}. Balance: ${result.newBalance}`);
+    }
   }
 }
 
@@ -168,7 +205,7 @@ async function handleSubscriptionCheckoutCompleted(session: Stripe.Checkout.Sess
 
   if (clerkOrgId) {
     // Org-level subscription — save customer ID on org
-    const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId });
+    const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId }, convexAdminOpts);
     if (!org) {
       console.error('❌ Org not found for clerkOrgId:', clerkOrgId);
       return;
@@ -177,12 +214,12 @@ async function handleSubscriptionCheckoutCompleted(session: Stripe.Checkout.Sess
       await fetchMutation(internalOrgs.updateStripeCustomerId, {
         orgId: org._id,
         stripeCustomerId,
-      });
+      }, convexAdminOpts);
       console.log(`✅ Saved stripeCustomerId ${stripeCustomerId} for org ${clerkOrgId}`);
     }
   } else if (clerkUserId) {
     // User-level subscription — save customer ID on user
-    const user = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId });
+    const user = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId }, convexAdminOpts);
     if (!user) {
       console.error('❌ User not found for clerkUserId:', clerkUserId);
       return;
@@ -191,7 +228,7 @@ async function handleSubscriptionCheckoutCompleted(session: Stripe.Checkout.Sess
       await fetchMutation(internalUsers.updateStripeCustomerId, {
         userId: user._id,
         stripeCustomerId,
-      });
+      }, convexAdminOpts);
       console.log(`✅ Saved stripeCustomerId ${stripeCustomerId} for user ${clerkUserId}`);
     }
   } else {
@@ -232,7 +269,7 @@ async function handleSubscriptionCreated(sub: Stripe.Subscription) {
 
   if (clerkOrgId) {
     // Org-level subscription
-    const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId });
+    const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId }, convexAdminOpts);
     if (!org) {
       console.error('❌ Org not found for clerkOrgId:', clerkOrgId, 'sub:', sub.id);
       return;
@@ -248,13 +285,13 @@ async function handleSubscriptionCreated(sub: Stripe.Subscription) {
       billingInterval: tierMeta.billingInterval,
       currentPeriodStart: period.start * 1000,
       currentPeriodEnd: period.end * 1000,
-    });
+    }, convexAdminOpts);
     console.log(
       `✅ Org subscription created in Convex: org=${clerkOrgId} tier=${tierMeta.tier} minutes=${tierMeta.includedMinutes}`
     );
   } else if (clerkUserId) {
     // User-level subscription
-    const user = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId });
+    const user = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId }, convexAdminOpts);
     if (!user) {
       console.error('❌ User not found for clerkUserId:', clerkUserId, 'sub:', sub.id);
       return;
@@ -270,7 +307,7 @@ async function handleSubscriptionCreated(sub: Stripe.Subscription) {
       billingInterval: tierMeta.billingInterval,
       currentPeriodStart: period.start * 1000,
       currentPeriodEnd: period.end * 1000,
-    });
+    }, convexAdminOpts);
     console.log(
       `✅ User subscription created in Convex: user=${clerkUserId} tier=${tierMeta.tier} minutes=${tierMeta.includedMinutes}`
     );
@@ -290,15 +327,15 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
   if (tierMeta) {
     const convexSub = await fetchQuery(internalSubs.getByStripeSubscriptionId, {
       stripeSubscriptionId: sub.id,
-    });
+    }, convexAdminOpts);
     if (convexSub && tierMeta.includedMinutes < convexSub.includedMinutes) {
       console.log(
         `⬇️ Plan downgrade detected for ${sub.id}: ${convexSub.includedMinutes} → ${tierMeta.includedMinutes} min — resetting rollover`
       );
       if (convexSub.orgId) {
-        await fetchMutation(internalOrgs.resetRolloverOnDowngrade, { orgId: convexSub.orgId });
+        await fetchMutation(internalOrgs.resetRolloverOnDowngrade, { orgId: convexSub.orgId }, convexAdminOpts);
       } else if (convexSub.userId) {
-        await fetchMutation(internalSubs.resetUserRolloverOnDowngrade, { userId: convexSub.userId });
+        await fetchMutation(internalSubs.resetUserRolloverOnDowngrade, { userId: convexSub.userId }, convexAdminOpts);
       }
     }
   }
@@ -319,7 +356,7 @@ async function handleSubscriptionUpdated(sub: Stripe.Subscription) {
     patch.billingInterval = tierMeta.billingInterval;
   }
 
-  await fetchMutation(internalSubs.updateSubscription, patch);
+  await fetchMutation(internalSubs.updateSubscription, patch, convexAdminOpts);
   console.log(`✅ Subscription updated in Convex: ${sub.id} status=${status}`);
 }
 
@@ -360,7 +397,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
 
   const convexSub = await fetchQuery(internalSubs.getByStripeSubscriptionId, {
     stripeSubscriptionId: stripeSubId,
-  });
+  }, convexAdminOpts);
   if (!convexSub) {
     console.error('❌ Convex subscription not found for stripe sub:', stripeSubId);
     return;
@@ -374,7 +411,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     // ── Org-level renewal ─────────────────────────────────────────────────
 
     // Report overage from closing cycle to Stripe
-    const org = await fetchQuery(internalOrgs.getById, { orgId: convexSub.orgId });
+    const org = await fetchQuery(internalOrgs.getById, { orgId: convexSub.orgId }, convexAdminOpts);
     const overageMinutes = org?.overageMinutesThisCycle ?? 0;
 
     if (overageMinutes > 0 && org?.stripeCustomerId) {
@@ -405,19 +442,19 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       newIncludedMinutes: tierMeta.includedMinutes,
       newBillingCycleStart: newPeriodStart,
       newBillingCycleEnd: newPeriodEnd,
-    });
+    }, convexAdminOpts);
 
     // Reset per-member usage counters for the new cycle
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const internalMemberships = (internal as any).memberships;
-    await fetchMutation(internalMemberships.resetMemberMinutes, { orgId: convexSub.orgId });
+    await fetchMutation(internalMemberships.resetMemberMinutes, { orgId: convexSub.orgId }, convexAdminOpts);
 
   } else if (convexSub.userId) {
     // ── User-level renewal ────────────────────────────────────────────────
 
     // Report overage from closing cycle to Stripe
-    const user = await fetchQuery(internalUsers.getById, { userId: convexSub.userId });
+    const user = await fetchQuery(internalUsers.getById, { userId: convexSub.userId }, convexAdminOpts);
     const overageMinutes = user?.overageMinutesThisCycle ?? 0;
 
     if (overageMinutes > 0 && user?.stripeCustomerId) {
@@ -448,7 +485,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       newIncludedMinutes: tierMeta.includedMinutes,
       newCycleStart: newPeriodStart,
       newCycleEnd: newPeriodEnd,
-    });
+    }, convexAdminOpts);
   }
 
   // Sync subscription period boundaries
@@ -457,7 +494,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     status: 'active',
     currentPeriodStart: newPeriodStart,
     currentPeriodEnd: newPeriodEnd,
-  });
+  }, convexAdminOpts);
 
   console.log(
     `✅ Renewal processed for ${stripeSubId}: ${tierMeta.includedMinutes} min provisioned`
@@ -470,15 +507,15 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
   // cancelSubscription handles user-level rollover reset internally
   await fetchMutation(internalSubs.cancelSubscription, {
     stripeSubscriptionId: sub.id,
-  });
+  }, convexAdminOpts);
   console.log('✅ Subscription marked canceled in Convex:', sub.id);
 
   // For org-level subscriptions, also reset org rollover balance
   const convexSub = await fetchQuery(internalSubs.getByStripeSubscriptionId, {
     stripeSubscriptionId: sub.id,
-  });
+  }, convexAdminOpts);
   if (convexSub?.orgId) {
-    await fetchMutation(internalOrgs.resetRolloverOnCancellation, { orgId: convexSub.orgId });
+    await fetchMutation(internalOrgs.resetRolloverOnCancellation, { orgId: convexSub.orgId }, convexAdminOpts);
     console.log('✅ Rollover balance reset for org:', convexSub.orgId);
   }
 }
@@ -494,7 +531,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   await fetchMutation(internalSubs.updateSubscription, {
     stripeSubscriptionId: stripeSubId,
     status: 'past_due',
-  });
+  }, convexAdminOpts);
 
   console.log(`⚠️ Subscription marked past_due: ${stripeSubId}`);
 }

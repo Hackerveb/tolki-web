@@ -3,6 +3,11 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { fetchQuery, fetchMutation } from 'convex/nextjs';
 import { internal } from '@/convex/_generated/api';
 
+// fetchQuery/fetchMutation do NOT auto-read CONVEX_DEPLOY_KEY; we must pass it
+// explicitly as adminToken so internal functions are authorized.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const convexAdminOpts = { adminToken: process.env.CONVEX_DEPLOY_KEY! } as any;
+
 // fetchQuery/fetchMutation require `as any` for internal function references
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const internalOrgs = (internal as any).organizations;
@@ -44,11 +49,26 @@ export async function POST() {
       return NextResponse.json({ synced: 0 });
     }
 
-    // Resolve the Convex user
-    const convexUser = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId });
+    // Resolve the Convex user — create if missing (self-healing when client auth is misconfigured)
+    let convexUser = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId }, convexAdminOpts);
     if (!convexUser) {
-      // User not yet in Convex — this shouldn't happen since we call this after createOrUpdateUser
-      return NextResponse.json({ synced: 0 });
+      // User not in Convex yet — create via internal mutation (no client auth needed)
+      const clerkUser = await client.users.getUser(clerkUserId);
+      const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') ||
+        clerkUser.emailAddresses?.[0]?.emailAddress?.split('@')[0] || 'User';
+      const email = clerkUser.emailAddresses?.[0]?.emailAddress || '';
+
+      await fetchMutation(internalUsers.upsertUser, {
+        clerkId: clerkUserId,
+        email,
+        name,
+      }, convexAdminOpts);
+
+      convexUser = await fetchQuery(internalUsers.getByClerkId, { clerkId: clerkUserId }, convexAdminOpts);
+      if (!convexUser) {
+        console.error('Failed to create user in Convex for clerkId:', clerkUserId);
+        return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
+      }
     }
 
     let synced = 0;
@@ -56,11 +76,21 @@ export async function POST() {
     for (const membership of memberships.data) {
       const clerkOrgId = membership.organization.id;
 
-      // Resolve the Convex org
-      const org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId });
+      // Resolve the Convex org — create it if missing (self-healing for orgs
+      // created before the webhook was configured)
+      let org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId }, convexAdminOpts);
       if (!org) {
-        // Org not synced to Convex yet — skip
-        continue;
+        const clerkOrg = membership.organization;
+        await fetchMutation(internalOrgs.syncOrganization, {
+          clerkOrgId: clerkOrg.id,
+          name: clerkOrg.name,
+          slug: clerkOrg.slug,
+        }, convexAdminOpts);
+        org = await fetchQuery(internalOrgs.getByClerkOrgId, { clerkOrgId }, convexAdminOpts);
+        if (!org) {
+          console.error(`Failed to create org for clerkOrgId: ${clerkOrgId}`);
+          continue;
+        }
       }
 
       // Upsert membership (addMember is idempotent)
@@ -69,7 +99,7 @@ export async function POST() {
         userId: convexUser._id,
         clerkMembershipId: membership.id,
         role: mapRole(membership.role),
-      });
+      }, convexAdminOpts);
       synced++;
     }
 

@@ -109,40 +109,6 @@ export const updateDefaultLanguage = mutation({
   },
 });
 
-// Deduct credits from user (called every minute during translation)
-export const deductCredits = mutation({
-  args: {
-    clerkId: v.string(),
-    credits: v.number(),
-  },
-  handler: async (ctx, args) => {
-    await verifyIdentity(ctx, args.clerkId);
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    if (user.credits < args.credits) {
-      throw new Error("Insufficient credits");
-    }
-
-    // Handle decimal credits with proper rounding
-    const newBalance = Math.round((user.credits - args.credits) * 100) / 100;
-
-    await ctx.db.patch(user._id, {
-      credits: newBalance,
-      lastActive: Date.now(),
-    });
-
-    return newBalance; // Return new balance
-  },
-});
-
 // Add credits after successful purchase (internal only — not callable from client)
 export const addCredits = internalMutation({
   args: {
@@ -166,6 +132,42 @@ export const addCredits = internalMutation({
     });
 
     return user.credits + args.credits; // Return new balance
+  },
+});
+
+// Upsert user by Clerk ID (INTERNAL ONLY — sync-memberships, no client auth needed)
+export const upsertUser = internalMutation({
+  args: {
+    clerkId: v.string(),
+    email: v.string(),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        email: args.email,
+        name: args.name,
+        lastActive: Date.now(),
+      });
+      return existing._id;
+    }
+
+    return ctx.db.insert("users", {
+      clerkId: args.clerkId,
+      email: args.email,
+      name: args.name,
+      credits: FREE_SIGNUP_CREDITS,
+      totalCreditsEverPurchased: 0,
+      freeMinutesBalance: 20,
+      lastFreeMinutesReset: Date.now(),
+      createdAt: Date.now(),
+      lastActive: Date.now(),
+    });
   },
 });
 

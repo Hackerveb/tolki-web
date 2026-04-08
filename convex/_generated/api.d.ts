@@ -9,6 +9,7 @@
  */
 
 import type * as crons from "../crons.js";
+import type * as lib_auth from "../lib/auth.js";
 import type * as memberships from "../memberships.js";
 import type * as organizations from "../organizations.js";
 import type * as payments from "../payments.js";
@@ -24,6 +25,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   crons: typeof crons;
+  "lib/auth": typeof lib_auth;
   memberships: typeof memberships;
   organizations: typeof organizations;
   payments: typeof payments;

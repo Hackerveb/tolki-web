@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useOrganization } from '@clerk/nextjs';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { useQuery } from 'convex/react';
@@ -133,7 +133,9 @@ function AddOnContent() {
   const { toast } = useToast();
   const { locale } = useLocale();
   const tt = useT(locale);
-  const { tier, isLoaded } = useUserTier();
+  const { tier, isLoaded, orgName } = useUserTier();
+  const { organization } = useOrganization();
+  const isOrgAdmin = tier === 'org_admin';
   const [minutes, setMinutes] = useState<number>(60);
   const [inputValue, setInputValue] = useState<string>('60');
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -201,6 +203,7 @@ function AddOnContent() {
         body: JSON.stringify({
           minutes,
           clerkId: user.id,
+          ...(isOrgAdmin && organization?.id && { orgId: organization.id }),
         }),
       });
 
@@ -300,6 +303,13 @@ function AddOnContent() {
             </svg>
           </div>
         </div>
+        {isOrgAdmin && (
+          <p style={{ fontSize: '12px', color: 'var(--color-text-tertiary)', marginTop: '8px' }}>
+            {locale === 'nb'
+              ? 'Minutter deles med organisasjonen din'
+              : 'Credits are shared with your organization'}
+          </p>
+        )}
 
         {/* Per-minute rate info */}
         <div
@@ -545,9 +555,13 @@ function AddOnContent() {
             </div>
           ) : (
             <span style={{ fontSize: '16px', fontWeight: 700, color: '#FFFFFF' }}>
-              {locale === 'nb'
-                ? `Kjøp ${minutes} minutter — ${totalNok.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr`
-                : `Buy ${minutes} minutes — ${totalNok.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NOK`}
+              {isOrgAdmin && orgName
+                ? locale === 'nb'
+                  ? `Kjøp ${minutes} minutter for ${orgName} — ${totalNok.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr`
+                  : `Buy ${minutes} minutes for ${orgName} — ${totalNok.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NOK`
+                : locale === 'nb'
+                  ? `Kjøp ${minutes} minutter — ${totalNok.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kr`
+                  : `Buy ${minutes} minutes — ${totalNok.toLocaleString('nb-NO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NOK`}
             </span>
           )}
         </motion.button>
