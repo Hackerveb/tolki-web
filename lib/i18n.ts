@@ -36,6 +36,7 @@ const translations = {
   'main.agentFailed': { nb: 'Tolken klarte ikke å starte. Prøv igjen senere.', en: 'The interpreter agent failed to start. Please try again later.' },
   'main.connectFailed': { nb: 'Kunne ikke koble til: {msg}. Sjekk mikrofontillatelser.', en: 'Failed to connect: {msg}. Check microphone permissions.' },
   'main.outOfCredits': { nb: 'Du har gått tom for credits. Oppgrader for å fortsette.', en: 'You have run out of credits. Please upgrade to continue.' },
+  'main.sessionError': { nb: 'Noe gikk galt med økten. Prøv igjen.', en: 'Something went wrong with the session. Please try again.' },
   'main.upgradeNow': { nb: 'Oppgrader nå', en: 'Upgrade now' },
   'main.needCredits': { nb: 'Du trenger minst 0.05 credits for å starte en økt.', en: 'You need at least 0.05 credits to start a session.' },
 

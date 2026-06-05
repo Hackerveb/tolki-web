@@ -8,7 +8,9 @@ import { CREDIT_DEDUCTION_INTERVAL_SEC } from '@/constants/billing';
 
 interface UseTrackUsageOptions {
   isActive: boolean; // Whether to track usage (e.g., when recording)
-  onInsufficientCredits?: () => void;
+  // Fired when a deduction call fails. Receives the underlying error so the caller
+  // can tell a genuine "out of credits" apart from other backend failures.
+  onSessionError?: (error: Error) => void;
 }
 
 interface UseTrackUsageReturn {
@@ -20,7 +22,7 @@ interface UseTrackUsageReturn {
 
 export const useTrackUsage = ({
   isActive,
-  onInsufficientCredits,
+  onSessionError,
 }: UseTrackUsageOptions): UseTrackUsageReturn => {
   const { user } = useUser();
   const [secondsUsed, setSecondsUsed] = useState(0);
@@ -34,12 +36,12 @@ export const useTrackUsage = ({
   // Use refs to avoid stale closures and prevent effect re-runs
   const secondsUsedRef = useRef(0);
   const isTrackingRef = useRef(false);
-  const onInsufficientCreditsRef = useRef(onInsufficientCredits);
+  const onSessionErrorRef = useRef(onSessionError);
 
   // Keep callback ref updated
   useEffect(() => {
-    onInsufficientCreditsRef.current = onInsufficientCredits;
-  }, [onInsufficientCredits]);
+    onSessionErrorRef.current = onSessionError;
+  }, [onSessionError]);
 
   // Track seconds and deduct credits periodically
   useEffect(() => {
@@ -66,15 +68,15 @@ export const useTrackUsage = ({
               lastDeductionRef.current = newSeconds;
             })
             .catch((error) => {
-              // Error (e.g., insufficient credits) — stop the interval to prevent spam
+              // Deduction failed (insufficient credits, ended session, backend error…).
+              // Stop the interval to prevent spam and surface the error to the caller.
               console.warn('Error deducting credits, stopping tracking:', error);
               if (intervalRef.current) {
                 clearInterval(intervalRef.current);
                 intervalRef.current = null;
               }
-              if (onInsufficientCreditsRef.current) {
-                onInsufficientCreditsRef.current();
-              }
+              const err = error instanceof Error ? error : new Error(String(error));
+              onSessionErrorRef.current?.(err);
             });
         }
       }, 1000);

@@ -20,12 +20,20 @@ import { useTheme } from '@/hooks/useTheme';
 import { useT } from '@/lib/i18n';
 import { languageStorage } from '@/utils/languageStorage';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import type { Id } from '@/convex/_generated/dataModel';
 
 const HOLD_TO_MUTE_KEY = 'tolki_hold_mute_educated';
 type ConnectionStatus = 'idle' | 'connecting' | 'connected';
 
 // Agent states that indicate the agent has truly joined and is ready/active
 const AGENT_ACTIVE_STATES = new Set(['listening', 'thinking', 'speaking']);
+
+// Distinguish a genuine credit/minute exhaustion from any other backend failure,
+// so the UI never blames the user's balance for an unrelated error.
+const isCreditError = (msg: string): boolean =>
+  /insufficient|run out of minutes|no available minutes|out of minutes|allocation exhausted/i.test(msg);
 
 // Stable style objects — extracted to module level to avoid per-render allocation
 const HEADER_STYLE: React.CSSProperties = {
@@ -58,7 +66,7 @@ const SETTINGS_BUTTON_STYLE: React.CSSProperties = {
 // Inner component — needs to live inside RoomContext.Provider
 function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitRoom> }) {
   const router = useRouter();
-  const { credits, isLoaded, isSignedIn } = useCurrentUser();
+  const { credits, isLoaded, isSignedIn, clerkUser } = useCurrentUser();
   const [sourceLanguage, setSourceLanguage] = useState<Language>(defaultSourceLanguage);
   const [targetLanguage, setTargetLanguage] = useState<Language>(defaultTargetLanguage);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
@@ -77,11 +85,30 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
   const { room, connect, disconnect, isConnected, error } = liveKit;
   const { state: agentState, audioTrack } = useVoiceAssistant();
 
+  // Convex billing session lifecycle. Without an active usageSessions row, every
+  // credit deduction fails with "No active session found" — which is the bug that
+  // made the app stop after a few seconds and falsely report "out of credits".
+  const startSessionMutation = useMutation(api.usageSessions.startSession);
+  const endSessionMutation = useMutation(api.usageSessions.endSession);
+  const sessionIdRef = useRef<Id<'usageSessions'> | null>(null);
+  const sessionStartingRef = useRef(false);
+
+  const endConvexSession = useCallback(async () => {
+    const id = sessionIdRef.current;
+    sessionIdRef.current = null;
+    if (!id) return;
+    try {
+      await endSessionMutation({ sessionId: id });
+    } catch (err) {
+      console.error('Failed to end session:', err);
+    }
+  }, [endSessionMutation]);
+
   const { secondsUsed, reset: resetUsage } = useTrackUsage({
     isActive: connectionStatus === 'connected',
-    onInsufficientCredits: () => {
+    onSessionError: (err) => {
       handleRecordingStop();
-      toast.error(tt('main.outOfCredits'));
+      toast.error(isCreditError(err.message) ? tt('main.outOfCredits') : tt('main.sessionError'));
     },
   });
 
@@ -115,11 +142,47 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
     };
   }, [isConnected, connectionStatus, disconnect, resetUsage, toast]);
 
-  // When agent actually joins and is active (listening/thinking/speaking), mark as connected
+  // When agent actually joins and is active (listening/thinking/speaking), create the
+  // Convex billing session, THEN mark as connected. Tracking (useTrackUsage) only
+  // activates once status is 'connected', so the session row is guaranteed to exist
+  // before the first credit deduction runs.
   useEffect(() => {
-    if (connectionStatus === 'connecting' && isConnected && AGENT_ACTIVE_STATES.has(agentState)) {
-      // Agent has truly joined and is active — clear timeout, show connected
-      if (agentTimeoutRef.current) clearTimeout(agentTimeoutRef.current);
+    if (
+      connectionStatus !== 'connecting' ||
+      !isConnected ||
+      !AGENT_ACTIVE_STATES.has(agentState) ||
+      sessionStartingRef.current
+    ) {
+      return;
+    }
+
+    // Agent has truly joined and is active — clear the no-agent timeout and start billing.
+    sessionStartingRef.current = true;
+    if (agentTimeoutRef.current) clearTimeout(agentTimeoutRef.current);
+
+    (async () => {
+      try {
+        if (!clerkUser?.id) throw new Error('Not authenticated');
+        // startSession runs the real credit/minute pre-check and resolves org vs.
+        // personal billing. A failure here is the only legitimate place an
+        // "out of credits" can surface at session start.
+        const sessionId = await startSessionMutation({
+          clerkId: clerkUser.id,
+          languageFrom: sourceLanguage.name,
+          languageTo: targetLanguage.name,
+        });
+        sessionIdRef.current = sessionId;
+      } catch (err) {
+        sessionStartingRef.current = false;
+        setConnectionStatus('idle');
+        await disconnect();
+        resetUsage();
+        const msg = err instanceof Error ? err.message : '';
+        toast.error(isCreditError(msg) ? tt('main.outOfCredits') : tt('main.sessionError'), 8000);
+        return;
+      }
+
+      sessionStartingRef.current = false;
       setConnectionStatus('connected');
       const hasSeen = typeof window !== 'undefined' && localStorage.getItem(HOLD_TO_MUTE_KEY);
       if (!hasSeen) {
@@ -129,8 +192,9 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
           localStorage.setItem(HOLD_TO_MUTE_KEY, '1');
         }, 4000);
       }
-    }
-  }, [agentState, connectionStatus, isConnected]);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentState, connectionStatus, isConnected, clerkUser?.id, sourceLanguage.name, targetLanguage.name]);
 
   // If agent dispatch fails, disconnect and show error
   useEffect(() => {
@@ -190,10 +254,12 @@ function MainScreenContent({ liveKit }: { liveKit: ReturnType<typeof useLiveKitR
 
   const handleRecordingStop = useCallback(async () => {
     if (agentTimeoutRef.current) clearTimeout(agentTimeoutRef.current);
+    sessionStartingRef.current = false;
     setConnectionStatus('idle');
     await disconnect();
+    await endConvexSession();
     resetUsage();
-  }, [disconnect, resetUsage]);
+  }, [disconnect, endConvexSession, resetUsage]);
 
   // Tap vs hold: hold (>500ms) = mute only (keep session), short tap = start/stop
   const handleVisualizerPointerDown = useCallback(() => {
